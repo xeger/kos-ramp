@@ -2,11 +2,8 @@ local nd is nextnode.
 local epsilon is 0.25.
 
 lock a to ship:maxthrust/ship:mass.
-
-function burn_duration {
-  parameter nd.
-  return (nd:deltav:mag/a).
-}
+set dob to (nd:deltav:mag / a).
+lock dob to (nd:deltav:mag / a).
 
 print "Node: burn at T+" + round(nd:eta) + "; " + round(nd:deltav:mag/a) + " s @ " + round(a) + " m/s^2".
 
@@ -15,7 +12,7 @@ lock steering to np.
 wait until abs(np:pitch - facing:pitch) < epsilon and abs(np:yaw - facing:yaw) < epsilon.
 print "Node: oriented to burn".
 
-wait until nd:eta < burn_duration(nd) < 2.
+wait until nd:eta < dob / 2.
 
 print "Node: burn start".
 set tset to 0.
@@ -41,14 +38,12 @@ until done
     if vdot(dv0, nd:deltav) < 0
     {
         lock throttle to 0.
-        break.
+        set done to true.
     }
 
     else if nd:deltav:mag < 0.1
     {
-        print "Node: burn taper; remain dV=" + round(nd:deltav:mag,1) + " m/s, vdot=" + round(vdot(dv0, nd:deltav),1).
         wait until vdot(dv0, nd:deltav) < 0.1.
-
         lock throttle to 0.
         set done to true.
     }
