@@ -54,7 +54,7 @@ until done
     }
 }
 
-print "Node: burn complete; residual dV=" + round(nd:deltav:mag,1) + " m/s, vdot=" + round(vdot(dv0, nd:deltav),1).
+print "Node: burn complete; residual dV=" + round(nd:deltav:mag,1) + " m/s".
 unlock steering.
 unlock throttle.
 remove nd.
