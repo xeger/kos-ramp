@@ -2,13 +2,16 @@ local nd is nextnode.
 local epsilon is 0.25.
 
 lock a to ship:maxthrust/ship:mass.
-set dob to (nd:deltav:mag / a).
-lock dob to (nd:deltav:mag / a).
 
 print "Node: burn at T+" + round(nd:eta) + "; " + round(nd:deltav:mag/a) + " s @ " + round(a) + " m/s^2".
 
-set np to lookdirup(nd:deltav, ship:facing:topvector). //points to node, keeping roll the same.
-lock steering to np.
+// keep ship pointed at node
+lock steering to lookdirup(nd:deltav, ship:facing:topvector).
+
+// estimate direction & duration for waiting purposes
+set np to lookdirup(nd:deltav, ship:facing:topvector).
+set dob to (nd:deltav:mag / a).
+
 wait until abs(np:pitch - facing:pitch) < epsilon and abs(np:yaw - facing:yaw) < epsilon.
 print "Node: oriented to burn".
 
@@ -41,7 +44,7 @@ until done
         set done to true.
     }
 
-    else if nd:deltav:mag < 0.1
+    else if nd:deltav:mag < 1
     {
         wait until vdot(dv0, nd:deltav) < 0.1.
         lock throttle to 0.
