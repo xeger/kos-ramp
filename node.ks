@@ -1,21 +1,21 @@
 local nd is nextnode.
-local epsilon is 0.85.
+local epsilon is 0.25.
 
 lock a to ship:maxthrust/ship:mass.
-local burn_duration is nd:deltav:mag/a.
 
-function burn_start {
-  return time + (nd:eta - burn_duration / 2).
+function burn_duration {
+  parameter nd.
+  return (nd:deltav:mag/a).
 }
 
-print "Node: burn at T+" + round(nd:eta) + "; " + round(burn_duration) + " s @ " + round(a) + " m/s^2".
+print "Node: burn at T+" + round(nd:eta) + "; " + round(nd:deltav:mag/a) + " s @ " + round(a) + " m/s^2".
 
 set np to lookdirup(nd:deltav, ship:facing:topvector). //points to node, keeping roll the same.
 lock steering to np.
 wait until abs(np:pitch - facing:pitch) < epsilon and abs(np:yaw - facing:yaw) < epsilon.
 print "Node: oriented to burn".
 
-wait until time >= burn_start.
+wait until nd:eta < burn_duration(nd) < 2.
 
 print "Node: burn start".
 set tset to 0.
@@ -26,10 +26,10 @@ set dv0 to nd:deltav.
 
 until done
 {
-    if ship:maxthrust < epsilon {
+    if a = 0 {
       print "Node: automatic stage!".
       stage.
-      wait 1.
+      wait until a > 0.
     }
 
     //throttle is 100% until there is less than 1 second of time left to burn
@@ -47,7 +47,7 @@ until done
     else if nd:deltav:mag < 0.1
     {
         print "Node: burn taper; remain dV=" + round(nd:deltav:mag,1) + " m/s, vdot=" + round(vdot(dv0, nd:deltav),1).
-        wait until vdot(dv0, nd:deltav) < 0.5.
+        wait until vdot(dv0, nd:deltav) < 0.1.
 
         lock throttle to 0.
         set done to true.
@@ -57,8 +57,6 @@ until done
 print "Node: burn complete; residual dV=" + round(nd:deltav:mag,1) + " m/s, vdot=" + round(vdot(dv0, nd:deltav),1).
 unlock steering.
 unlock throttle.
-wait 1.
-
 remove nd.
 
 //just in case.
