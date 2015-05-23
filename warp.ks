@@ -8,38 +8,38 @@ set t1 to t0 + dt.
 if dt > 10 {
   print "Warp: for " + dt + "s".
   if dt > 3000 {
-      print "Warp:5".
+      print "Warp: 5".
       set warp to 5.
   }
   if dt > 3000 {
       when time:seconds > t1 - 3000 then {
-          print "Warp:4".
+          print "Warp: 4".
           set warp to 4.
       }
   }
   if dt > 300 and dt <= 3000 {
-      print "Warp:4".
+      print "Warp: 4".
       set warp to 4.
   }
   if dt > 300 {
       when time:seconds > t1 - 300 then {
-          print "Warp:3".
+          print "Warp: 3".
           set warp to 3.
       }
   }
   if dt > 10 and dt < 300 {
-      print "Warp-3".
+      print "Warp: 3".
       set warp to 3.
   }
   if dt > 60 {
       when time:seconds > t1 - 60 then {
-          print "Warp:2".
+          print "Warp: 2".
           set warp to 2.
       }
   }
   if dt > 30 {
       when time:seconds > t1 - 30 then {
-          print "Warp:1".
+          print "Warp: 1".
           set warp to 1.
       }
   }

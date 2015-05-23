@@ -7,9 +7,9 @@ Getting Started
 Roadmap
 =======
 
-1. Steal stuff from http://kos.wikia.com/wiki/Maneuvering_modules
-2. Solve terrible oscillations caused by `LOCK STEERING TO`
-3. Hohmann transfer
+1. Plane change / align planes
+2. Hohmann transfer
+3. Match velocity
 
 Scratchpad
 ==========

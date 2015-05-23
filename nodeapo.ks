@@ -19,5 +19,3 @@ local v2 is sqrt( vom^2 + (mu * (2/r2 - 2/r + 1/a - 1/a2 ) ) ).
 local deltav is v2 - va.
 local nd is node(time:seconds + eta:apoapsis, 0, 0, deltav).
 add nd.
-
-print "Node: change apoapsis in " + round(nd:eta) + " s".
