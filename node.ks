@@ -3,6 +3,8 @@ local epsilon is 0.25.
 
 lock a to ship:maxthrust/ship:mass.
 
+sas off.
+
 print "Node: burn at T+" + round(nd:eta) + "; " + round(nd:deltav:mag/a) + " s @ " + round(a) + " m/s^2".
 
 // keep ship pointed at node
@@ -12,10 +14,10 @@ lock steering to lookdirup(nd:deltav, ship:facing:topvector).
 set np to lookdirup(nd:deltav, ship:facing:topvector).
 set dob to (nd:deltav:mag / a).
 
-wait until abs(np:pitch - facing:pitch) < epsilon and abs(np:yaw - facing:yaw) < epsilon.
+wait until vdot(facing:forevector, np:forevector) >= 0.999.
 print "Node: oriented to burn".
 
-wait until nd:eta < dob / 2.
+run warp(nd:eta - dob/2).
 
 print "Node: burn start".
 set tset to 0.
@@ -59,3 +61,4 @@ remove nd.
 
 //just in case.
 set ship:control:pilotmainthrottle to 0.
+sas on.
