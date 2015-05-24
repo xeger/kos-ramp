@@ -1,11 +1,13 @@
+// Warp time (while on rails) so that a certain amount of time passes.
 declare parameter dt.
+
 // warp (0:1) (1:5) (2:10) (3:50) (4:100) (5:1000)
 set dt to round(dt).
 set t0 to round(time:seconds).
 set t1 to t0 + dt.
 
 
-if dt > 10 {
+if dt > 5 {
   print "Warp: for " + dt + "s".
   if dt > 3000 {
       print "Warp: 5".

@@ -1,3 +1,4 @@
+// Execute a maneuver node.
 local nd is nextnode.
 local epsilon is 0.25.
 

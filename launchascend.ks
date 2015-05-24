@@ -1,3 +1,4 @@
+// Ascend from a planet, performing a gravity turn to help with atmosphere.
 global epsilon is 0.001.
 
 parameter gt0.

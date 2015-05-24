@@ -1,3 +1,4 @@
+// Immediate launch.
 stage.
 
 local atmo is ship:obt:body:atm:height.

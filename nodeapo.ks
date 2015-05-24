@@ -1,3 +1,4 @@
+// Change periapsis by performing an apoapsis burn.
 parameter alt.
 
 local mu is constant():G * ship:obt:body:mass.
