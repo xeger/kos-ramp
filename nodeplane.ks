@@ -15,7 +15,7 @@ function soiraw {
   parameter ship.
   parameter pos.
 
-  return pos - ship:body:position.
+  return pos - ship:obt:body:position.
 }
 
 // Find orbital velocity at a given position relative to reference body's CENTER
@@ -29,9 +29,63 @@ function obtvelpos {
   return sqrt( mu * ( (2 / pos:mag) - (1 / obt:semimajoraxis) ) ).
 }
 
+// Find time of equatorial ascending/descending node of ship's orbit.
+function obtequnode {
+  local t0 is time.
+  local p0 is soiraw(ship, ship:obt:position).
+  local v0 is ship:obt:velocity:surface.
+
+  local dt is ship:obt:period / 2.
+  set t to t0 + ship:obt:period.
+
+  local p0 is soiraw(ship, ship:obt:position).
+  local v0 is ship:obt:velocity:surface.
+  local p1 is soiraw(ship, positionat(ship, t)).
+  local v1 is soiraw(ship, velocityat(ship, t):orbit).
+  local iter is 0.
+
+  until abs(p1:y - p0:y) < 10 {
+    set iter to iter + 1.
+
+    if ((p0:y > 0) and (p1:y < 0) and (dt * v0:y < 0)) or
+       ((p0:y < 0) and (p1:y > 0) and (dt * v0:y > 0)) {
+      set dt to -dt / 2.
+    } else {
+      set dt to dt / 2.
+    }
+    set t to t + dt.
+
+    set p1 to soiraw(ship, positionat(ship, t)).
+    set v1 to soiraw(ship, velocityat(ship, t):orbit).
+
+    if iter >= 32 {
+      print "Can't find solution after 32 iterations!".
+      return 1 / 0.
+      break.
+    }
+    //print "ITER  T=" + round(t:seconds) + " err=" + (p1:y - p0:y).
+  }
+
+  //print "FINAL T=" + round(t:seconds) + " err=" + (p1:y - p0:y).
+  return t.
+}
+
+// Find delta v for plane-change from circular orbit
 local deltaI is (inc - ship:obt:inclination).
 local v is obtvelpos(ship:obt, soiraw(ship, ship:obt:position)).
 local deltav is 2 * v * sin(deltaI / 2).
 
-local nd is node(time:seconds, 0, deltav, 0).
+// Find time of equatorial node
+local andn is obtequnode():seconds.
+local vandn is velocityat(ship, andn):orbit.
+local nd is 0.
+
+if vandn:y > 0 {
+  // ascending node
+  set nd to node(andn, 0, -deltav, 0).
+} else {
+  // descending node
+    set nd to node(andn, 0, deltav, 0).
+}
+
 add nd.
