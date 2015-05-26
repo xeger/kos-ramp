@@ -19,7 +19,7 @@ function soiraw {
 }
 
 // Find orbital velocity at a given position relative to reference body's CENTER
-// (vector from center, not altitude from surface).
+// (vector from center, not altitude above surface!)
 function obtvelpos {
   parameter obt.
   parameter pos.

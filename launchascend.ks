@@ -1,8 +1,14 @@
 // Ascend from a planet, performing a gravity turn to help with atmosphere.
+// Circularize at apoapsis with e <= 0.01
 global epsilon is 0.001.
 
+// Beginning of gravity turn (m altitude)
 parameter gt0.
+
+// End of gravity turn (m altitude)
 parameter gt1.
+
+// Final apoapsis (m altitude)
 parameter apo.
 
 
