@@ -8,8 +8,13 @@ Roadmap
 =======
 
 0. Annotate programs with helpful comments, source citations
-1. Generalize nodeplane so plane-change can be planned at any time (not just now).
-2. Implement plane-change and align commands. 
+1. Rethink how plane-change is planned
+      - at equ AN/DN are handy (esp for inclined circular orbits)
+      - cheaper would be at apoapsis (for elliptical orbits)
+      - compare w/MechJeb planning
+      - build recircularization into the burn?
+2. Implement align-plane-to-target command
+      - grok http://www.braeunig.us/space/orbmech.htm#maneuver (grep for '#4.24')
 3. Hohmann transfer
 4. Match velocity
 

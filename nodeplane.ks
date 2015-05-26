@@ -59,33 +59,31 @@ function obtequnode {
     set v1 to soiraw(ship, velocityat(ship, t):orbit).
 
     if iter >= 32 {
-      print "Can't find solution after 32 iterations!".
+      print "obtequnode: Can't find solution after 32 iterations!".
       return 1 / 0.
       break.
     }
-    //print "ITER  T=" + round(t:seconds) + " err=" + (p1:y - p0:y).
   }
 
-  //print "FINAL T=" + round(t:seconds) + " err=" + (p1:y - p0:y).
   return t.
 }
-
-// Find delta v for plane-change from circular orbit
-local deltaI is (inc - ship:obt:inclination).
-local v is obtvelpos(ship:obt, soiraw(ship, ship:obt:position)).
-local deltav is 2 * v * sin(deltaI / 2).
 
 // Find time of equatorial node
 local andn is obtequnode():seconds.
 local vandn is velocityat(ship, andn):orbit.
 local nd is 0.
 
+// Find delta v for plane-change from circular orbit
+local theta is (inc - ship:obt:inclination).
+local v is vandn:mag.
+local dv is 2 * v * sin(theta / 2).
+
 if vandn:y > 0 {
-  // ascending node
-  set nd to node(andn, 0, -deltav, 0).
+  // burn normal at ascending node
+  set nd to node(andn, 0, -dv, 0).
 } else {
-  // descending node
-    set nd to node(andn, 0, deltav, 0).
+  // burn anti-normal at descending node
+  set nd to node(andn, 0, dv, 0).
 }
 
 add nd.
