@@ -55,10 +55,10 @@ Names must follow lexical ordering, i.e. all programs related to maneuver-node
 management begin with `node-`: `nodeapo`, `nodecirc` and so forth. The program
 simply named `node` is standalone; it executes the next node, then halts.
 
-The additional words of a program name should convey _what the program does_
-and _at what point during the mission_ they apply. For example:
+The additional words of a program name should convey _when_
+the program is designed to run. For example:
 
-1. `nodecirc`: create node to circularize orbit as soon as possible
+1. `nodeapo`: create node at apoapsis to change periapsis altitude
 2. `launchascend`: perform ascent phase of launch
 
 Parameter Passing
@@ -68,9 +68,10 @@ Whenever possible, programs and functions should accept parameters with
 "ordinary" units. The name of the parameter should convey its unit of measure.
 Preferred units are:
 
-1. Universal time (UT) in seconds after the epoch
-2. Altitude (ALT) in meters
-3. Estimated time (ETA) in seconds after current time
+1. Name of orbital position e.g. "apoapsis"
+2. Universal time (UT) in seconds after the epoch
+3. Altitude (ALT) in meters
+4. Estimated time (ETA) in seconds after current time
 
 Function Libraries
 ------------------

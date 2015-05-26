@@ -1,13 +1,11 @@
-// Immediate circularize.
-parameter alt.
+// Circularize as soon as possible.
 
-// allow program to be called with no params
-// assume circularize "up" to apoapsis.
-if alt = 0 {
-  set alt to ship:obt:apoapsis.
+if eta:apoapsis < eta:peripapsis {
+  run nodecirc("apoapsis").
+} else {
+  run nodecirc("periapsis").
 }
 
-run nodecirc(alt).
 run node.
 
 print "Node: circularization complete; e = " + round(ship:obt:eccentricity, 3).
