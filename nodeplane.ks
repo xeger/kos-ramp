@@ -27,16 +27,16 @@ function obtequnode {
   local v0 is obt:velocity:surface.
 
   local dt is obt:period / 2.
-  set t to t0 + obt:period.
+  local t is t0 + dt.
 
   local p0 is soiraw(ship, obt:position).
   local v0 is obt:velocity:surface.
   local p1 is soiraw(ship, positionat(ship, t)).
   local v1 is soiraw(ship, velocityat(ship, t):orbit).
-  local iter is 0.
+  local n is 0.
 
   until abs(p1:y - p0:y) < 10 {
-    set iter to iter + 1.
+    set n to n + 1.
 
     if ((p0:y > 0) and (p1:y < 0) and (dt * v0:y < 0)) or
        ((p0:y < 0) and (p1:y > 0) and (dt * v0:y > 0)) {
@@ -49,10 +49,9 @@ function obtequnode {
     set p1 to soiraw(ship, positionat(ship, t)).
     set v1 to soiraw(ship, velocityat(ship, t):orbit).
 
-    if iter >= 32 {
+    if n >= 32 {
       print "obtequnode: Can't find solution after 32 iterations!".
       return 1 / 0.
-      break.
     }
   }
 
