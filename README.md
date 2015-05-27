@@ -18,7 +18,7 @@ execute them using the program whose name is simply `node`.
 Automating a Mission
 --------------------
 
-If you want to automate your entire mission end-to-end, it is highly suggested
+If you want to script your entire mission end-to-end, it is highly suggested
 that you copy the `launch` program into a program named `mission` that lives
 on your vessel.
 
@@ -36,7 +36,6 @@ Preparing for Launch
 
 TODO - implement/discuss `prep` script to precompile all programs & copy them
 onto the vessel's CPUs.
-
 
 Contributing & Customizing
 ==========================
@@ -70,8 +69,10 @@ Preferred units are:
 
 1. Name of orbital position e.g. "apoapsis"
 2. Universal time (UT) in seconds after the epoch
-3. Altitude (ALT) in meters
-4. Estimated time (ETA) in seconds after current time
+3. Estimated time (ETA) in seconds after current time
+4. Altitude (ALT) in meters
+5. Distance (R) in meters from origin of SoI body
+6. Distance-vector (X) from origin of SoI body
 
 Function Libraries
 ------------------
