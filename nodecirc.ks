@@ -11,5 +11,5 @@ if where = "periapsis" {
   run nodeapo(obt:apoapsis).
 } else {
   print "nodecirc: unrecognized location " + where.
-  return 1 / 0.
+  print 1 / 0.
 }

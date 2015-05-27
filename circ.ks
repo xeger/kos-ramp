@@ -1,6 +1,6 @@
 // Circularize as soon as possible.
 
-if eta:apoapsis < eta:peripapsis {
+if eta:apoapsis < eta:periapsis {
   run nodecirc("apoapsis").
 } else {
   run nodecirc("periapsis").
