@@ -5,41 +5,32 @@
 //   Orbit is circular.
 //   New inclination is in the range [-90..90]
 // Notes:
-//   Limit change to 60 degrees (else launching a new vessel takes less dV!)
+//   Beware that changing inclination will decircularize your orbit!
 
 // Desired new inclination (degrees)
 parameter inc.
+// Location of plane change ("an", "dn", "apoapsis", 0)
+parameter where.
 
 // Convert a position from SHIP-RAW to SOI-RAW frame.
 function soiraw {
   parameter ship.
   parameter pos.
 
-  return pos - ship:obt:body:position.
-}
-
-// Find orbital velocity at a given position relative to reference body's CENTER
-// (vector from center, not altitude above surface!)
-function obtvelpos {
-  parameter obt.
-  parameter pos.
-
-  local mu is constant():G * obt:body:mass.
-
-  return sqrt( mu * ( (2 / pos:mag) - (1 / obt:semimajoraxis) ) ).
+  return pos - obt:body:position.
 }
 
 // Find time of equatorial ascending/descending node of ship's orbit.
 function obtequnode {
   local t0 is time.
-  local p0 is soiraw(ship, ship:obt:position).
-  local v0 is ship:obt:velocity:surface.
+  local p0 is soiraw(ship, obt:position).
+  local v0 is obt:velocity:surface.
 
-  local dt is ship:obt:period / 2.
-  set t to t0 + ship:obt:period.
+  local dt is obt:period / 2.
+  set t to t0 + obt:period.
 
-  local p0 is soiraw(ship, ship:obt:position).
-  local v0 is ship:obt:velocity:surface.
+  local p0 is soiraw(ship, obt:position).
+  local v0 is obt:velocity:surface.
   local p1 is soiraw(ship, positionat(ship, t)).
   local v1 is soiraw(ship, velocityat(ship, t):orbit).
   local iter is 0.
@@ -68,22 +59,33 @@ function obtequnode {
   return t.
 }
 
-// Find time of equatorial node
-local andn is obtequnode():seconds.
-local vandn is velocityat(ship, andn):orbit.
+local T is 0.
+
+// Find time of plane-change: next node, at apoapsis, or right now
+
+if where = "an" {
+  set T to obtequnode():seconds.
+} else if where = "dn" {
+  set T to obtequnode():seconds.
+} else if where = "apoapsis" {
+  set T to (time + (eta:apoapsis)):seconds.
+} else {
+  set T to time:seconds.
+}
+
 local nd is 0.
 
 // Find delta v for plane-change from circular orbit
-local theta is (inc - ship:obt:inclination).
-local v is vandn:mag.
-local dv is 2 * v * sin(theta / 2).
+local theta is (inc - obt:inclination).
+local v is velocityat(ship, T):orbit.
+local dv is 2 * v:mag * sin(theta / 2).
 
-if vandn:y > 0 {
+if v:y > 0 {
   // burn normal at ascending node
-  set nd to node(andn, 0, -dv, 0).
+  set nd to node(T, 0, -dv, 0).
 } else {
   // burn anti-normal at descending node
-  set nd to node(andn, 0, dv, 0).
+  set nd to node(T, 0, dv, 0).
 }
 
 add nd.
