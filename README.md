@@ -12,7 +12,7 @@ atmosphere:
 After you reach a stable orbit, plan maneuvers using the `node-` programs and
 execute them using the program whose name is simply `node`.
 
-    run nodeapo(180000). // plan periapsis burn to raise apo to 180km
+    run node_apo(180000). // plan periapsis burn to raise apoapsis to 180km
     run node.            // make it so!
 
 Automating a Mission
@@ -51,28 +51,26 @@ Program names must be as short as possible while still conveying the purpose
 of the program.
 
 Names must follow lexical ordering, i.e. all programs related to maneuver-node
-management begin with `node-`: `nodeapo`, `nodecirc` and so forth. The program
+management begin with `node-`: `node_apo`, `node_circ` and so forth. The program
 simply named `node` is standalone; it executes the next node, then halts.
 
-The additional words of a program name should convey _when_
-the program is designed to run. For example:
+The additional words of a program name should convey _what_ the program
+accomplishes for single-purpose programs, and _when_ during the mission
+the program needs to run, for more complex or long-running program.
 
-1. `nodeapo`: create node at apoapsis to change periapsis altitude
-2. `launchascend`: perform ascent phase of launch
+1. `node_apo`: create node to change apoapsis
+2. `launch_asc`: perform ascent phase of launch
 
 Parameter Passing
 -----------------
 
 Whenever possible, programs and functions should accept parameters with
-"ordinary" units. The name of the parameter should convey its unit of measure.
-Preferred units are:
+"ordinary" units and frames of reference. The name of the parameter
+should convey its unit of measure. Suggested units/frames are:
 
-1. Name of orbital position e.g. "apoapsis"
+1. Name of ship orbital position e.g. "apoapsis"
 2. Universal time (UT) in seconds after the epoch
-3. Estimated time (ETA) in seconds after current time
-4. Altitude (ALT) in meters
-5. Distance (R) in meters from origin of SoI body
-6. Distance-vector (X) from origin of SoI body
+3. Altitude (ALT) in meters above SoI surface
 
 Function Libraries
 ------------------

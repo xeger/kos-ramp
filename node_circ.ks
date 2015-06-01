@@ -6,10 +6,10 @@ parameter where.
 local obt is ship:obt.
 
 if where = "periapsis" {
-  run nodeperi(obt:periapsis).
+  run node_apo(obt:periapsis).
 } else if where = "apoapsis" {
-  run nodeapo(obt:apoapsis).
+  run node_peri(obt:apoapsis).
 } else {
-  print "nodecirc: unrecognized location " + where.
+  print "node_circ: unrecognized location " + where.
   print 1 / 0.
 }

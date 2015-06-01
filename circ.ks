@@ -1,9 +1,9 @@
 // Circularize as soon as possible.
 
 if eta:apoapsis < eta:periapsis {
-  run nodecirc("apoapsis").
+  run node_circ("apoapsis").
 } else {
-  run nodecirc("periapsis").
+  run node_circ("periapsis").
 }
 
 run node.
