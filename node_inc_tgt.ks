@@ -4,8 +4,6 @@
 // stolen from http://pastebin.com/fq3nqj2p
 // as linked-to by http://www.reddit.com/r/kos/comments/2zehw6/help_calculating_time_to_andn/
 
-local target_inclination is target:obt:inclination.
-
 local t0 is time:seconds.
 local ship_orbit_normal is vcrs(ship:velocity:orbit,positionat(ship,t0)-ship:body:position).
 local target_orbit_normal is vcrs(target:velocity:orbit,target:position-ship:body:position).
@@ -16,7 +14,7 @@ local angle_to_opposite_node is vang(positionat(ship,t0)-ship:body:position,-1*l
 local relative_inclination is vang(ship_orbit_normal,target_orbit_normal).
 local angle_to_node_delta is angle_to_node2-angle_to_node.
 
-local ship_orbital_angular_vel to (ship:velocity:orbit:mag / (body:radius+ship:altitude))  * (180/constant():pi).
+local ship_orbital_angular_vel is (ship:velocity:orbit:mag / (body:radius+ship:altitude))  * (180/constant():pi).
 local time_to_node is angle_to_node / ship_orbital_angular_vel.
 local time_to_opposite_node is angle_to_opposite_node / ship_orbital_angular_vel.
 local time_to_node_minutes is floor((time_to_node)/60).
