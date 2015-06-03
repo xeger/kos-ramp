@@ -17,10 +17,6 @@ local angle_to_node_delta is angle_to_node2-angle_to_node.
 local ship_orbital_angular_vel is (ship:velocity:orbit:mag / (body:radius+ship:altitude))  * (180/constant():pi).
 local time_to_node is angle_to_node / ship_orbital_angular_vel.
 local time_to_opposite_node is angle_to_opposite_node / ship_orbital_angular_vel.
-local time_to_node_minutes is floor((time_to_node)/60).
-local time_to_node_seconds is (((time_to_node)/60)-time_to_node_minutes)*60.
-local time_to_opposite_node_minutes is floor((time_to_opposite_node)/60).
-local time_to_opposite_node_seconds is (((time_to_opposite_node)/60)-time_to_opposite_node_minutes)*60.
 
 local t is t0.
 

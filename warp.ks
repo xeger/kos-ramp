@@ -45,8 +45,8 @@ if dt > 5 {
           set warp to 1.
       }
   }
-  if dt > 10 {
-      when time:seconds > t1 - 10 then {
+  if dt > 3 {
+      when time:seconds > t1 - 3 then {
           print "Warp: realtime, " + round(t1-time:seconds) + "s remain".
           set warp to 0.
       }
