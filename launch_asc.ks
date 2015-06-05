@@ -1,6 +1,5 @@
 // Ascend from a planet, performing a gravity turn to help with atmosphere.
 // Circularize at apoapsis with e <= 0.01
-global epsilon is 0.001.
 
 // Beginning of gravity turn (m altitude)
 parameter gt0.
@@ -11,6 +10,8 @@ parameter gt1.
 // Final apoapsis (m altitude)
 parameter apo.
 
+// A very small amount (of propellant) left in tanks when we auto stage
+local epsilon is 0.1.
 
 // Gravity turn parameters
 local gtd is gt1 - gt0.  // overall depth
@@ -40,8 +41,8 @@ if stage:solidfuel > 0 {
   set ship:control:pilotmainthrottle to 1.
 }
 
-when stage:liquidfuel < epsilon and stage:solidfuel < epsilon then {
-  print "Launch: launch stage separation".
+when stage:liquidfuel < epsilon then {
+  print "Launch: initial stage separation".
   stage.
 
   when stage:liquidfuel < epsilon then {
