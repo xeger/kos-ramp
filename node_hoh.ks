@@ -35,8 +35,15 @@ if ri > 0.1 {
 
 local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
 local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
+local dt is 0.
 
-local dv1 is sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1).
+if r2 > r1 {
+  set dt to ship:obt:period / 8.
+} else {
+  set dt to target:obt:period / 8.
+}
+// TODO account for approach
+local dv1 is sqrt(body:mu / r1) * (sqrt( (2*(r2)) / (r1+r2) ) - 1).
 
 local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
 local ft is pt - floor(pt).
@@ -68,16 +75,13 @@ until done = true or T > Tmax {
 
   if r2 > r1 and norm:y > 0 {
     // ship is ahead of target; skip ahead
-    set T to T + ship:obt:period / 8.
+    set T to T + dt.
   } else if r2 < r1 and norm:y < 0 {
     // ship is ahead of target; skip ahead
-    set T to T + ship:obt:period / 8.
-  } else if dot > 0 {
+    set T to T + dt.
+  } else if (eta > 0 and dot > 0) or (eta < 0 and dot < 0) {
     // ship is ahead of target; skip ahead
-    set T to T + ship:obt:period / 8.
-  } else if eta < 0 {
-    // ship has already passed the window; skip ahead
-    set T to T + ship:obt:period / 2.
+    set T to T + dt.
   } else {
     set T to T + eta.
     print "found window at " + T.

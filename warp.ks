@@ -6,7 +6,6 @@ set dt to round(dt).
 set t0 to round(time:seconds).
 set t1 to t0 + dt.
 
-
 if dt > 5 {
   print "Warp: for " + dt + "s".
   if dt > 3000 {
@@ -45,13 +44,13 @@ if dt > 5 {
           set warp to 1.
       }
   }
-  if dt > 3 {
-      when time:seconds > t1 - 3 then {
+  if dt > 5 {
+      when time:seconds > t1 - 5 then {
           print "Warp: realtime, " + round(t1-time:seconds) + "s remain".
           set warp to 0.
       }
   }
-  wait until time:seconds > t1.
+  wait until time:seconds >= t1.
 
   print "Warp: complete @ " + time:calendar + " " + time:clock.
 }
