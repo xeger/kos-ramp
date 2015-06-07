@@ -1,9 +1,9 @@
 // Circularize as soon as possible.
 
-if eta:apoapsis < eta:periapsis {
-  run node_circ("apoapsis").
-} else {
+if obt:transition = "ESCAPE" or eta:periapsis < eta:apoapsis {
   run node_circ("periapsis").
+else {
+  run node_circ("apoapsis").
 }
 
 run node.
