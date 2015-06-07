@@ -13,7 +13,7 @@ parameter gt1.
 parameter apo.
 
 // A very small amount (of propellant) left in tanks when we auto stage
-local epsilon is 0.1.
+local epsilon is 1.
 
 // Gravity turn parameters
 local gtd is gt1 - gt0.  // overall depth
@@ -26,38 +26,34 @@ function gte {
   return max(0, 90 * cos(k * (altitude - gt0)/gtd)).
 }
 
+function flameout {
+    return (stage:liquidfuel < epsilon) or (stage:oxidizer < epsilon).
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Setup auto-stage behavior
 /////////////////////////////////////////////////////////////////////////////
 
 if stage:solidfuel > 0 {
-  uiStatus("Launch", "Main throttle half").
   set ship:control:pilotmainthrottle to 0.5.
   when stage:solidfuel < epsilon then {
-    uiStatus("Launch", "Booster separation; main throttle full").
+    uiStatus("Launch", "Booster separation").
     set ship:control:pilotmainthrottle to 1.
     stage.
   }
 } else {
-  uiStatus("Launch", "Main throttle full").
   set ship:control:pilotmainthrottle to 1.
 }
 
-when stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
+when flameout() = true then {
   uiStatus("Launch", "Stage " + stage:number + " separation").
   stage.
-
-  when stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
-    uiStatus("Launch", "Stage " + stage:number + " separation").
-    stage.
-    preserve.
-  }
+  preserve.
 }
+
 ///////////////////////////////////////////////////////////
 // Perform gravity turn
 /////////////////////////////////////////////////////////////////////////////
-
-uiStatus("Launch", "Climb to " + round(gt0 / 1000. 1) + "km").
 
 sas on.
 lock steering to heading(90,90).
@@ -65,10 +61,6 @@ lock steering to heading(90,90).
 when ship:altitude >= gt0 then {
   uiStatus("Launch", "Gravity turn entry").
   lock steering to heading(90, gte(ship:altitude)).
-
-  when (ship:altitude >= gt1) or (ship:obt:apoapsis >= apo) then {
-    uiStatus("Launch", "Gravity turn complete").
-  }
 }
 
 wait until ship:obt:apoapsis >= apo.

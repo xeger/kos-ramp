@@ -6,7 +6,7 @@ stage.
 
 local atmo is body:atm:height.
 local gt0  is atmo * 0.1.
-local gt1  is atmo * 0.90.
+local gt1  is atmo * 1.0.
 local apo  is atmo + (body:radius / 3).
 
 if atmo > 0 {

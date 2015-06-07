@@ -2,7 +2,7 @@ function uiConsole {
   parameter prefix.
   parameter msg.
 
-  return "T+" + round(time:seconds) + " " + prefix + ": " + msg.
+  print "T+" + round(time:seconds) + " " + prefix + ": " + msg.
 }
 
 function uiStatus {

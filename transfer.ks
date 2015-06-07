@@ -10,6 +10,8 @@ if ri > 0.1 {
   run node.
 }
 
+// TODO if > 5 orbits, switch to phasing orbit
+
 run node_hoh.
 uiBanner("Transfer", "Injection burn").
 run node.

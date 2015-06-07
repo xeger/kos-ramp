@@ -1,10 +1,8 @@
 TODO
 ====
-1. Debug auto-stage at launch; don't orient to circ node until out of atmo!
-2. smoke test Hohmann transfer w/fudge factor
-3. Match velocity at closest approach
-4. Physics warp when needed
-5. Fine-tune closest approach
+1. Debug auto-stage at launch (switch to more reliable until-loop)
+2. Test physics warp, transfer
+3. Finish rendezvous with a 'final approach' program
 
 Scratchpad
 ==========
