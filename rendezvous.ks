@@ -1,6 +1,6 @@
 // Rendezvous with another vessel orbiting the same body
 
-run ui.
+run lib_ui.
 
 local ri is abs(obt:inclination - target:obt:inclination).
 

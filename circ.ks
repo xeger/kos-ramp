@@ -1,6 +1,6 @@
 // Circularize as soon as possible.
 
-run ui.
+run lib_ui.
 
 if obt:transition = "ESCAPE" or eta:periapsis < eta:apoapsis {
   run node_circ("periapsis").

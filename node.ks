@@ -1,5 +1,5 @@
 // Execute a maneuver node.
-run ui.
+run lib_ui.
 
 local nd is nextnode.
 local epsilon is 0.25.

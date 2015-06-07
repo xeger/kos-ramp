@@ -1,6 +1,6 @@
 // Hohmann transfer to a satellite of the vessel's SoI body.
 
-run ui.
+run lib_ui.
 
 local ri is abs(obt:inclination - target:obt:inclination).
 

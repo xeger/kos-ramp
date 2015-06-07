@@ -1,7 +1,7 @@
 // Delta vee math stolen from http://en.wikipedia.org/wiki/Hohmann_transfer_orbit#Calculation
 // Phase angle math stolen from https://docs.google.com/document/d/1IX6ykVb0xifBrB4BRFDpqPO6kjYiLvOcEo3zwmZL0sQ/edit
 
-run ui.
+run lib_ui.
 
 function approachDistance {
   local ratio is target:mass / ship:mass.

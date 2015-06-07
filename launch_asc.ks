@@ -1,7 +1,7 @@
 // Ascend from a planet, performing a gravity turn to help with atmosphere.
 // Circularize at apoapsis with e <= 0.01
 
-run ui.
+run lib_ui.
 
 // Beginning of gravity turn (m altitude)
 parameter gt0.

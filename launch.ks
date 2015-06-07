@@ -1,6 +1,6 @@
 // Immediate launch.
 
-run ui.
+run lib_ui.
 
 stage.
 
