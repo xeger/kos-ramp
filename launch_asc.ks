@@ -79,5 +79,6 @@ wait until ship:obt:apoapsis >= apo.
 print "Launch: main throttle off; coast to apoapsis".
 set ship:control:pilotmainthrottle to 0.
 lock steering to ship:prograde.
+wait until ship:altitude > body:atm:height.
 
 run circ.
