@@ -1,6 +1,8 @@
 // Ascend from a planet, performing a gravity turn to help with atmosphere.
 // Circularize at apoapsis with e <= 0.01
 
+run ui.
+
 // Beginning of gravity turn (m altitude)
 parameter gt0.
 
@@ -29,44 +31,43 @@ function gte {
 /////////////////////////////////////////////////////////////////////////////
 
 if stage:solidfuel > 0 {
-  print "Launch: main throttle half".
+  uiStatus("Launch", "Main throttle half").
   set ship:control:pilotmainthrottle to 0.5.
   when stage:solidfuel < epsilon then {
-    print "Launch: booster separation; main throttle full".
+    uiStatus("Launch", "Booster separation; main throttle full").
     set ship:control:pilotmainthrottle to 1.
     stage.
   }
 } else {
-  print "Launch: main throttle full".
+  uiStatus("Launch", "Main throttle full").
   set ship:control:pilotmainthrottle to 1.
 }
 
 when stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
-  print "Launch: initial stage separation".
+  uiStatus("Launch", "Stage " + stage:number + " separation").
   stage.
 
   when stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
-    print "Launch: stage " + stage:number + " separation".
+    uiStatus("Launch", "Stage " + stage:number + " separation").
     stage.
     preserve.
   }
 }
-
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 // Perform gravity turn
 /////////////////////////////////////////////////////////////////////////////
 
-print "Launch: initial climb to " + gt0 + " m".
+uiStatus("Launch", "Climb to " + round(gt0 / 1000. 1) + "km").
 
 sas on.
 lock steering to heading(90,90).
 
 when ship:altitude >= gt0 then {
-  print "Launch: gravity turn entry".
+  uiStatus("Launch", "Gravity turn entry").
   lock steering to heading(90, gte(ship:altitude)).
 
   when (ship:altitude >= gt1) or (ship:obt:apoapsis >= apo) then {
-    print "Launch: gravity turn complete".
+    uiStatus("Launch", "Gravity turn complete").
   }
 }
 
@@ -76,7 +77,7 @@ wait until ship:obt:apoapsis >= apo.
 // Circularize at apoapsis
 /////////////////////////////////////////////////////////////////////////////
 
-print "Launch: main throttle off; coast to apoapsis".
+uiStatus("Launch", "Main throttle off; coast to apoapsis").
 set ship:control:pilotmainthrottle to 0.
 lock steering to ship:prograde.
 wait until ship:altitude > body:atm:height.

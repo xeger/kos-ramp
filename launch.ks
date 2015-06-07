@@ -1,4 +1,7 @@
 // Immediate launch.
+
+run ui.
+
 stage.
 
 local atmo is body:atm:height.
@@ -7,10 +10,10 @@ local gt1  is atmo * 0.90.
 local apo  is atmo + (body:radius / 3).
 
 if atmo > 0 {
-  print "Launch: ascending to " + round(apo / 1000) + " km orbit; atmospheric gravity turn " + round(gt0 / 1000) + " - " + round(gt1 / 1000) + " km".
+  uiStatus("Launch", "Ascend to " + round(apo / 1000) + "km; turn " + round(gt0 / 1000) + " - " + round(gt1 / 1000) + "km").
 } else {
   //in vacuum, gravity turn @ 100m AGL to clear obstacles
-  print "Launch: ascending to " + round(apo / 1000) + " km orbit".
+  uiStatus("Launch", "Ascend to " + round(apo / 1000) + "km").
   set gt0 to 100.
   set gt1 to 250.
 }

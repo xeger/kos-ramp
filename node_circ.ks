@@ -10,6 +10,6 @@ if where = "periapsis" or obt:transition = "ESCAPE" {
 } else if where = "apoapsis" {
   run node_peri(obt:apoapsis).
 } else {
-  print "node_circ: unrecognized location " + where.
-  print 1 / 0.
+  uiError("Node", "Unrecognized '" + where + "'").
+  local die is 1 / 0.
 }

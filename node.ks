@@ -1,18 +1,5 @@
 // Execute a maneuver node.
-
-function warning {
-  parameter msg.
-
-  print "Node: " + msg.
-  hudtext(msg, 10, 4, 36, YELLOW, true).
-}
-
-function error {
-  parameter msg.
-
-  print "Node: " + msg.
-  hudtext(msg, 10, 4, 36, RED, true).
-}
+run ui.
 
 local nd is nextnode.
 local epsilon is 0.25.
