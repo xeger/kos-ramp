@@ -8,4 +8,4 @@ if eta:apoapsis < eta:periapsis {
 
 run node.
 
-print "Node: circularization complete; e = " + round(ship:obt:eccentricity, 3).
+print "Circ: circularization complete; e = " + round(ship:obt:eccentricity, 3).

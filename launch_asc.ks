@@ -41,11 +41,11 @@ if stage:solidfuel > 0 {
   set ship:control:pilotmainthrottle to 1.
 }
 
-when stage:liquidfuel < epsilon then {
+when stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
   print "Launch: initial stage separation".
   stage.
 
-  when stage:liquidfuel < epsilon then {
+  when stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
     print "Launch: stage " + stage:number + " separation".
     stage.
     preserve.
