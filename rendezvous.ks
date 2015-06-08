@@ -20,5 +20,5 @@ run node_vel_tgt.
 uiBanner("Rendezvous", "Braking burn").
 run node.
 
-uiError("Rendezvous", "UNFINISHED SCRIPT! RUN FOR YOUR LIFE!")
+uiError("Rendezvous", "UNFINISHED SCRIPT! RUN FOR YOUR LIFE!").
 local die is 1/0.

@@ -1,0 +1,19 @@
+/////////////////////////////////////////////////////////////////////////////
+// Idempotent mission script
+/////////////////////////////////////////////////////////////////////////////
+// Copy mission programs onto CPUs before launch.
+/////////////////////////////////////////////////////////////////////////////
+
+run lib_ui.
+
+local status is vessel:status.
+
+function missionAccomplished {
+  return false. // TODO get smarter (look at vessel name, etc)
+}
+
+if status = "prelaunch" {
+  run launch.
+} else {
+  uiError("Mission", "Don't know how to proceed at " + status).
+}

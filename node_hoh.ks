@@ -27,20 +27,16 @@ function synodicPeriod {
 
 if body <> target:body {
   uiWarning("Node", "Incompatible orbits").
-  local die is 1 / 0.
 }
 if ship:obt:eccentricity > 0.1 {
   uiWarning("Node", "Eccentric ship e=" + round(ship:obt:eccentricity, 1)).
-  local die is 1 / 0.
 }
 if target:obt:eccentricity > 0.1 {
   uiWarning("Node", "Eccentric target e=" +  + round(target:obt:eccentricity, 1)).
-  local die is 1 / 0.
 }
 local ri is abs(obt:inclination - target:obt:inclination).
 if ri > 0.1 {
   uiWarning("Node", "Bad alignment ri=" +  + round(ri, 1)).
-  local die is 1 / 0.
 }
 
 local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
@@ -117,6 +113,5 @@ if done {
   uiDebugNode(T, "found window! angleT=" + round(angleT, 1) + " phi=" + round(phi, 1)).
   add node(T, 0, 0, dv).
 } else {
-  uiError("Node", "NO SOLUTION").
-  local die is 1 / 0.
+  uiError("Node", "NO TRANSFER WINDOW").
 }
