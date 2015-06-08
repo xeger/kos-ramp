@@ -10,4 +10,4 @@ if obt:transition = "ESCAPE" or eta:periapsis < eta:apoapsis {
 
 run node.
 
-uiStatus("Circ", "Circularized e=" + round(ship:obt:eccentricity, 3)).
+uiStatus("Circ", "Circularized; e=" + round(ship:obt:eccentricity, 3)).

@@ -1,7 +1,9 @@
-// Ascend from a planet, performing a gravity turn to help with atmosphere.
-// Circularize at apoapsis with e <= 0.01
-
-run lib_ui.
+/////////////////////////////////////////////////////////////////////////////
+// Ascent phase of launch.
+/////////////////////////////////////////////////////////////////////////////
+// Ascend from a planet, performing a gravity turn and staging as necessary.
+// Circularize at apoapsis.
+/////////////////////////////////////////////////////////////////////////////
 
 // Beginning of gravity turn (m altitude)
 parameter gt0.
@@ -11,6 +13,8 @@ parameter gt1.
 
 // Final apoapsis (m altitude)
 parameter apo.
+
+run lib_ui.
 
 // A very small amount (of propellant) left in tanks when we auto stage
 local epsilon is 1.
@@ -31,7 +35,10 @@ function flameout {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Setup auto-stage behavior
+// Setup booster-separation behavior. Boosters are special because we stage
+// the moment they run out, regardless of the status of any other engines.
+// This assumes that the vessel's initial stage separation will drop SRBs
+// and not other useful engines!
 /////////////////////////////////////////////////////////////////////////////
 
 if stage:solidfuel > 0 {
@@ -45,14 +52,8 @@ if stage:solidfuel > 0 {
   set ship:control:pilotmainthrottle to 1.
 }
 
-when flameout() = true then {
-  uiStatus("Launch", "Stage " + stage:number + " separation").
-  stage.
-  preserve.
-}
-
-///////////////////////////////////////////////////////////
-// Perform gravity turn
+/////////////////////////////////////////////////////////////////////////////
+// Setup gravity-turn behavior
 /////////////////////////////////////////////////////////////////////////////
 
 sas on.
@@ -63,14 +64,43 @@ when ship:altitude >= gt0 then {
   lock steering to heading(90, gte(ship:altitude)).
 }
 
-wait until ship:obt:apoapsis >= apo.
+// Shut off throttle exactly at apoapsis
+when ship:obt:apoapsis >= apo then {
+  set ship:control:pilotmainthrottle to 0.
+  uiStatus("Launch", "Main throttle off; coast to apoapsis").
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Enter auto-stage loop; separate stage as soon as all engines are flameout
+/////////////////////////////////////////////////////////////////////////////
+
+until ship:control:pilotmainthrottle = 0 {
+  local Neng is 0.
+  local Nout is 0.
+
+  list engines in engs.
+  for eng in engs {
+    if eng:ignition {
+      set Neng to Neng + 1.
+      if eng:flameout {
+        set Nout to Nout + 1.
+      }
+    }
+  }
+
+  if Neng = Nout {
+    wait until stage:ready.
+    uiStatus("Launch", "Stage " + stage:number + " separation").
+    stage.
+  } else {
+    wait 1.
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // Circularize at apoapsis
 /////////////////////////////////////////////////////////////////////////////
 
-uiStatus("Launch", "Main throttle off; coast to apoapsis").
-set ship:control:pilotmainthrottle to 0.
 lock steering to ship:prograde.
 wait until ship:altitude > body:atm:height.
 
