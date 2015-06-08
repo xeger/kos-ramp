@@ -1,27 +1,22 @@
 /////////////////////////////////////////////////////////////////////////////
 // Prelaunch mission preparation.
 /////////////////////////////////////////////////////////////////////////////
-// Copy mission programs onto all CPU volumes before launch.
+// Copy mission programs onto another CPU before launch. This is designed
+// to be installed on a secondary CPU (e.g. attached to a launch stage).
 //
+// TODO: make this work on ships that have 3+ CPUs (named volume?)
 // TODO: make compilation work (it has bugs with running lib_ui?!)
 /////////////////////////////////////////////////////////////////////////////
 
 if ship:status = "prelaunch" {
-  list volumes in vols.
-  local Nvols is vols:length.
-
   switch to archive.
   list files in scripts.
   for ks in scripts {
     if ks <> "README.md" {
-      local N is 1.
-      until N > (Nvols - 1) {
-        copy ks to N.
-        set N to N + 1.
-      }
+      copy ks to 2.
     }
   }
 
   run lib_ui.
-  uiStatus("Boot", "Ready " + (vols:length-1) + " CPU(s) for launch").
+  uiStatus("Boot", "Prepare flight control software").
 }

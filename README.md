@@ -4,38 +4,36 @@ Introduction
 Getting Started
 ===============
 
-Run the launch program to ascend to a circular orbit 20km above your local
-atmosphere:
+Run the launch program to ascend to a circular orbit a few hundred km above
+your local atmosphere:
 
-    run launch.
+    run mission.
 
-After you reach a stable orbit, plan maneuvers using the `node-` programs and
-execute them using the program whose name is simply `node`.
+After you reach a stable orbit, select a target. Use the transfer or rendezvous
+programs to reach your target.
 
-    run node_apo(180000). // plan periapsis burn to raise apoapsis to 180km
-    run node.            // make it so!
+    set target to vessel("My Awesome Missions").
+    run rendezvous.
+
+    set target to body("Mun").
+    run transfer.
 
 Automating a Mission
 --------------------
 
 If you want to script your entire mission end-to-end, it is highly suggested
-that you copy the `launch` program into a program named `mission` that lives
-on your vessel.
+that you choose `boot_mission` as the boot script for your vessel's main CPU.
 
-The `mission` program should be capable of running any phase of your mission;
-when executed, it should inspect the state of the world to determine which
-phase is current and resume operation starting with that phase.
-
-kOS halts execution when you switch away from a vessel. By creating an
-idempotent mission script, you will save yourself from endless frustration
-having to reprogram your CPUs and remember your progress every time you restore
-a saved game!
+To change the mission profile, just edit the mission script so the ship
+behaves the right way in each mission state.
 
 Preparing for Launch
 --------------------
 
-TODO - implement/discuss `prep` script to precompile all programs & copy them
-onto the vessel's CPUs.
+If your ship will travel farther than 100km from KSC, you should install
+a secondary CPU on the vessel and run `boot_prep` to copy the mission
+software onto the primary volume. Running archive scripts is fine in low
+orbit, but a space probe needs to be able to think for itself!
 
 Contributing & Customizing
 ==========================
@@ -75,9 +73,8 @@ should convey its unit of measure. Suggested units/frames are:
 Function Libraries
 ------------------
 
-The programs under `lib/` are reusable code that you can copy-paste into
-programs in order to save time. kOS doesn't support true code sharing, but we
-can share code by being good citizens and curating our library.
+Programs beginning with `lib/` contain reusable functions and are invoked by
+other programs to make use of rudimentary kOS function sharing.
 
 Comments and Documentation
 --------------------------
