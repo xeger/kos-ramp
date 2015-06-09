@@ -32,9 +32,10 @@ function uiWarning {
 }
 
 function uiError {
+  parameter prefix.
   parameter msg.
 
-  print "Node: " + msg.
+  uiConsole(prefix, msg).
   hudtext(msg, 10, 4, 36, RED, false).
 }
 
