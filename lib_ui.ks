@@ -1,4 +1,5 @@
-global libui_debug is false.
+global libui_debug     is true.
+global libui_debugNode is false.
 
 function uiConsole {
   parameter prefix.
@@ -52,7 +53,7 @@ function uiDebugNode {
   parameter T.
   parameter msg.
 
-  if libui_debug {
+  if libui_debugNode {
     local nd is node(T, 0, 0, 0).
     add(nd).
     uiDebug(msg).

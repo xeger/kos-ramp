@@ -10,19 +10,14 @@ if ri > 0.1 {
   run node.
 }
 
-// TODO if > 5 orbits, switch to phasing orbit
-
 run node_hoh.
 uiBanner("Transfer", "Injection burn").
 run node.
 
-until obt:transition <> "escape" {
-  warp(eta:transition+1).
-}
+wait 1. // TODO let warp deal with ship under acceleration
 until obt:transition <> "encounter" {
-  warp(eta:transition+1).
+  run warp(eta:transition+1).
 }
 
-run node_circ.
 uiBanner("Transfer", "Braking burn").
-run node.
+run circ.
