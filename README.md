@@ -38,6 +38,13 @@ orbit, but a space probe needs to be able to think for itself!
 Contributing & Customizing
 ==========================
 
+*WARNING*: notice the control flow between programs is very flat. I try never
+to call more than 2-3 programs deep. This is because the kOS VM seems to have
+bugs with deep call chains; specifically, local variables acquire wrong values
+when they have certain names!
+
+See comments in node_apo/node_peri for an example.
+
 Program Naming
 --------------
 
@@ -49,7 +56,7 @@ Program names must be as short as possible while still conveying the purpose
 of the program.
 
 Names must follow lexical ordering, i.e. all programs related to maneuver-node
-management begin with `node-`: `node_apo`, `node_circ` and so forth. The program
+management begin with `node-`: `node_apo`, `node_peri` and so forth. The program
 simply named `node` is standalone; it executes the next node, then halts.
 
 The additional words of a program name should convey _what_ the program
