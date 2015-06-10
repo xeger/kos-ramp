@@ -3,11 +3,13 @@
 
 run lib_ui.
 
+// TODO deal properly with approach distance...
+// this is VERY rough and might not work for all mu/radii!
 function approachDistance {
   local ratio is target:mass / ship:mass.
 
-  if ratio > 100000 {
-    return 2 * target:radius + target:atm:height.
+  if ratio > 1000 {
+    return 4 * target:radius + target:atm:height.
   } else {
     return 0.
   }
@@ -41,16 +43,14 @@ if ri > 0.1 {
 
 local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
 local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
-local dt is 0.
 local approach is 0.
 
 if r2 > r1 {
   set approach to approachDistance().
-  set dt to ship:obt:period / 4.
 } else {
-  set approach to approachDistance().
-  set dt to target:obt:period / 4.
+  set approach to -approachDistance().
 }
+uiDebug("Rough approach distance is  " + round(approach / 1000, 1) + " km").
 
 local dv is sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1).
 local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
@@ -60,34 +60,41 @@ local ft is pt - floor(pt).
 local theta is 360 * ft.
 // necessary phase angle for vessel burn
 local phi is 180 - theta.
-// angular velocity of vessel
-local omega is (ship:velocity:orbit:mag / (body:radius+ship:altitude))  * (180/constant():pi).
 
 local T is time:seconds.
 local Tmax is T + 1.5 * synodicPeriod(ship:obt, target:obt).
+local dt is (Tmax - T) / 8.
 local done is false.
 
 until done = true or T > Tmax {
-  local p1 is positionat(ship, T) - body:position.
-  local p2 is positionat(target, T) - body:position.
-  local v1 is velocityat(ship, T):orbit.
-  local v2 is velocityat(target, T):orbit.
+  local ps is positionat(ship, T) - body:position.
+  local pt is positionat(target, T) - body:position.
+  local vs is velocityat(ship, T):orbit.
+  local vt is velocityat(target, T):orbit.
 
-  // unsigned magnitude of the orbital angle between ship and target
-  local angleT is vang(p1, p2).
+  // angular velocity of vessel
+  local omega is (vs:mag / ps:mag)  * (180/constant():pi).
+  // angular velocity of the target
+  local omega2 is (vt:mag / pt:mag)  * (180/constant():pi).
+
+  // unsigned magnitude of the phase angle between ship and target
+  local phiT is vang(ps, pt).
   // if r2 > r1, then norm:y is negative when ship is "behind" the target
-  local norm is vcrs(p1, p2).
+  local norm is vcrs(ps, pt).
   // < 0 if ship is on opposite side of planet
-  local dot is vdot(v1, v2).
+  local dot is vdot(vs, vt).
 
   local eta is 0.
 
   if r2 > r1 {
-    set eta to (angleT - phi) / omega.
+    set eta to (phiT - phi) / (omega - omega2).
   } else {
-    set eta to (angleT + phi) / omega.
+    set eta to (phiT + phi) / (omega2 - omega).
   }
 
+  // TODO make sure this heuristic works for all cases:
+  //   - rendezvous up (untested)
+  //   - transfer down (untested)
   if r2 > r1 and norm:y > 0 {
     uiDebugNode(T, "ship is ahead of target").
     set T to T + dt.
@@ -97,20 +104,17 @@ until done = true or T > Tmax {
   } else if (r2 > r1 and dot > 0) or (r2 < r1 and dot < 0) {
     uiDebugNode(T, "ship is opposite target").
     set T to T + dt.
-  } else if eta > ship:obt:period {
+  } else if abs(eta) > 1 {
     uiDebugNode(T, "eta is too far").
-    set T to T + dt.
+    set T to T + eta / 2.
   } else {
     set T to T + eta.
+    uiDebugNode(T, "found window! eta=" + round(eta) + " phiT=" + round(phiT, 1) + " phi=" + round(phi, 1)).
     set done to true.
   }
 }
 
 if done {
-  local p1 is positionat(ship, T) - body:position.
-  local p2 is positionat(target, T) - body:position.
-  local angleT is vang(p1, p2).
-  uiDebugNode(T, "found window! angleT=" + round(angleT, 1) + " phi=" + round(phi, 1)).
   add node(T, 0, 0, dv).
 } else {
   uiError("Node", "NO TRANSFER WINDOW").
