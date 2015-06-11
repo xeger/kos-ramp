@@ -4,6 +4,8 @@
 // Carry out the vessel's mission. Run at any time to resume the mission.
 /////////////////////////////////////////////////////////////////////////////
 
+run lib_ui.
+
 global missionGoal is body("Mun").
 
 function missionAccomplished {
@@ -21,10 +23,11 @@ if ship:status = "flying" or ship:status = "sub_orbital" {
   local gt1  is atmo * 1.0.
   local apo  is atmo + (body:radius / 3).
 
-  if missionAccomplished() {
-    run launch_asc(gt0, gt1, apo).
+  if missionAccomplished() = true {
+    //run land_any.
   } else {
-    run land_any.
+    uiStatus("Mission", "Ascent from " + body:name).
+    run launch_asc(gt0, gt1, apo).
   }
 }
 

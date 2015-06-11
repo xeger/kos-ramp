@@ -67,7 +67,7 @@ set ship:control:pilotmainthrottle to 0.
 if nd:deltav:mag < 0.5 {
   remove nd.
 } else {
-  uiWarning("Node", "VARIANCE " + round(dvf, 1) + " m/s").
+  uiWarning("Node", "VARIANCE " + round(nd:deltav:mag, 1) + " m/s").
 }
 
 sas on.
