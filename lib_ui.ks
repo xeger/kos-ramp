@@ -40,6 +40,19 @@ function uiError {
   hudtext(msg, 10, 4, 36, RED, false).
 }
 
+function uiAssertAccel {
+  parameter prefix.
+
+  local accel is ship:availablethrust / ship:mass. // kN over tonnes; 1000s cancel
+
+  if accel = 0 {
+    uiError(prefix, "ENGINE FAULT - RESUME CONTROL").
+    local die is 1 / 0.
+  } else {
+    return accel.
+  }
+}
+
 function uiDebug {
   parameter msg.
 

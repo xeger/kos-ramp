@@ -6,17 +6,7 @@ local epsilon is 0.25.
 
 local nstages is 0.
 
-lock accel to ship:maxthrust/ship:mass.
-
-// Guard against engine failures in the future and right now
-when accel = 0 or stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
-  uiError("Node", "FAULT - RESUME CONTROL!").
-  local die is 1/0.
-}
-if accel = 0 or stage:liquidfuel < epsilon or stage:oxidizer < epsilon {
-  uiError("Node", "FAULT - RESUME CONTROL!").
-  local die is 1/0.
-}
+lock accel to uiAssertAccel("Node").
 
 // keep ship pointed at node
 sas off.
