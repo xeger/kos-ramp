@@ -4,33 +4,10 @@
 // Bring the ship to a stop when it meets up with the target.
 /////////////////////////////////////////////////////////////////////////////
 
-local Tmin is time:seconds.
-local Tmax is Tmin + 2*ship:obt:period.
-
-local T is 0.
-
-// Binary search for time of closest approach
-local N is 0.
-until N > 64 {
-  local dt is (Tmax - Tmin) / 4.
-  set T to  Tmin + (2*dt).
-  local Tl is Tmin - dt.
-  local Th is Tmax + dt.
-
-  local R is (positionat(ship, T)) - (positionat(target, T)).
-  local Rl is (positionat(ship, Tl)) - (positionat(target, Tl)).
-  local Rh is (positionat(ship, Th)) - (positionat(target, Th)).
-
-  if Rh:mag < Rl:mag {
-    set Tmin to T.
-  } else {
-    set Tmax to T.
-  }
-
-  set N to N + 1.
-}
+run lib_util.
 
 // Figure out some basics
+local T is utilClosestApproach(ship, target).
 local Vship is velocityat(ship, T):orbit.
 local Vtgt is velocityat(target, T):orbit.
 local Pship is positionat(ship, T) - body:position.

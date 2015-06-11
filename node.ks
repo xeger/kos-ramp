@@ -6,15 +6,25 @@ local epsilon is 0.25.
 
 local nstages is 0.
 
-lock a to ship:maxthrust/ship:mass.
-sas off.
+lock accel to ship:maxthrust/ship:mass.
+
+// Guard against engine failures in the future and right now
+when accel = 0 or stage:liquidfuel < epsilon or stage:oxidizer < epsilon then {
+  uiError("Node", "FAULT - RESUME CONTROL!").
+  local die is 1/0.
+}
+if accel = 0 or stage:liquidfuel < epsilon or stage:oxidizer < epsilon {
+  uiError("Node", "FAULT - RESUME CONTROL!").
+  local die is 1/0.
+}
 
 // keep ship pointed at node
+sas off.
 lock steering to lookdirup(nd:deltav, ship:facing:topvector).
 
-// estimate direction & duration for waiting purposes
-set np to lookdirup(nd:deltav, ship:facing:topvector).
-set dob to (nd:deltav:mag / a).
+// estimate direction & duration
+local np is lookdirup(nd:deltav, ship:facing:topvector).
+local dob is (nd:deltav:mag / accel).
 
 wait until vdot(facing:forevector, np:forevector) >= 0.999.
 
@@ -28,21 +38,9 @@ local dv0 to nd:deltav.
 
 until done
 {
-    if a = 0 or stage:liquidfuel < epsilon or stage:oxidizer < epsilon {
-      local t0 is time.
-      stage.
-      set nstages to nstages + 1.
-      wait until (a > epsilon) or ((time - t0):seconds > 3).
-
-      if nstages > 1 {
-        uiError("Node", "FAULT - RESUME CONTROL!").
-        break.
-      }
-    } else {
-      //throttle is 100% until there is less than 1 second of time left to burn
-      //when there is less than 1 second - decrease the throttle linearly
-      set tset to min(nd:deltav:mag/a, 1).
-    }
+    //throttle is 100% until there is less than 1 second of time left to burn
+    //when there is less than 1 second - decrease the throttle linearly
+    set tset to min(nd:deltav:mag/accel, 1).
 
     //here's the tricky part, we need to cut the throttle as soon as our nd:deltav and initial deltav start facing opposite directions
     //this check is done via checking the dot product of those 2 vectors
