@@ -8,7 +8,9 @@ declare parameter dt.
 set t0 to time:seconds.
 set t1 to t0 + dt.
 
-if ship:altitude < body:atm:height and ship:status <> "PRELAUNCH" and ship:status <> "LANDED" {
+local inAtmo is ship:altitude < body:atm:height and ship:status <> "PRELAUNCH" and ship:status <> "LANDED".
+
+if inAtmo {
   set warpmode to "physics".
 
   if dt > 5 {
@@ -22,6 +24,10 @@ if ship:altitude < body:atm:height and ship:status <> "PRELAUNCH" and ship:statu
 }
 
 if dt > 5 {
+  // TODO detect when ship is under residual acceleration
+  wait 1.
+  set dt to dt - 1.
+
   if dt > 3000 {
       set warp to 5.
   }

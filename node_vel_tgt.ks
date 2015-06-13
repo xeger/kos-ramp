@@ -1,7 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////
 // Match velocities at closest approach.
 /////////////////////////////////////////////////////////////////////////////
-// Bring the ship to a stop when it meets up with the target.
+// Bring the ship to a stop when it meets up with the target. The accuracy
+// of this program is limited; it'll get you into roughly the same orbit
+// as the target, but fine-tuning will be required if you want to
+// rendezvous.
 /////////////////////////////////////////////////////////////////////////////
 
 run lib_ui.

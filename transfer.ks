@@ -23,7 +23,6 @@ run node_hoh.
 uiBanner("Transfer", "Transfer injection burn").
 run node.
 
-wait 1. // TODO let warp deal with ship under acceleration
 until obt:transition <> "encounter" {
   run warp(eta:transition+1).
 }
