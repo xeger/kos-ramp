@@ -12,6 +12,7 @@ if ship:body <> target:body {
   local die is 1/0.
 }
 
+local accel is uiAssertAccel("Rendezvous").
 local approachT is utilClosestApproach(ship, target).
 local approachX is (positionat(target, approachT) - positionat(ship, approachT)):mag.
 
@@ -40,13 +41,11 @@ if target:position:mag > 25000 and approachX > 25000 {
 }
 
 // Finish Hohmann transfer if necessary
-if target:position:mag > 25000 {
-  run node_vel_tgt.
-  uiBanner("Rendezvous", "Transfer braking burn").
-  run node.
-}
-
-local accel is uiAssertAccel("Rendezvous").
+set approachT to utilClosestApproach(ship, target).
+local aprVship is velocityat(ship, approachT):orbit.
+local aprVtgt is velocityat(target, approachT):orbit.
+local brakingT is (aprVtgt - aprVship):mag / accel.
+run warp(approachT - time:seconds - brakingT).
 
 rcs off.
 sas off.
