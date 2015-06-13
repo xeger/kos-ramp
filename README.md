@@ -1,25 +1,56 @@
 Introduction
 ============
 
+Relatively Adequate Mission Planner (RAMP) is a set of kOS programs that aims
+to improve your [KSP](http://kerbalspaceprogram.com) experience in several ways:
+
+1. Maximize the precision of your maneuvers
+2. Let you focus on the fun parts of spaceflight by automating the drudgework
+3. Teach you about orbital mechanics and physics
+
+You can use the scripts as a kind of autopilot or poke into them to
+see how everything works, learn about the underlying science, or customize
+them to your needs.
+
 Getting Started
 ===============
+
+RAMP scripts have a naming pattern: one-word scripts can be executed without any
+parameters, and multi-word scripts require parameters. Comments at the top of
+every script explain what it does and which parameters it needs.
 
 Run the launch program to ascend to a circular orbit a few hundred km above
 your local atmosphere:
 
     run mission.
 
-After you reach a stable orbit, select a target. Use the transfer or rendezvous
-programs to reach your target.
+After you reach a stable orbit, select a target. Use the transfer or rendezvous script to reach your target.
 
-    set target to vessel("My Awesome Missions").
-    run rendezvous.
+    set target to vessel("My Other Vessel").
+    run rendezvous. // matches velocity with target on arrival
 
     set target to body("Mun").
-    run transfer.
+    run transfer.   // fudges Hohmann transfer to avoid hitting target!
+
+The mission, rendezvous and transfer scripts are [idempotent](https://en.wikipedia.org/wiki/Idempotence):
+you can safely run them at any time; they either make progress toward your goal, or error out
+with an explanation as to why they can't.
+
+Other idempotent scripts include:
+
+    run circ.             // circularize at nearest apsis
+    run circ_alt(250000). // circularize to specific altitude of 250km
+
+Planning Maneuvers
+------------------
+
+You can also plan and execute on-orbit maneuvers by hand using the `node_*` scripts.
+
+    run node_apo(1000000). // plan to make our apogee huge!
+    run node               // make it so
 
 Automating a Mission
---------------------
+====================
 
 If you want to script your entire mission end-to-end, it is highly suggested
 that you choose `boot_mission` as the boot script for your vessel's main CPU.
@@ -38,12 +69,27 @@ orbit, but a space probe needs to be able to think for itself!
 Contributing & Customizing
 ==========================
 
-*WARNING*: notice the control flow between programs is very flat. I try never
-to call more than 2-3 programs deep. This is because the kOS VM seems to have
-bugs with deep call chains; specifically, local variables acquire wrong values
-when they have certain names!
+Clone my repo. Hack to your enjoyment. Pull requests are gladly accepted!
 
-See comments in node_apo/node_peri for an example.
+*WARNING*: notice the control flow between programs is fairly flat. I try never
+to call more than 2-3 programs deep. This is because the kOS VM seems to have
+bugs with programs and functions calling one another. Specifically:
+1) Local variables from inner programs sometimes overwrite same-named variables from the outer program
+2) Function libraries don't seem to work when they are compiled code
+
+See comments in `node_apo`/`node_peri` for an example of #1.
+Try to compile `lib_ui` and run it from another program for an example of #2.
+
+Design Principles
+-----------------
+
+RAMP's code should be:
+
+1) Safe: scripts should check for errors and harmful conditions
+2) Modular: each script accomplishes a specific purpose
+3) Reusable: scripts call library functions rather than copy-pasting code
+4) Educational: comments explain each script and provide science and math background
+5) Ethical: anything copied or derived from an outside work includes a link to the original
 
 Program Naming
 --------------
@@ -80,13 +126,12 @@ should convey its unit of measure. Suggested units/frames are:
 Function Libraries
 ------------------
 
-Programs beginning with `lib/` contain reusable functions and are invoked by
-other programs to make use of rudimentary kOS function sharing.
+Programs beginning with `lib_` contain reusable functions and are invoked by
+other programs.
 
 Comments and Documentation
 --------------------------
 
 Every program should begin with comments explaining what the program does.
 Functions should be likewise commented. Every parameter (to a program _or_ a
-function) needs a comment explaining the purpose of the parameter and whether it
-is optional.
+function) needs a comment explaining the purpose of the parameter.
