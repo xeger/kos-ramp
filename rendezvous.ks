@@ -47,7 +47,6 @@ local aprVtgt is velocityat(target, approachT):orbit.
 local brakingT is (aprVtgt - aprVship):mag / accel.
 run warp(approachT - time:seconds - brakingT).
 
-rcs off.
 sas off.
 
 lock velR to vdot((ship:velocity:orbit - target:velocity:orbit), target:position:normalized) * target:position:normalized.
