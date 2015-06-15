@@ -1,5 +1,6 @@
 global ui_debug     is true.  // Debug messages on console and screen
-global ui_debugVecs is true.  // Educational graphics on screen
+global ui_debugNode is false. // Explain node planning
+global ui_debugAxes is false. // Explain 3-axis navigation e.g. docking
 
 global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stbd", 1, false).
 global ui_DebugUp is vecdraw(v(0,0,0), v(0,0,0), BLUE, "Up", 1, false).
@@ -71,7 +72,7 @@ function uiDebugNode {
   parameter T.
   parameter msg.
 
-  if ui_debugVecs {
+  if ui_debugNode {
     local nd is node(T, 0, 0, 0).
     add(nd).
     uiDebug(msg).
@@ -84,7 +85,7 @@ function uiDebugAxes {
   parameter myPart.
   parameter hisPart.
 
-  if ui_debugVecs = true {
+  if ui_debugAxes = true {
     if myPart <> 0 {
       set ui_DebugStb:start to myPart:position.
       set ui_DebugStb:vec to myPart:portfacing:starvector*20.
