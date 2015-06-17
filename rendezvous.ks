@@ -87,7 +87,4 @@ unlock steering.
 sas on.
 run warp((target:position:mag - 250) / vel:mag).
 
-uiBanner("Rendezvous", "Final approach").
-// TODO use RCS to position self directly ahead/astern target
-uiError("Rendezvous", "UNFINISHED PROGRAM").
-local die is 1 / 0.
+run dock.
