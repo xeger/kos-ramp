@@ -17,23 +17,21 @@
 //   - set control to my part (optional? still be nice!)
 /////////////////////////////////////////////////////////////////////////////
 
-//
-//
-// choose port better
-// add 5-10 second hold to end of sequence
+// TODO
+//   - store d, v as vectors
+//   - choose port better
 
 run lib_ui.
 run lib_dock.
 run lib_pid.
 
 // Constant docking parameters
-local scaleApproach is 50.   // Distance scaling factor (per X m)
-local distApproach is 10.    // minimum initial distance from target
-local distDock is 2.5.       // distance for final approach
-local speedAlign is 5.       // max transverse speed while aligning
-local speedCreep is 0.25.    // forward speed while aligning
-local speedApch is 2.5.      // max forward speed during approach
-local speedDock is 0.1.      // final approach
+local scaleApproach is 100. // Distance scaling factor (per X m)
+local distApproach is 25.   // minimum initial distance from target
+local distDock is 3.        // distance for final approach
+local speedLimit is 5.      // max transverse/fwd speed while aligning
+local speedCreep is 1.      // creep-forward speed during align/approach
+local speedDock is 0.2.     // final approach
 
 sas off.
 
@@ -55,15 +53,15 @@ lock vY to vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfac
 lock vZ to vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:vector).
 
 // Velocity controllers (during alignment)
-local pidX1 is pidInit(1, 0, 3.0, -1, 1).
-local pidY1 is pidInit(1, 0, 3.0, -1, 1).
+local pidX1 is pidInit(1.4, 0.1, 2.0, -1, 1).
+local pidY1 is pidInit(1.4, 0.1, 2.0, -1, 1).
 
 // Position controllers (during approach)
 local pidX2 is pidInit(0.4, 0, 1.4, -1, 1).
 local pidY2 is pidInit(0.4, 0, 1.4, -1, 1).
 
-// Shared Z controller
-local pidZ is pidInit(1, 0.4, 1.4, -1, 1).
+// Shared velocity controller
+local pidZ is pidInit(0.8, 0.4, 0.2, -1, 1).
 
 lock steering to lookdirup(-target:portfacing:forevector, ship:facing:upvector).
 wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0.99.
@@ -78,19 +76,19 @@ until dockComplete(myPort) {
 
   local vScaleX is min(abs(dX / scaleApproach), 1).
   local vScaleY is min(abs(dY / scaleApproach), 1).
-  local vWantX is -(dX / abs(dX)) * speedAlign * vScaleX.
-  local vWantY is -(dY / abs(dY)) * speedAlign * vScaleY.
+  local vWantX is -(dX / abs(dX)) * speedLimit * vScaleX.
+  local vWantY is -(dY / abs(dY)) * speedLimit * vScaleY.
 
   if dz < 0 {
     dockAnnounce("Move to correct side of target").
 
-    set ship:control:fore to -pidSeek(pidZ, speedApch, vZ).
-  } else if apchDot > -0.999 {
+    set ship:control:fore to -pidSeek(pidZ, speedLimit, vZ).
+  } else if apchDot > -0.99 {
     dockAnnounce("Align with target").
 
     if dZ > distApproach {
       // Creep slowly forward, braking only when necessary
-      if vZ < speedCreep and vZ > -speedApch {
+      if vZ > -speedCreep and vZ < -speedLimit {
         pidSeek(pidZ, -speedCreep, vZ).
         set ship:control:fore to 0.
       } else {
@@ -111,7 +109,7 @@ until dockComplete(myPort) {
     } else {
       dockAnnounce("Approach target").
       local vScaleZ is min(abs(dZ / scaleApproach), 1).
-      set ship:control:fore to -pidSeek(pidZ, -speedApch*vScaleZ, vZ).
+      set ship:control:fore to -pidSeek(pidZ, -max(speedCreep, speedLimit*vScaleZ), vZ).
     }
 
     // Stay aligned
