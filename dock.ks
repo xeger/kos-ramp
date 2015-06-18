@@ -44,17 +44,6 @@ if myPort = 0 {
 }
 
 // Physical state that influences the docking algorithm
-lock apchDot to vdot(target:position:normalized, target:facing:forevector).
-lock dockD to V(
-  vdot((target:position - myPort:position), myPort:portfacing:starvector),
-  vdot((target:position - myPort:position), myPort:portfacing:upvector),
-  vdot((target:position - myPort:position), myPort:portfacing:vector)
-).
-lock dockV to V(
-  vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:starvector),
-  vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:upvector),
-  vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:vector)
-).
 
 // Velocity controllers (during alignment)
 local pidX1 is pidInit(1.4, 0.1, 2.0, -1, 1).
@@ -73,15 +62,26 @@ wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0
 sas off.
 rcs on.
 
-clearscreen.
-
 until dockComplete(myPort) {
-  uiDebugAxes(myPort, target, v(dockD:X, dockD:Y, scaleApproach)).
-
+  local apchDot is vdot(target:position:normalized, target:facing:forevector).
+  local rawD is target:position - myPort:position.
+  local dockD is V(
+    vdot(rawD, myPort:portfacing:starvector),
+    vdot(rawD, myPort:portfacing:upvector),
+    vdot(rawD, myPort:portfacing:vector)
+  ).
+  local rawV is tgtVessel:velocity:orbit - ship:velocity:orbit.
+  local dockV is V(
+    vdot(rawV, myPort:portfacing:starvector),
+    vdot(rawV, myPort:portfacing:upvector),
+    vdot(rawV, myPort:portfacing:vector)
+  ).
   local vScaleX is min(abs(dockD:X / scaleApproach), 1).
   local vScaleY is min(abs(dockD:Y / scaleApproach), 1).
   local vWantX is -(dockD:X / abs(dockD:X)) * speedLimit * vScaleX.
   local vWantY is -(dockD:Y / abs(dockD:Y)) * speedLimit * vScaleY.
+
+  uiDebugAxes(myPort, target, v(dockD:X, dockD:Y, distApproach)).
 
   if dockD:Z < 0 {
     dockAnnounce("Move to correct side of target").
