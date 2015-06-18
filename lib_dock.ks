@@ -25,12 +25,14 @@ global dock_Y2 is pidInit(0.4, 0, 1.4, -1, 1).
 // Shared velocity controller
 global dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
 
+// Back off from target in order to approach from the correct side.
 function dockBack {
   parameter pos, vel.
 
   set ship:control:fore to -pidSeek(dock_Z, dock_limit, vel:Z).
 }
 
+// Center docking ports in X/Y while slowly moving forward
 function dockAlign {
   parameter pos, vel.
 
@@ -59,6 +61,8 @@ function dockAlign {
   set ship:control:top to pidSeek(dock_Y1, vWantY, vel:Y).
 }
 
+// Close remaining distance to the target, slowing drastically near
+// the end.
 function dockApproach {
   parameter pos, vel.
 
@@ -78,6 +82,7 @@ function dockApproach {
   set ship:control:top to pidSeek(dock_Y2, 0, pos:Y).
 }
 
+// Find suitable docking ports on self and target
 function dockChoosePorts {
   local hisPort is 0.
   local myPort is 0.
@@ -116,6 +121,7 @@ function dockChoosePorts {
   return myPort.
 }
 
+// Determine whether chosen port is docked
 function dockComplete {
   parameter port.
 
