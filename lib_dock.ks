@@ -25,10 +25,6 @@ global dock_Y2 is pidInit(0.4, 0, 1.4, -1, 1).
 // Shared velocity controller
 global dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
 
-// UI flourishes
-global dock_announce is 0.
-global dock_announceMsg is "".
-
 function dockBack {
   parameter pos, vel.
 
@@ -80,16 +76,6 @@ function dockApproach {
   // Stay aligned
   set ship:control:starboard to pidSeek(dock_X2, 0, pos:X).
   set ship:control:top to pidSeek(dock_Y2, 0, pos:Y).
-}
-
-function dockAnnounce {
-  parameter msg.
-
-  if (time:seconds - dock_announce > 60) or (dock_announceMsg <> msg) {
-    uiBanner("Dock", msg).
-    set dock_announce to time:seconds.
-    set dock_announceMsg to msg.
-  }
 }
 
 function dockChoosePorts {

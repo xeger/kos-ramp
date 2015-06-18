@@ -1,11 +1,16 @@
+global ui_announce is 0.
+global ui_announceMsg is "".
+
 global ui_debug     is true.  // Debug messages on console and screen
 global ui_debugNode is false. // Explain node planning
-global ui_debugAxes is true. // Explain 3-axis navigation e.g. docking
+global ui_debugAxes is false. // Explain 3-axis navigation e.g. docking
 
-global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stbd", 1, false).
+global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stb", 1, false).
 global ui_DebugUp is vecdraw(v(0,0,0), v(0,0,0), BLUE, "Up", 1, false).
 global ui_DebugFwd is vecdraw(v(0,0,0), v(0,0,0), RED, "Fwd", 1, false).
-global ui_DebugTgtFwd is vecdraw(v(0,0,0), v(0,0,0), YELLOW, "Tgt", 1, false).
+
+global ui_myPort is vecdraw(v(0,0,0), v(0,0,0), YELLOW, "Port", 1, false).
+global ui_hisPort is vecdraw(v(0,0,0), v(0,0,0), YELLOW, "Tgt", 1, false).
 
 function uiConsole {
   parameter prefix.
@@ -26,8 +31,12 @@ function uiBanner {
   parameter prefix.
   parameter msg.
 
-  uiConsole(prefix, msg).
-  hudtext(msg, 10, 4, 24, GREEN, false).
+  if (time:seconds - ui_announce > 60) or (ui_announceMsg <> msg) {
+    uiConsole(prefix, msg).
+    hudtext(msg, 10, 4, 24, GREEN, false).
+    set ui_announce to time:seconds.
+    set ui_announceMsg to msg.
+  }
 }
 
 function uiWarning {
@@ -44,6 +53,34 @@ function uiError {
 
   uiConsole(prefix, msg).
   hudtext(msg, 10, 4, 36, RED, false).
+}
+
+function uiShowPorts {
+  parameter myPort.
+  parameter hisPort.
+  parameter dist.
+  parameter ready.
+
+  if myPort <> 0 {
+    set ui_myPort:start to myPort:position.
+    set ui_myPort:vec to myPort:portfacing:vector*dist.
+    if ready {
+      set ui_myPort:color to yellow.
+    } else {
+      set ui_myPort:color to purple.
+    }
+    set ui_myPort:show to true.
+  } else {
+    set ui_myPort:show to false.
+  }
+
+  if hisPort <> 0 {
+    set ui_hisPort:start to hisPort:position.
+    set ui_hisPort:vec to hisPort:portfacing:vector*dist.
+    set ui_hisPort:show to true.
+  } else {
+    set ui_hisPort:show to false.
+  }
 }
 
 function uiAssertAccel {
@@ -82,33 +119,33 @@ function uiDebugNode {
 }
 
 function uiDebugAxes {
-  parameter myPart.
-  parameter hisPart.
-  parameter vel.
+  parameter origin.
+  parameter dir.
+  parameter length.
 
   if ui_debugAxes = true {
-    if myPart <> 0 {
-      set ui_DebugStb:start to myPart:position.
-      set ui_DebugStb:vec to myPart:portfacing:starvector*vel:x.
-      set ui_DebugUp:start to myPart:position.
-      set ui_DebugUp:vec to myPart:portfacing:upvector*vel:y.
-      set ui_DebugFwd:start to myPart:position.
-      set ui_DebugFwd:vec to myPart:portfacing:vector*20.
+    if length:x <> 0 {
+      set ui_DebugStb:start to origin.
+      set ui_DebugStb:vec to dir:starvector*length:x.
       set ui_DebugStb:show to true.
-      set ui_DebugUp:show to true.
-      set ui_DebugFwd:show to true.
     } else {
       set ui_DebugStb:show to false.
-      set ui_DebugUp:show to false.
-      set ui_DebugFwd:show to false.
     }
 
-    if hisPart <> 0 {
-      set ui_DebugTgtFwd:start to hisPart:position.
-      set ui_DebugTgtFwd:vec to hisPart:portfacing:vector*20.
-      set ui_DebugTgtFwd:show to true.
+    if length:y <> 0 {
+      set ui_DebugUp:start to origin.
+      set ui_DebugUp:vec to dir:upvector*length:y.
+      set ui_DebugUp:show to true.
     } else {
-      set ui_DebugTgtFwd:show to false.
+      set ui_DebugUp:show to false.
+    }
+
+    if length:z <> 0 {
+      set ui_DebugFwd:start to origin.
+      set ui_DebugFwd:vec to dir:vector*length:z.
+      set ui_DebugFwd:show to true.
+    } else {
+      set ui_DebugFwd:show to false.
     }
   }
 }

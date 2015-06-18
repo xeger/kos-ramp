@@ -55,16 +55,19 @@ until dockComplete(myPort) {
     vdot(rawV, myPort:portfacing:vector)
   ).
 
-  uiDebugAxes(myPort, target, v(dockD:X, dockD:Y, dock_start)).
+  local needAlign is (apchDot > -0.995).
+
+  uiShowPorts(myPort, target, dock_start, not needAlign).
+  uiDebugAxes(myPort:position, myPort:portfacing, dockD).
 
   if dockD:Z < 0 {
-    dockAnnounce("Back off from target").
+    uiBanner("Dock", "Back off from target").
     dockBack(dockD, dockV).
-  } else if apchDot > -0.999 {
-    dockAnnounce("Align with target").
+  } else if needAlign {
+    uiBanner("Dock", "Align with target").
     dockAlign(dockD, dockV).
   } else {
-    dockAnnounce("Approach target").
+    uiBanner("Dock", "Approach target").
     dockApproach(dockD, dockV).
   }
 }
@@ -74,4 +77,5 @@ rcs off.
 sas on.
 
 uiBanner("Dock", "Docking complete").
+uiShowPorts(0, 0, 0, false).
 uiDebugAxes(0,0, v(0,0,0)).
