@@ -45,12 +45,16 @@ if myPort = 0 {
 
 // Physical state that influences the docking algorithm
 lock apchDot to vdot(target:position:normalized, target:facing:forevector).
-lock dX to vdot((target:position - myPort:position), myPort:portfacing:starvector).
-lock dY to vdot((target:position - myPort:position), myPort:portfacing:upvector).
-lock dZ to vdot((target:position - myPort:position), myPort:portfacing:vector).
-lock vX to vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:starvector).
-lock vY to vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:upvector).
-lock vZ to vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:vector).
+lock dockD to V(
+  vdot((target:position - myPort:position), myPort:portfacing:starvector),
+  vdot((target:position - myPort:position), myPort:portfacing:upvector),
+  vdot((target:position - myPort:position), myPort:portfacing:vector)
+).
+lock dockV to V(
+  vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:starvector),
+  vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:upvector),
+  vdot((tgtVessel:velocity:orbit - ship:velocity:orbit), myPort:portfacing:vector)
+).
 
 // Velocity controllers (during alignment)
 local pidX1 is pidInit(1.4, 0.1, 2.0, -1, 1).
@@ -72,49 +76,49 @@ rcs on.
 clearscreen.
 
 until dockComplete(myPort) {
-  uiDebugAxes(myPort, target, v(dX, dY, scaleApproach)).
+  uiDebugAxes(myPort, target, v(dockD:X, dockD:Y, scaleApproach)).
 
-  local vScaleX is min(abs(dX / scaleApproach), 1).
-  local vScaleY is min(abs(dY / scaleApproach), 1).
-  local vWantX is -(dX / abs(dX)) * speedLimit * vScaleX.
-  local vWantY is -(dY / abs(dY)) * speedLimit * vScaleY.
+  local vScaleX is min(abs(dockD:X / scaleApproach), 1).
+  local vScaleY is min(abs(dockD:Y / scaleApproach), 1).
+  local vWantX is -(dockD:X / abs(dockD:X)) * speedLimit * vScaleX.
+  local vWantY is -(dockD:Y / abs(dockD:Y)) * speedLimit * vScaleY.
 
-  if dz < 0 {
+  if dockD:Z < 0 {
     dockAnnounce("Move to correct side of target").
 
-    set ship:control:fore to -pidSeek(pidZ, speedLimit, vZ).
+    set ship:control:fore to -pidSeek(pidZ, speedLimit, dockV:Z).
   } else if apchDot > -0.99 {
     dockAnnounce("Align with target").
 
-    if dZ > distApproach {
+    if dockD:Z > distApproach {
       // Creep slowly forward, braking only when necessary
-      if vZ > -speedCreep and vZ < -speedLimit {
-        pidSeek(pidZ, -speedCreep, vZ).
+      if dockV:Z > -speedCreep and dockV:Z < -speedLimit {
+        pidSeek(pidZ, -speedCreep, dockV:Z).
         set ship:control:fore to 0.
       } else {
-        set ship:control:fore to -pidSeek(pidZ, -speedCreep, vZ).
+        set ship:control:fore to -pidSeek(pidZ, -speedCreep, dockV:Z).
       }
     } else {
       /// Stop at distApproach
-      set ship:control:fore to -pidSeek(pidZ, 0, vZ).
+      set ship:control:fore to -pidSeek(pidZ, 0, dockV:Z).
     }
 
     // Drift into alignment
-    set ship:control:starboard to pidSeek(pidX1, vWantX, vX).
-    set ship:control:top to pidSeek(pidY1, vWantY, vY).
+    set ship:control:starboard to pidSeek(pidX1, vWantX, dockV:X).
+    set ship:control:top to pidSeek(pidY1, vWantY, dockV:Y).
   } else {
-    if dZ < distDock {
+    if dockD:Z < distDock {
       dockAnnounce("Final approach").
-      set ship:control:fore to -pidSeek(pidZ, -speedDock, vZ).
+      set ship:control:fore to -pidSeek(pidZ, -speedDock, dockV:Z).
     } else {
       dockAnnounce("Approach target").
-      local vScaleZ is min(abs(dZ / scaleApproach), 1).
-      set ship:control:fore to -pidSeek(pidZ, -max(speedCreep, speedLimit*vScaleZ), vZ).
+      local vScaleZ is min(abs(dockD:Z / scaleApproach), 1).
+      set ship:control:fore to -pidSeek(pidZ, -max(speedCreep, speedLimit*vScaleZ), dockV:Z).
     }
 
     // Stay aligned
-    set ship:control:starboard to pidSeek(pidX2, 0, dX).
-    set ship:control:top to pidSeek(pidY2, 0, dY).
+    set ship:control:starboard to pidSeek(pidX2, 0, dockD:X).
+    set ship:control:top to pidSeek(pidY2, 0, dockD:Y).
   }
 }
 
