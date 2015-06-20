@@ -18,64 +18,67 @@
 /////////////////////////////////////////////////////////////////////////////
 
 // TODO
-//   - store d, v as vectors
 //   - choose port better
 
 run lib_ui.
 run lib_dock.
 
-sas off.
+local tgtVessel is 0.
+// HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
+if target:mass < 2 {
+  set tgtVessel to target:ship.
+} else {
+  set tgtVessel to target.
+}
 
-local tgtVessel is target.
 local myPort is dockChoosePorts().
 
-if myPort = 0 {
-  uiError("Dock", "Switch ship control to a docking port").
-  local die is 1/0.
-}
+if myPort <> 0 {
+  lock steering to lookdirup(-target:portfacing:forevector, ship:facing:upvector).
+  wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0.99.
 
-lock steering to lookdirup(-target:portfacing:forevector, ship:facing:upvector).
-wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0.99.
+  sas off.
+  rcs on.
 
-sas off.
-rcs on.
+  until dockComplete(myPort) {
+    local apchDot is vdot(target:position:normalized, target:facing:forevector).
+    local rawD is target:position - myPort:position.
+    local dockD is V(
+      vdot(rawD, myPort:portfacing:starvector),
+      vdot(rawD, myPort:portfacing:upvector),
+      vdot(rawD, myPort:portfacing:vector)
+    ).
+    local rawV is tgtVessel:velocity:orbit - ship:velocity:orbit.
+    local dockV is V(
+      vdot(rawV, myPort:portfacing:starvector),
+      vdot(rawV, myPort:portfacing:upvector),
+      vdot(rawV, myPort:portfacing:vector)
+    ).
 
-until dockComplete(myPort) {
-  local apchDot is vdot(target:position:normalized, target:facing:forevector).
-  local rawD is target:position - myPort:position.
-  local dockD is V(
-    vdot(rawD, myPort:portfacing:starvector),
-    vdot(rawD, myPort:portfacing:upvector),
-    vdot(rawD, myPort:portfacing:vector)
-  ).
-  local rawV is tgtVessel:velocity:orbit - ship:velocity:orbit.
-  local dockV is V(
-    vdot(rawV, myPort:portfacing:starvector),
-    vdot(rawV, myPort:portfacing:upvector),
-    vdot(rawV, myPort:portfacing:vector)
-  ).
+    local needAlign is (apchDot > -0.995).
 
-  local needAlign is (apchDot > -0.995).
+    uiShowPorts(myPort, target, dock_start, not needAlign).
+    uiDebugAxes(myPort:position, myPort:portfacing, dockD).
 
-  uiShowPorts(myPort, target, dock_start, not needAlign).
-  uiDebugAxes(myPort:position, myPort:portfacing, dockD).
-
-  if dockD:Z < 0 {
-    uiBanner("Dock", "Back off from target").
-    dockBack(dockD, dockV).
-  } else if needAlign {
-    uiBanner("Dock", "Align with target").
-    dockAlign(dockD, dockV).
-  } else {
-    uiBanner("Dock", "Approach target").
-    dockApproach(dockD, dockV).
+    if dockD:Z < 0 {
+      uiBanner("Dock", "Back off from target").
+      dockBack(dockD, dockV).
+    } else if needAlign {
+      uiBanner("Dock", "Align with target").
+      dockAlign(dockD, dockV).
+    } else {
+      uiBanner("Dock", "Approach target").
+      dockApproach(dockD, dockV).
+    }
   }
+
+  unlock steering.
+  rcs off.
+  sas on.
+
+  uiBanner("Dock", "Docking complete").
+  uiShowPorts(0, 0, 0, false).
+  uiDebugAxes(0,0, v(0,0,0)).
+} else {
+  uiError("Dock", "Switch ship control to a docking port").
 }
-
-unlock steering.
-rcs off.
-sas on.
-
-uiBanner("Dock", "Docking complete").
-uiShowPorts(0, 0, 0, false).
-uiDebugAxes(0,0, v(0,0,0)).
