@@ -11,7 +11,7 @@ local epsilon is 0.25.
 
 local nstages is 0.
 
-lock accel to uiAssertAccel("Node").
+lock accel to ship:availablethrust / ship:mass.
 
 // keep ship pointed at node
 sas off.
