@@ -90,7 +90,7 @@ function uiAssertAccel {
 
   if accel = 0 {
     uiError(prefix, "ENGINE FAULT - RESUME CONTROL").
-    return 1.0.
+    reboot.
   } else {
     return accel.
   }

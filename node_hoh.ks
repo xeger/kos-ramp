@@ -9,7 +9,7 @@ function approachDistance {
   local ratio is target:mass / ship:mass.
 
   if ratio > 1000 {
-    return 4 * target:radius + target:atm:height.
+    return 0.
   } else {
     return 0.
   }
@@ -50,7 +50,6 @@ if r2 > r1 {
 } else {
   set approach to -approachDistance().
 }
-uiDebug("Rough approach distance is  " + round(approach / 1000, 1) + " km").
 
 local dv is sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1).
 local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
@@ -107,6 +106,9 @@ until done = true or T > Tmax {
   } else if abs(eta) > 1 {
     uiDebugNode(T, "eta is too far").
     set T to T + eta / 2.
+  } else if eta < 0 {
+    uiDebugNode(T, "eta is in the past").
+    set T to T + dt.
   } else {
     set T to T + eta.
     uiDebugNode(T, "found window! eta=" + round(eta) + " phiT=" + round(phiT, 1) + " phi=" + round(phi, 1)).
