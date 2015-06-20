@@ -7,20 +7,20 @@
 run lib_pid.
 
 // Constant docking parameters
-local dock_scale is 100. // X/Y/Z velocity scaling factor (m)
+local dock_scale is 50.  // X/Y/Z velocity scaling factor (m)
 local dock_start is 25.  // ideal start distance (m)
-local dock_final is 3.   // final approach distance (m)
+local dock_final is 2.   // final approach distance (m)
 local dock_limit is 5.   // max X/Y/Z speed (m/s)
 local dock_creep is 1.   // creep-forward speed (m/s)
 local dock_touch is 0.2. // final approach speed (m/s)
 
 // Velocity controllers (during alignment)
-local dock_X1 is pidInit(1.4, 0.1, 2.0, -1, 1).
-local dock_Y1 is pidInit(1.4, 0.1, 2.0, -1, 1).
+local dock_X1 is pidInit(1.4, 0.4, 0.2, -1, 1).
+local dock_Y1 is pidInit(1.4, 0.4, 0.2, -1, 1).
 
 // Position controllers (during approach)
-local dock_X2 is pidInit(0.4, 0, 1.4, -1, 1).
-local dock_Y2 is pidInit(0.4, 0, 1.4, -1, 1).
+local dock_X2 is pidInit(0.6, 0, 1.0, -1, 1).
+local dock_Y2 is pidInit(0.6, 0, 1.0, -1, 1).
 
 // Shared velocity controller
 local dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
