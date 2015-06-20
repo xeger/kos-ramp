@@ -40,12 +40,17 @@ if target:position:mag > 25000 and approachX > 25000 {
 }
 
 // Match velocity at closest approach
-local approachT is utilClosestApproach(ship, target).
+set approachT to utilClosestApproach(ship, target).
 local aprVship is velocityat(ship, approachT):orbit.
 local aprVtgt is velocityat(target, approachT):orbit.
 local brakingT is (aprVtgt - aprVship):mag / accel.
-run warp(approachT - time:seconds - brakingT).
+run node_vel_tgt.
+lock steering to lookdirup(nextnode:deltav, ship:facing:topvector).
+wait until vdot(nextnode:deltav:normalized, ship:facing:vector) > 0.99.
+unlock steering.
+run warp(approachT - time:seconds - brakingT - 1).
 run match.
+remove nextnode.
 
 // Make sure we don't drift apart
 run dock.
