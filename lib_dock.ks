@@ -15,15 +15,15 @@ local dock_creep is 1.   // creep-forward speed (m/s)
 local dock_touch is 0.2. // final approach speed (m/s)
 
 // Velocity controllers (during alignment)
-global dock_X1 is pidInit(1.4, 0.1, 2.0, -1, 1).
-global dock_Y1 is pidInit(1.4, 0.1, 2.0, -1, 1).
+local dock_X1 is pidInit(1.4, 0.1, 2.0, -1, 1).
+local dock_Y1 is pidInit(1.4, 0.1, 2.0, -1, 1).
 
 // Position controllers (during approach)
-global dock_X2 is pidInit(0.4, 0, 1.4, -1, 1).
-global dock_Y2 is pidInit(0.4, 0, 1.4, -1, 1).
+local dock_X2 is pidInit(0.4, 0, 1.4, -1, 1).
+local dock_Y2 is pidInit(0.4, 0, 1.4, -1, 1).
 
 // Shared velocity controller
-global dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
+local dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
 
 // Back off from target in order to approach from the correct side.
 function dockBack {
@@ -89,6 +89,7 @@ function dockChoosePorts {
 
   local myMods is ship:modulesnamed("ModuleDockingNode").
   for mod in myMods {
+    // TODO get this to work with multiple docking ports on vessel!
     //if mod:part:controlfrom = true {
       set myPort to mod:part.
     //}
@@ -98,12 +99,15 @@ function dockChoosePorts {
     local myMass is myPort:mass.
 
     // HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
-    if target:mass > 2.0 {
+    if target:mass > 2 {
       local hisMods is target:modulesnamed("ModuleDockingNode").
-      local tgtPos is target:position.
       local bestAngle is 180.
+
       for mod in hisMods {
-        if abs(mod:part:mass - myMass) < 0.1 and vang(tgtPos, mod:part:position) < bestAngle and vdot(myPort:portfacing:forevector, mod:part:portfacing:forevector) < 0 {
+        if abs(mod:part:mass - myMass) < 0.1 and
+          mod:part:targetable and mod:part:state = "Ready" and
+          vang(target:position, mod:part:portfacing:vector) < bestAngle
+        {
           set hisPort to mod:part.
         }
       }
@@ -111,14 +115,17 @@ function dockChoosePorts {
       set hisPort to target.
     }
 
-    if hisPort <> 0 {
-      set target to hisPort.
-    } else {
-      return 0.
+    if hisPort = 0 {
+      set myPort to 0.
     }
   }
 
-  return myPort.
+  if hisPort <> 0 and myPort <> 0 {
+    set target to hisPort.
+    return myPort.
+  } else {
+    return 0.
+  }
 }
 
 // Determine whether chosen port is docked
