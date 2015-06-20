@@ -8,7 +8,7 @@ run lib_ui.
 
 if ship:body <> target:body {
   uiError("Transfer", "Target outside of SoI").
-  local die is 1 / 0.
+  reboot.
 }
 
 local ri is abs(obt:inclination - target:obt:inclination).

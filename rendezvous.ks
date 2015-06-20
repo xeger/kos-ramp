@@ -9,7 +9,7 @@ run lib_util.
 
 if ship:body <> target:body {
   uiError("Rendezvous", "Target outside of SoI").
-  local die is 1/0.
+  reboot.
 }
 
 local accel is uiAssertAccel("Rendezvous").
@@ -18,7 +18,6 @@ local approachX is (positionat(target, approachT) - positionat(ship, approachT))
 
 // Perform Hohmann transfer if necessary
 if target:position:mag > 25000 and approachX > 25000 {
-  uiDebug("Closest approach is " + round(approachX, 1)).
   local ri is abs(obt:inclination - target:obt:inclination).
 
   // Align if necessary

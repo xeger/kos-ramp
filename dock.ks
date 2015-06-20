@@ -31,7 +31,7 @@ local myPort is dockChoosePorts().
 
 if myPort = 0 {
   uiError("Dock", "Switch ship control to a docking port").
-  local die is 1/0.
+  reboot.
 }
 
 lock steering to lookdirup(-target:portfacing:forevector, ship:facing:upvector).

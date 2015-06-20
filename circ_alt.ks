@@ -22,5 +22,5 @@ if obt:eccentricity < 0.1 {
   run node.
 } else {
   uiWarning("Circ", "Unfinished program!").
-  local die is 1 / 0.
+  reboot.
 }
