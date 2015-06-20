@@ -21,7 +21,7 @@ lock steering to lookdirup(nd:deltav, ship:facing:topvector).
 local np is lookdirup(nd:deltav, ship:facing:topvector).
 local dob is (nd:deltav:mag / accel).
 
-wait until vdot(facing:forevector, np:forevector) >= 0.999.
+wait until vdot(facing:forevector, np:forevector) >= 0.95.
 
 run warp(nd:eta - dob/2 - 1).
 
@@ -35,7 +35,7 @@ until done
 {
     //throttle is 100% until there is less than 1 second of time left to burn
     //when there is less than 1 second - decrease the throttle linearly
-    set tset to min(nd:deltav:mag/accel, 1).
+    set tset to min(nd:deltav:mag/accel, 1.0).
 
     //here's the tricky part, we need to cut the throttle as soon as our nd:deltav and initial deltav start facing opposite directions
     //this check is done via checking the dot product of those 2 vectors
