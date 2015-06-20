@@ -23,7 +23,7 @@ if ship:status = "flying" or ship:status = "sub_orbital" {
   local gt1  is atmo * 1.0.
   local apo  is atmo + (body:radius / 3).
 
-  if missionAccomplished() = true {
+  if missionAccomplished() {
     //run land_any.
   } else {
     uiStatus("Mission", "Ascent from " + body:name).
@@ -32,11 +32,17 @@ if ship:status = "flying" or ship:status = "sub_orbital" {
 }
 
 if ship:status = "escaping" {
-  // TODO warp to transition
+  // TODO get a bit about this smarter (when to circ instead?)
+  run warp(eta:transition - 5).
 }
 
 if ship:status = "orbiting" {
-  // TODO if hyperbolic, plan to circ at periapsis
-  // TODO if stable, ensure circular
-  // TODO if !accomplished, ensure planes aligned with target
+  uiBanner("Mission unplanned; you take it from here!").
+  //if missionAccomplished() {
+  //  set target to body("Kerbin").
+  //} else {
+  //  set target to body("Mun").
+  //}
+
+  run transfer.
 }
