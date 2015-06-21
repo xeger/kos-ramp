@@ -8,12 +8,12 @@
 run lib_ui.
 run lib_util.
 
+// Don't let unbalanced RCS mess with our velocity
+rcs off.
 sas off.
 
 local accel is uiAssertAccel("Maneuver").
 lock vel to (ship:velocity:orbit - target:velocity:orbit).
-lock velR to vdot(vel, target:position:normalized) * target:position:normalized.
-lock velT to vel - velR.
 
 lock steering to lookdirup(-vel:normalized, ship:facing:upvector).
 wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.99.
@@ -31,8 +31,6 @@ set throttle to 0.
 // TODO use RCS to cancel remaining dv
 
 unlock vel.
-unlock velT.
-unlock velR.
 
 unlock steering.
 sas on.
