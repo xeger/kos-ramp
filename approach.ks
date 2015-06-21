@@ -61,7 +61,7 @@ local dt is time:seconds - t0.
 lock steering to lookdirup(-velR:normalized, ship:facing:upvector).
 wait until vdot(-velR:normalized, ship:facing:forevector) >= 0.99.
 local stopDistance is 0.5 * accel * (vel:mag / accel)^2.
-local dt is (target:position:mag - stopDistance - 200) / vel:mag.
+local dt is (target:position:mag - stopDistance - 100) / vel:mag.
 run warp(dt).
 
 run match.

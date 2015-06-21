@@ -40,17 +40,19 @@ if target:position:mag > 25000 and approachX > 25000 {
 }
 
 // Match velocity at closest approach
+// TODO make node_vel_tgt more accurate and use it here (currently only used for steering guidance)
 set approachT to utilClosestApproach(ship, target).
 local aprVship is velocityat(ship, approachT):orbit.
 local aprVtgt is velocityat(target, approachT):orbit.
 local brakingT is (aprVtgt - aprVship):mag / accel.
+sas off.
 run node_vel_tgt.
 lock steering to lookdirup(nextnode:deltav, ship:facing:topvector).
 wait until vdot(nextnode:deltav:normalized, ship:facing:vector) > 0.99.
 unlock steering.
-run warp(approachT - time:seconds - brakingT - 1).
-run match.
 remove nextnode.
+run warp(approachT - time:seconds - brakingT).
 
-// Make sure we don't drift apart
+run approach.
+wait until target:position:mag < 150.
 run dock.

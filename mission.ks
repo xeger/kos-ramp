@@ -6,10 +6,10 @@
 
 run lib_ui.
 
-global missionGoal is body("Mun").
+global mission_goal is body("Mun").
 
 function missionAccomplished {
-  return false. // TODO get smarter (look at vessel name, etc)
+  return false. // TODO actually discern this
 }
 
 if ship:status = "prelaunch" {
@@ -37,12 +37,17 @@ if ship:status = "escaping" {
 }
 
 if ship:status = "orbiting" {
-  uiBanner("Mission unplanned; you take it from here!").
+  uiWarning("Mission", "Mission unplanned; you take it from here!").
+
+  // Let's go to the Mun .. or back!
   //if missionAccomplished() {
   //  set target to body("Kerbin").
   //} else {
-  //  set target to body("Mun").
+  //  set target to mission_goal.
   //}
+  //run transfer.
 
-  run transfer.
+  // Let's rendezvous with another spacecraft!
+  //set target to mission_goal.
+  //run rendezvous.
 }
