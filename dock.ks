@@ -34,7 +34,7 @@ if target:mass < 2 {
 local myPort is dockChoosePorts().
 
 if myPort <> 0 {
-  lock steering to lookdirup(-target:portfacing:forevector, ship:facing:upvector).
+  lock steering to lookdirup(-target:portfacing:forevector, target:portfacing:upvector).
   wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0.99.
 
   sas off.
