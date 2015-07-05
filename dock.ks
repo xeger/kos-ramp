@@ -34,10 +34,11 @@ if target:mass < 2 {
 local myPort is dockChoosePorts().
 
 if myPort <> 0 {
+  sas off.
+
   lock steering to lookdirup(-target:portfacing:forevector, target:portfacing:upvector).
   wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0.99.
 
-  sas off.
   rcs on.
 
   until dockComplete(myPort) {
@@ -57,7 +58,7 @@ if myPort <> 0 {
 
     local needAlign is (apchDot > -0.995).
 
-    uiShowPorts(myPort, target, dock_start, not needAlign).
+    uiShowPorts(myPort, target, dock_start / 2, not needAlign).
     uiDebugAxes(myPort:position, myPort:portfacing, dockD).
 
     if dockD:Z < 0 {

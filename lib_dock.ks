@@ -9,7 +9,7 @@ run lib_pid.
 // Constant docking parameters
 local dock_scale is 50.  // X/Y/Z velocity scaling factor (m)
 local dock_start is 25.  // ideal start distance (m)
-local dock_final is 2.   // final approach distance (m)
+local dock_final is 3.   // final approach distance (m)
 local dock_limit is 5.   // max X/Y/Z speed (m/s)
 local dock_creep is 1.   // creep-forward speed (m/s)
 local dock_touch is 0.2. // final approach speed (m/s)
@@ -19,8 +19,8 @@ local dock_X1 is pidInit(1.4, 0.4, 0.2, -1, 1).
 local dock_Y1 is pidInit(1.4, 0.4, 0.2, -1, 1).
 
 // Position controllers (during approach)
-local dock_X2 is pidInit(0.6, 0, 1.0, -1, 1).
-local dock_Y2 is pidInit(0.6, 0, 1.0, -1, 1).
+local dock_X2 is pidInit(0.4, 0, 1.0, -1, 1).
+local dock_Y2 is pidInit(0.4, 0, 1.0, -1, 1).
 
 // Shared velocity controller
 local dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
@@ -56,9 +56,19 @@ function dockAlign {
     set ship:control:fore to -pidSeek(dock_Z, 0, vel:Z).
   }
 
-  // Hold transverse velocity at setpoint
-  set ship:control:starboard to pidSeek(dock_X1, vWantX, vel:X).
-  set ship:control:top to pidSeek(dock_Y1, vWantY, vel:Y).
+  // Drift into alignment
+  local rcsStarb is pidSeek(dock_X1, vWantX, vel:X).
+  local rcsTop to pidSeek(dock_Y1, vWantY, vel:Y).
+  if ship:facing:roll < 180 {
+      set rcsStarb to -1 * rcsStarb.
+      set rcsTop to -1 * rcsTop.
+  }
+  set ship:control:starboard to rcsStarb.
+  set ship:control:top to rcsTop.
+  //print "stbd = " + round(rcsStarb,1) + " (actual " + ship:control:pilotstarboard + ")         " at(0,0).
+  //print "top  = " + round(rcsTop, 1) + " (actual " + ship:control:pilottop + ")                " at(0,1).
+  //print "roll = " + round (ship:facing:roll, 1) at (0,2).
+  //print "..." at(0,3).
 }
 
 // Close remaining distance to the target, slowing drastically near
@@ -66,7 +76,9 @@ function dockAlign {
 function dockApproach {
   parameter pos, vel.
 
-  local vScaleZ is min(abs(pos:Z / dock_scale), 1).
+  // RCS tends to give more fore/aft authority than lateral.
+  // Divide scale by 4 to compensate.
+  local vScaleZ is min(abs(pos:Z / dock_scale), 1) / 4.
 
   if pos:Z < dock_final {
     // Final approach: barely inch forward!
@@ -78,8 +90,14 @@ function dockApproach {
   }
 
   // Stay aligned
-  set ship:control:starboard to pidSeek(dock_X2, 0, pos:X).
-  set ship:control:top to pidSeek(dock_Y2, 0, pos:Y).
+  local rcsStarb is pidSeek(dock_X2, 0, pos:X).
+  local rcsTop is pidSeek(dock_Y2, 0, pos:Y).
+  if ship:facing:roll < 180 {
+      set rcsStarb to -1 * rcsStarb.
+      set rcsTop to -1 * rcsTop.
+  }
+  set ship:control:starboard to rcsStarb.
+  set ship:control:top to rcsTop.
 }
 
 // Find suitable docking ports on self and target
@@ -132,7 +150,7 @@ function dockChoosePorts {
 function dockComplete {
   parameter port.
 
-  if port:state = "Docked (docker)" or port:state = "Docked (dockee)" or port:state = "Docked (same vessel)" {
+  if port:state = "PreAttached" or port:state = "Docked (docker)" or port:state = "Docked (dockee)" or port:state = "Docked (same vessel)" {
     return true.
   } else {
     return false.
