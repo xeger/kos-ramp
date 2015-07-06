@@ -20,6 +20,7 @@
 // TODO
 //   - choose port better
 
+clearvecdraws().
 run lib_ui.
 run lib_dock.
 
@@ -41,23 +42,22 @@ if myPort <> 0 {
 
   rcs on.
 
+  lock rawD to target:position - myPort:position.
+  lock dockD to V(
+    vdot(rawD, myPort:portfacing:starvector),
+    vdot(rawD, myPort:portfacing:upvector),
+    vdot(rawD, myPort:portfacing:vector)
+  ).
+  lock rawV to tgtVessel:velocity:orbit - ship:velocity:orbit.
+  lock dockV to V(
+    vdot(rawV, myPort:portfacing:starvector),
+    vdot(rawV, myPort:portfacing:upvector),
+    vdot(rawV, myPort:portfacing:vector)
+  ).
+  lock needAlign to (apchDot > -0.995).
+  lock apchDot to vdot(target:position:normalized, target:facing:forevector).
+
   until dockComplete(myPort) {
-    local apchDot is vdot(target:position:normalized, target:facing:forevector).
-    local rawD is target:position - myPort:position.
-    local dockD is V(
-      vdot(rawD, myPort:portfacing:starvector),
-      vdot(rawD, myPort:portfacing:upvector),
-      vdot(rawD, myPort:portfacing:vector)
-    ).
-    local rawV is tgtVessel:velocity:orbit - ship:velocity:orbit.
-    local dockV is V(
-      vdot(rawV, myPort:portfacing:starvector),
-      vdot(rawV, myPort:portfacing:upvector),
-      vdot(rawV, myPort:portfacing:vector)
-    ).
-
-    local needAlign is (apchDot > -0.995).
-
     uiShowPorts(myPort, target, dock_start / 2, not needAlign).
     uiDebugAxes(myPort:position, myPort:portfacing, dockD).
 

@@ -15,6 +15,11 @@ lock velT to vel - velR.
 rcs off.
 sas off.
 
+// HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
+if target:mass < 2 {
+  set target to target:vessel.
+}
+
 if target:position:mag / vel:mag < 15 {
   // Nearby target; come to a stop first
   lock steering to lookdirup(-vel:normalized, ship:facing:upvector).

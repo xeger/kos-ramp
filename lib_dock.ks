@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // Docking functions
 /////////////////////////////////////////////////////////////////////////////
-// Shared logic for docking
+// Shared logic for docking. Assumes that every ship has one port!
 /////////////////////////////////////////////////////////////////////////////
 
 run lib_pid.
@@ -9,7 +9,7 @@ run lib_pid.
 // Constant docking parameters
 local dock_scale is 50.  // X/Y/Z velocity scaling factor (m)
 local dock_start is 25.  // ideal start distance (m)
-local dock_final is 3.   // final approach distance (m)
+local dock_final is 2.5. // final approach distance (m)
 local dock_limit is 5.   // max X/Y/Z speed (m/s)
 local dock_creep is 1.   // creep-forward speed (m/s)
 local dock_touch is 0.2. // final approach speed (m/s)
@@ -76,9 +76,8 @@ function dockAlign {
 function dockApproach {
   parameter pos, vel.
 
-  // RCS tends to give more fore/aft authority than lateral.
-  // Divide scale by 4 to compensate.
-  local vScaleZ is min(abs(pos:Z / dock_scale), 1) / 4.
+  // Cut back z-speed by half to make sure we don't ram the target!
+  local vScaleZ is min(abs(pos:Z / dock_scale), 1) * 0.5.
 
   if pos:Z < dock_final {
     // Final approach: barely inch forward!
@@ -100,6 +99,17 @@ function dockApproach {
   set ship:control:top to rcsTop.
 }
 
+// Figure out how to undock
+function dockChooseDeparturePort {
+  for port in core:element:dockingPorts {
+    if dockComplete(port) {
+      return port.
+    }
+  }
+
+  return 0.
+}
+
 // Find suitable docking ports on self and target
 function dockChoosePorts {
   local hisPort is 0.
@@ -107,7 +117,7 @@ function dockChoosePorts {
 
   local myMods is ship:modulesnamed("ModuleDockingNode").
   for mod in myMods {
-    // TODO get this to work with multiple docking ports on vessel!
+    // TODO get this to work on ships with more than one port
     //if mod:part:controlfrom = true {
       set myPort to mod:part.
     //}
