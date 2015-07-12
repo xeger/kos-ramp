@@ -23,47 +23,39 @@
 run lib_ui.
 run lib_dock.
 
-// HACK: distinguish between currently-targeted vessel and port using mass > 2 tonnes
-local station is 0.
-if target:mass < 2 {
-  set station to target:ship.
-} else {
-  set station to target.
-}
-
 local myPort is dockChoosePorts().
+local hisPort is target.
+local station is target:ship.
 
 if myPort <> 0 {
-  local origTarget is target.
+  uiBanner("Dock", "Dock with " + station:name).
   dockPrepare(myPort, target).
 
-  until target <> origTarget or dockComplete(myPort) {
+  until target <> hisPort or dockComplete(myPort) {
     local rawD is target:position - myPort:position.
+    local sense is ship:facing.
+
     local dockD is V(
-      vdot(rawD, myPort:portfacing:starvector),
-      vdot(rawD, myPort:portfacing:upvector),
-      vdot(rawD, myPort:portfacing:vector)
+      vdot(rawD, sense:starvector),
+      vdot(rawD, sense:upvector),
+      vdot(rawD, sense:vector)
     ).
     local rawV is station:velocity:orbit - ship:velocity:orbit.
     local dockV is V(
-      vdot(rawV, ship:facing:starvector),
-      vdot(rawV, ship:facing:upvector),
-      vdot(rawV, ship:facing:vector)
+      vdot(rawV, sense:starvector),
+      vdot(rawV, sense:upvector),
+      vdot(rawV, sense:vector)
     ).
-    local apchDot is vdot(target:position:normalized, target:facing:forevector).
-    local needAlign is (apchDot > -0.995).
+    local needAlign is vdot(target:position:normalized, target:facing:forevector) > -0.9975.
 
     uiShowPorts(myPort, target, dock_start / 2, not needAlign).
-    uiDebugAxes(myPort:position, myPort:portfacing, dockD).
+    uiDebugAxes(myPort:position, sense, v(10,10,10)).
 
     if dockD:Z < 0 {
-      uiBanner("Dock", "Back off from target").
       dockBack(dockD, dockV).
     } else if needAlign or dockD:Z > dock_start {
-      uiBanner("Dock", "Align with target").
       dockAlign(dockD, dockV).
     } else {
-      uiBanner("Dock", "Approach target").
       dockApproach(dockD, dockV).
     }
   }

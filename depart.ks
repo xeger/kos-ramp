@@ -23,9 +23,12 @@ if myPort = 0 {
   reboot.
 }
 
+sas off.
+rcs off.
 myPort:undock.
-
+wait 0.5.
 sas on.
+wait 0.5.
 rcs on.
 
 lock vel to station:velocity:orbit - ship:velocity:orbit.

@@ -12,8 +12,16 @@ run lib_util.
 rcs off.
 sas off.
 
+// HACK: distinguish between currently-targeted vessel and port using mass > 2 tonnes
+local station is 0.
+if target:mass < 2 {
+  set station to target:ship.
+} else {
+  set station to target.
+}
+
 local accel is uiAssertAccel("Maneuver").
-lock vel to (ship:velocity:orbit - target:velocity:orbit).
+lock vel to (ship:velocity:orbit - station:velocity:orbit).
 
 lock steering to lookdirup(-vel:normalized, ship:facing:upvector).
 wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.99.
@@ -25,7 +33,7 @@ when vel:mag < 3 then {
   sas on.
   lock throttle to min(vel:mag / accel, 0.1).
 }
-wait until vel:mag < 1.
+wait until vel:mag < 0.2 and vel:z <= 0.
 set throttle to 0.
 
 // TODO use RCS to cancel remaining dv

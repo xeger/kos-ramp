@@ -7,23 +7,24 @@
 run lib_pid.
 
 // Constant docking parameters
-global dock_scale is 50.  // alignment speed scaling factor (m)
-global dock_start is 25.  // ideal start distance (m) & approach speed scaling factor
-global dock_final is 1.   // final-approach distance (m)
-global dock_algnV is 5.   // max alignment speed (m/s)
-global dock_apchV is 1.   // max approach speed (m/s)
-global dock_dockV is 0.1. // final-approach radial speed (m/s)
+global dock_scale is 25.   // alignment speed scaling factor (m)
+global dock_start is 10.   // ideal start distance (m) & approach speed scaling factor
+global dock_final is 1.    // final-approach distance (m)
+global dock_algnV is 2.5.  // max alignment speed (m/s)
+global dock_apchV is 1.    // max approach speed (m/s)
+global dock_dockV is 0.2.  // final approach speed (m/s)
+global dock_scale is 2.    // max speed multiple when ship is far from target
 
 // Velocity controllers (during alignment)
 global dock_X1 is pidInit(1.4, 0.4, 0.2, -1, 1).
 global dock_Y1 is pidInit(1.4, 0.4, 0.2, -1, 1).
 
 // Position controllers (during approach)
-global dock_X2 is pidInit(0.4, 0, 1.0, -1, 1).
-global dock_Y2 is pidInit(0.4, 0, 1.0, -1, 1).
+global dock_X2 is pidInit(0.4, 0, 1.2, -1, 1).
+global dock_Y2 is pidInit(0.4, 0, 1.2, -1, 1).
 
 // Shared velocity controller
-global dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
+global dock_Z is pidInit(1.4, 0, 0.4, -1, 1).
 
 // Prepare to dock by orienting the ship and priming SAS/RCS
 function dockPrepare {
@@ -56,25 +57,28 @@ function dockAlign {
   parameter pos, vel.
 
   // Taper X/Y/Z speed according to distance from target
-  local vScaleX is min(abs(pos:X / dock_scale), 1).
-  local vScaleY is min(abs(pos:Y / dock_scale), 1).
-  local vScaleZ is min(abs(pos:Z / dock_start), 1).
+  local vScaleX is min(abs(pos:X / dock_scale), dock_scale).
+  local vScaleY is min(abs(pos:Y / dock_scale), dock_scale).
+  local vScaleZ is min(abs(pos:Z / dock_start), dock_scale).
 
-  local vWantX is -(pos:X / abs(pos:X)) * dock_algnV * vScaleX.
-  local vWantY is -(pos:Y / abs(pos:Y)) * dock_algnV * vScaleY.
+  // Never align slower than final-approach speed
+  local vWantX is -(pos:X / abs(pos:X)) * min(dock_dockV, dock_algnV * vScaleX).
+  local vWantY is -(pos:Y / abs(pos:Y)) * min(dock_dockV, dock_algnV * vScaleY).
+  local vWantZ is 0.
 
-  if pos:Z > dock_start {
+  if pos:Z >= dock_start {
     // Move forward at a distance-dependent speed between
     // approach and final-approach
-    set ship:control:fore to -pidSeek(dock_Z, -max(dock_dockV, dock_apchV*vScaleZ), vel:Z).
+    set vWantZ to -max(dock_dockV, dock_apchV*vScaleZ).
   } else {
     // Halt at approach-start distance
-    set ship:control:fore to -pidSeek(dock_Z, 0, vel:Z).
+    set vWantZ to 0.
   }
 
   // Drift into alignment
   set ship:control:starboard to -1 * pidSeek(dock_X1, vWantX, vel:X).
   set ship:control:top to -1 * pidSeek(dock_Y1, vWantY, vel:Y).
+  set ship:control:fore to -1 * pidSeek(dock_Z, vWantZ, vel:Z).
 }
 
 // Close remaining distance to the target, slowing drastically near
@@ -83,16 +87,19 @@ function dockApproach {
   parameter pos, vel.
 
   // Taper Z speed according to distance from target
-  local vScaleZ is min(abs(pos:Z / dock_start), 1).
+  local vScaleZ is min(abs(pos:Z / dock_start), dock_scale).
+  local vWantZ is 0.
 
   if pos:Z < dock_final {
     // Final approach: barely inch forward!
-    set ship:control:fore to -pidSeek(dock_Z, -dock_dockV, vel:Z).
+    set vWantZ to -dock_dockV.
   } else {
     // Move forward at a distance-dependent speed between
     // approach and final-approach
-    set ship:control:fore to -pidSeek(dock_Z, -max(dock_dockV, dock_apchV*vScaleZ), vel:Z).
+    set vWantZ to -max(dock_dockV, dock_apchV*vScaleZ).
   }
+
+  set ship:control:fore to -pidSeek(dock_Z, vWantZ, vel:Z).
 
   // Stay aligned
   set ship:control:starboard to -1 * pidSeek(dock_X2, 0, pos:X).
@@ -112,8 +119,8 @@ function dockChooseDeparturePort {
 
 // Find suitable docking ports on self and target
 function dockChoosePorts {
-  local hisPort is 0.
   local myPort is 0.
+  local hisPort is 0.
 
   local myMods is ship:modulesnamed("ModuleDockingNode").
   for mod in myMods {
