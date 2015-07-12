@@ -7,68 +7,77 @@
 run lib_pid.
 
 // Constant docking parameters
-local dock_scale is 50.  // X/Y/Z velocity scaling factor (m)
-local dock_start is 25.  // ideal start distance (m)
-local dock_final is 2.5. // final approach distance (m)
-local dock_limit is 5.   // max X/Y/Z speed (m/s)
-local dock_creep is 1.   // creep-forward speed (m/s)
-local dock_touch is 0.2. // final approach speed (m/s)
+global dock_scale is 50.  // alignment speed scaling factor (m)
+global dock_start is 25.  // ideal start distance (m) & approach speed scaling factor
+global dock_final is 1.   // final-approach distance (m)
+global dock_algnV is 5.   // max alignment speed (m/s)
+global dock_apchV is 1.   // max approach speed (m/s)
+global dock_dockV is 0.1. // final-approach radial speed (m/s)
 
 // Velocity controllers (during alignment)
-local dock_X1 is pidInit(1.4, 0.4, 0.2, -1, 1).
-local dock_Y1 is pidInit(1.4, 0.4, 0.2, -1, 1).
+global dock_X1 is pidInit(1.4, 0.4, 0.2, -1, 1).
+global dock_Y1 is pidInit(1.4, 0.4, 0.2, -1, 1).
 
 // Position controllers (during approach)
-local dock_X2 is pidInit(0.4, 0, 1.0, -1, 1).
-local dock_Y2 is pidInit(0.4, 0, 1.0, -1, 1).
+global dock_X2 is pidInit(0.4, 0, 1.0, -1, 1).
+global dock_Y2 is pidInit(0.4, 0, 1.0, -1, 1).
 
 // Shared velocity controller
-local dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
+global dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
+
+// Prepare to dock by orienting the ship and priming SAS/RCS
+function dockPrepare {
+  parameter myPort, hisPort.
+
+  clearvecdraws().
+  sas off.
+  lock steering to lookdirup(-hisPort:portfacing:forevector, v(0,1,0)).
+  wait until vdot(myPort:portfacing:forevector, hisPort:portfacing:forevector) < -0.99.
+  rcs on.
+}
+
+// Finish docking
+function dockFinish {
+  unlock steering.
+  rcs off.
+  sas on.
+  uiShowPorts(0, 0, 0, false).
+  uiDebugAxes(0,0, v(0,0,0)).
+}
 
 // Back off from target in order to approach from the correct side.
 function dockBack {
   parameter pos, vel.
 
-  set ship:control:fore to -pidSeek(dock_Z, dock_limit, vel:Z).
+  set ship:control:fore to -pidSeek(dock_Z, dock_algnV, vel:Z).
 }
 
 // Center docking ports in X/Y while slowly moving forward
 function dockAlign {
   parameter pos, vel.
 
-  // Taper X/Y speed according to distance from goal
+  // Taper X/Y/Z speed according to distance from target
   local vScaleX is min(abs(pos:X / dock_scale), 1).
   local vScaleY is min(abs(pos:Y / dock_scale), 1).
-  local vWantX is -(pos:X / abs(pos:X)) * dock_limit * vScaleX.
-  local vWantY is -(pos:Y / abs(pos:Y)) * dock_limit * vScaleY.
+  local vScaleZ is min(abs(pos:Z / dock_start), 1).
+
+  local vWantX is -(pos:X / abs(pos:X)) * dock_algnV * vScaleX.
+  local vWantY is -(pos:Y / abs(pos:Y)) * dock_algnV * vScaleY.
 
   if pos:Z > dock_start {
-    // Move forward at some speed between creep and limit
-    // Tolerate a range of speeds; save juice for the approach
-    if vel:Z > -dock_limit and vel:Z < -dock_creep {
-      pidSeek(dock_Z, -dock_creep, vel:Z).
-      set ship:control:fore to 0.
-    } else {
-      set ship:control:fore to -pidSeek(dock_Z, -dock_creep, vel:Z).
-    }
+    // Move forward at a distance-dependent speed between
+    // approach and final-approach
+    set ship:control:fore to -pidSeek(dock_Z, -max(dock_dockV, dock_apchV*vScaleZ), vel:Z).
   } else {
-    // Too close: halt forward speed & keep aligning
+    // Halt at approach-start distance
     set ship:control:fore to -pidSeek(dock_Z, 0, vel:Z).
   }
 
   // Drift into alignment
-  local rcsStarb is pidSeek(dock_X1, vWantX, vel:X).
-  local rcsTop to pidSeek(dock_Y1, vWantY, vel:Y).
-  if ship:facing:roll < 180 {
-      set rcsStarb to -1 * rcsStarb.
-      set rcsTop to -1 * rcsTop.
-  }
+  local rcsStarb is -1 * pidSeek(dock_X1, vWantX, vel:X).
+  local rcsTop to -1 * pidSeek(dock_Y1, vWantY, vel:Y).
   set ship:control:starboard to rcsStarb.
   set ship:control:top to rcsTop.
-  //print "stbd = " + round(rcsStarb,1) + " (actual " + ship:control:pilotstarboard + ")         " at(0,0).
-  //print "top  = " + round(rcsTop, 1) + " (actual " + ship:control:pilottop + ")                " at(0,1).
-  //print "roll = " + round (ship:facing:roll, 1) at (0,2).
-  //print "..." at(0,3).
 }
 
 // Close remaining distance to the target, slowing drastically near
@@ -76,25 +85,21 @@ function dockAlign {
 function dockApproach {
   parameter pos, vel.
 
-  // Cut back z-speed by half to make sure we don't ram the target!
-  local vScaleZ is min(abs(pos:Z / dock_scale), 1) * 0.5.
+  // Taper Z speed according to distance from target
+  local vScaleZ is min(abs(pos:Z / dock_start), 1).
 
   if pos:Z < dock_final {
     // Final approach: barely inch forward!
-    set ship:control:fore to -pidSeek(dock_Z, -dock_touch, vel:Z).
+    set ship:control:fore to -pidSeek(dock_Z, -dock_dockV, vel:Z).
   } else {
     // Move forward at a distance-dependent speed between
-    // creep and limit
-    set ship:control:fore to -pidSeek(dock_Z, -max(dock_creep, dock_limit*vScaleZ), vel:Z).
+    // approach and final-approach
+    set ship:control:fore to -pidSeek(dock_Z, -max(dock_dockV, dock_apchV*vScaleZ), vel:Z).
   }
 
   // Stay aligned
-  local rcsStarb is pidSeek(dock_X2, 0, pos:X).
-  local rcsTop is pidSeek(dock_Y2, 0, pos:Y).
-  if ship:facing:roll < 180 {
-      set rcsStarb to -1 * rcsStarb.
-      set rcsTop to -1 * rcsTop.
-  }
+  local rcsStarb is -1 * pidSeek(dock_X2, 0, pos:X).
+  local rcsTop is -1 * pidSeek(dock_Y2, 0, pos:Y).
   set ship:control:starboard to rcsStarb.
   set ship:control:top to rcsTop.
 }
@@ -156,11 +161,20 @@ function dockChoosePorts {
   }
 }
 
+function dockPending {
+  parameter port.
+
+  if port:state = "PreAttached" {
+    return true.
+  } else {
+    return false.
+  }
+}
 // Determine whether chosen port is docked
 function dockComplete {
   parameter port.
 
-  if port:state = "PreAttached" or port:state = "Docked (docker)" or port:state = "Docked (dockee)" or port:state = "Docked (same vessel)" {
+  if port:state = "Docked (docker)" or port:state = "Docked (dockee)" or port:state = "Docked (same vessel)" {
     return true.
   } else {
     return false.

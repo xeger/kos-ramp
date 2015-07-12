@@ -10,7 +10,7 @@ global ui_DebugUp is vecdraw(v(0,0,0), v(0,0,0), BLUE, "Up", 1, false).
 global ui_DebugFwd is vecdraw(v(0,0,0), v(0,0,0), RED, "Fwd", 1, false).
 
 global ui_myPort is vecdraw(v(0,0,0), v(0,0,0), YELLOW, "Ship", 1, false).
-global ui_hisPort is vecdraw(v(0,0,0), v(0,0,0), YELLOW, "Dock", 1, false).
+global ui_hisPort is vecdraw(v(0,0,0), v(0,0,0), PURPLE, "Dock", 1, false).
 
 function uiConsole {
   parameter prefix.
@@ -65,9 +65,9 @@ function uiShowPorts {
     set ui_myPort:start to myPort:position.
     set ui_myPort:vec to myPort:portfacing:vector*dist.
     if ready {
-      set ui_myPort:color to yellow.
+      set ui_myPort:color to GREEN.
     } else {
-      set ui_myPort:color to purple.
+      set ui_myPort:color to RED.
     }
     set ui_myPort:show to true.
   } else {

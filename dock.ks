@@ -20,7 +20,6 @@
 // TODO
 //   - choose port better
 
-clearvecdraws().
 run lib_ui.
 run lib_dock.
 
@@ -35,36 +34,32 @@ if target:mass < 2 {
 local myPort is dockChoosePorts().
 
 if myPort <> 0 {
-  sas off.
+  local origTarget is target.
+  dockPrepare(myPort, target).
 
-  lock steering to lookdirup(-target:portfacing:forevector, target:portfacing:upvector).
-  wait until vdot(myport:portfacing:forevector, target:portfacing:forevector) < -0.99.
+  until target <> origTarget or dockComplete(myPort) {
+    local rawD is target:position - myPort:position.
+    local dockD is V(
+      vdot(rawD, myPort:portfacing:starvector),
+      vdot(rawD, myPort:portfacing:upvector),
+      vdot(rawD, myPort:portfacing:vector)
+    ).
+    local rawV is tgtVessel:velocity:orbit - ship:velocity:orbit.
+    local dockV is V(
+      vdot(rawV, myPort:portfacing:starvector),
+      vdot(rawV, myPort:portfacing:upvector),
+      vdot(rawV, myPort:portfacing:vector)
+    ).
+    local apchDot is vdot(target:position:normalized, target:facing:forevector).
+    local needAlign is (apchDot > -0.995).
 
-  rcs on.
-
-  lock rawD to target:position - myPort:position.
-  lock dockD to V(
-    vdot(rawD, myPort:portfacing:starvector),
-    vdot(rawD, myPort:portfacing:upvector),
-    vdot(rawD, myPort:portfacing:vector)
-  ).
-  lock rawV to tgtVessel:velocity:orbit - ship:velocity:orbit.
-  lock dockV to V(
-    vdot(rawV, myPort:portfacing:starvector),
-    vdot(rawV, myPort:portfacing:upvector),
-    vdot(rawV, myPort:portfacing:vector)
-  ).
-  lock needAlign to (apchDot > -0.995).
-  lock apchDot to vdot(target:position:normalized, target:facing:forevector).
-
-  until dockComplete(myPort) {
     uiShowPorts(myPort, target, dock_start / 2, not needAlign).
     uiDebugAxes(myPort:position, myPort:portfacing, dockD).
 
     if dockD:Z < 0 {
       uiBanner("Dock", "Back off from target").
       dockBack(dockD, dockV).
-    } else if needAlign {
+    } else if needAlign or dockD:Z > dock_start {
       uiBanner("Dock", "Align with target").
       dockAlign(dockD, dockV).
     } else {
@@ -73,13 +68,8 @@ if myPort <> 0 {
     }
   }
 
-  unlock steering.
-  rcs off.
-  sas on.
-
   uiBanner("Dock", "Docking complete").
-  uiShowPorts(0, 0, 0, false).
-  uiDebugAxes(0,0, v(0,0,0)).
+  dockFinish().
 } else {
   uiError("Dock", "No suitable docking port; try moving closer?").
 }
