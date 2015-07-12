@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // Dock
 /////////////////////////////////////////////////////////////////////////////
-// Dock with the target.
+// Docks with the target.
 //
 // Chooses an arbitrary docking port on the vessel, then finds a compatible
 // port on the target (or uses the selected port if a port is already
@@ -15,20 +15,20 @@
 //   - tell if target is vessel or part (currently cheat with mass)
 //   - unset target
 //   - set control to my part (optional? still be nice!)
-/////////////////////////////////////////////////////////////////////////////
-
+//
 // TODO
 //   - choose port better
+/////////////////////////////////////////////////////////////////////////////
 
 run lib_ui.
 run lib_dock.
 
-local tgtVessel is 0.
-// HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
+// HACK: distinguish between currently-targeted vessel and port using mass > 2 tonnes
+local station is 0.
 if target:mass < 2 {
-  set tgtVessel to target:ship.
+  set station to target:ship.
 } else {
-  set tgtVessel to target.
+  set station to target.
 }
 
 local myPort is dockChoosePorts().
@@ -44,11 +44,11 @@ if myPort <> 0 {
       vdot(rawD, myPort:portfacing:upvector),
       vdot(rawD, myPort:portfacing:vector)
     ).
-    local rawV is tgtVessel:velocity:orbit - ship:velocity:orbit.
+    local rawV is station:velocity:orbit - ship:velocity:orbit.
     local dockV is V(
-      vdot(rawV, myPort:portfacing:starvector),
-      vdot(rawV, myPort:portfacing:upvector),
-      vdot(rawV, myPort:portfacing:vector)
+      vdot(rawV, ship:facing:starvector),
+      vdot(rawV, ship:facing:upvector),
+      vdot(rawV, ship:facing:vector)
     ).
     local apchDot is vdot(target:position:normalized, target:facing:forevector).
     local needAlign is (apchDot > -0.995).

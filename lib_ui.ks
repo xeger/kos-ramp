@@ -3,7 +3,9 @@ global ui_announceMsg is "".
 
 global ui_debug     is true.  // Debug messages on console and screen
 global ui_debugNode is false. // Explain node planning
-global ui_debugAxes is false. // Explain 3-axis navigation e.g. docking
+global ui_debugAxes is true. // Explain 3-axis navigation e.g. docking
+
+clearvecdraws().
 
 global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stb", 1, false).
 global ui_DebugUp is vecdraw(v(0,0,0), v(0,0,0), BLUE, "Up", 1, false).

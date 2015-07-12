@@ -29,7 +29,6 @@ global dock_Z is pidInit(0.8, 0.4, 0.2, -1, 1).
 function dockPrepare {
   parameter myPort, hisPort.
 
-  clearvecdraws().
   sas off.
   lock steering to lookdirup(-hisPort:portfacing:forevector, v(0,1,0)).
   wait until vdot(myPort:portfacing:forevector, hisPort:portfacing:forevector) < -0.99.
@@ -74,10 +73,8 @@ function dockAlign {
   }
 
   // Drift into alignment
-  local rcsStarb is -1 * pidSeek(dock_X1, vWantX, vel:X).
-  local rcsTop to -1 * pidSeek(dock_Y1, vWantY, vel:Y).
-  set ship:control:starboard to rcsStarb.
-  set ship:control:top to rcsTop.
+  set ship:control:starboard to -1 * pidSeek(dock_X1, vWantX, vel:X).
+  set ship:control:top to -1 * pidSeek(dock_Y1, vWantY, vel:Y).
 }
 
 // Close remaining distance to the target, slowing drastically near
@@ -98,10 +95,8 @@ function dockApproach {
   }
 
   // Stay aligned
-  local rcsStarb is -1 * pidSeek(dock_X2, 0, pos:X).
-  local rcsTop is -1 * pidSeek(dock_Y2, 0, pos:Y).
-  set ship:control:starboard to rcsStarb.
-  set ship:control:top to rcsTop.
+  set ship:control:starboard to -1 * pidSeek(dock_X2, 0, pos:X).
+  set ship:control:top to -1 * pidSeek(dock_Y2, 0, pos:Y).
 }
 
 // Figure out how to undock
