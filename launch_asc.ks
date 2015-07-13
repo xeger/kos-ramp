@@ -21,7 +21,7 @@ local epsilon is 1.
 
 // Gravity turn parameters
 local gtd is gt1 - gt0.  // overall depth
-local k is 180.          // sharpness, 180 = pure cosine
+local k is 90.          // sharpness, 90 = pure cosine
 
 // Gravity turn: determine ship heading elevation for a given altitude.
 function gte {
