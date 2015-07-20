@@ -16,6 +16,9 @@ parameter apo.
 
 run lib_ui.
 
+global launch_tick is 0.25.          // autostage loop idle time
+global launch_interstage is 1.0.     // delay between stages
+
 // A very small amount (of propellant) left in tanks when we auto stage
 local epsilon is 1.
 
@@ -23,15 +26,13 @@ local epsilon is 1.
 local gtd is gt1 - gt0.  // overall depth
 local k is 90.          // sharpness, 90 = pure cosine
 
-// Gravity turn: determine ship heading elevation for a given altitude.
-function gte {
+// Gravity turn: determine ship elevation for a given altitude.
+// Uses a cosine function to turn smoothly.
+function launchAscDir {
   parameter altitude.
 
-  return max(0, 90 * cos(k * (altitude - gt0)/gtd)).
-}
-
-function flameout {
-    return (stage:liquidfuel < epsilon) or (stage:oxidizer < epsilon).
+  local elev is max(0, 90 * cos(k * (altitude - gt0)/gtd)).
+  return heading(90, elev).
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -56,18 +57,18 @@ if stage:solidfuel > 0 {
 // Setup gravity-turn behavior
 /////////////////////////////////////////////////////////////////////////////
 
-sas on.
-lock steering to heading(90,90).
+sas off.
+lock steering to heading(90, 90).
 
 when ship:altitude >= gt0 then {
   uiStatus("Launch", "Gravity turn entry").
-  lock steering to heading(90, gte(ship:altitude)).
+  lock steering to launchAscDir(ship:altitude).
 }
 
 // Shut off throttle exactly at apoapsis
 when ship:obt:apoapsis >= apo then {
   set ship:control:pilotmainthrottle to 0.
-  uiStatus("Launch", "Main throttle off; coast to apoapsis").
+  uiStatus("Launch", "Coast to apoapsis").
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -92,8 +93,9 @@ until ship:control:pilotmainthrottle = 0 {
     wait until stage:ready.
     uiStatus("Launch", "Stage " + stage:number + " separation").
     stage.
+    wait launch_interstage.
   } else {
-    wait 1.
+    wait launch_tick.
   }
 }
 

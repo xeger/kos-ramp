@@ -6,13 +6,14 @@
 
 run lib_ui.
 
-global mission_goal is body("Mun").
+global mission_goal is body("Minmus").
 
 function missionAccomplished {
-  return false. // TODO actually discern this
+  return ship:body = mission_goal.
 }
 
 if ship:status = "prelaunch" {
+  uiStatus("Mission", "Ascent from " + body:name).
   stage.
   wait 1.
 }
@@ -24,30 +25,24 @@ if ship:status = "flying" or ship:status = "sub_orbital" {
   local apo  is atmo + (body:radius / 3).
 
   if missionAccomplished() {
-    //run land_any.
+    run land_any.
   } else {
-    uiStatus("Mission", "Ascent from " + body:name).
     run launch_asc(gt0, gt1, apo).
   }
 }
 
 if ship:status = "escaping" {
-  // TODO get a bit about this smarter (when to circ instead?)
+  // TODO handle this in a smarter way
   run warp(eta:transition - 5).
 }
 
 if ship:status = "orbiting" {
-  uiWarning("Mission", "Mission unplanned; you take it from here!").
-
-  // Let's go to the Mun .. or back!
-  //if missionAccomplished() {
-  //  set target to body("Kerbin").
-  //} else {
-  //  set target to mission_goal.
-  //}
-  //run transfer.
-
-  // Let's rendezvous with another spacecraft!
-  //set target to mission_goal.
-  //run rendezvous.
+  // TODO handle non-final orbit (finish transfer)
+  if missionAccomplished() {
+    uiWarning("Mission", "Don't know how to land yet; good luck!").
+  } else {
+    set target to mission_goal.
+    uiError("Mission", "Buggy program - supervise transfer!").
+    //run transfer.
+  }
 }
