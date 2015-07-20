@@ -13,8 +13,8 @@ if ship:body <> target:body {
 
 local ri is abs(obt:inclination - target:obt:inclination).
 
-if ri > 0.1 {
-  uiBanner("Transfer", "Alignment burn").
+if ri > 0.25 {
+  uiBanner("Transfer", "Align planes with " + target:name).
   run node_inc_tgt.
   run node.
 }
@@ -26,6 +26,8 @@ run node.
 until obt:transition <> "encounter" {
   run warp(eta:transition+1).
 }
+
+// TODO - deal with collision (radial burn)
 
 uiBanner("Transfer", "Transfer braking burn").
 run circ.

@@ -25,7 +25,7 @@ if ship:status = "flying" or ship:status = "sub_orbital" {
   local apo  is atmo + (body:radius / 3).
 
   if missionAccomplished() {
-    run land_any.
+    run land.
   } else {
     run launch_asc(gt0, gt1, apo).
   }
@@ -39,10 +39,9 @@ if ship:status = "escaping" {
 if ship:status = "orbiting" {
   // TODO handle non-final orbit (finish transfer)
   if missionAccomplished() {
-    uiWarning("Mission", "Don't know how to land yet; good luck!").
+    uiStatus("Mission", "Mission accomplished").
   } else {
     set target to mission_goal.
-    uiError("Mission", "Buggy program - supervise transfer!").
-    //run transfer.
+    run transfer.
   }
 }
