@@ -9,6 +9,7 @@ run lib_util.
 
 if ship:body <> target:body {
   uiError("Rendezvous", "Target outside of SoI").
+  wait 5.
   reboot.
 }
 

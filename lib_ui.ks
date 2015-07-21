@@ -83,8 +83,9 @@ function uiAssertAccel {
 
   local accel is ship:availablethrust / ship:mass. // kN over tonnes; 1000s cancel
 
-  if accel = 0 {
+  if accel <= 0 {
     uiError(prefix, "ENGINE FAULT - RESUME CONTROL").
+    wait 5.
     reboot.
   } else {
     return accel.

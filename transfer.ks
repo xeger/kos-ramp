@@ -8,6 +8,7 @@ run lib_ui.
 
 if ship:body <> target:body {
   uiError("Transfer", "Target outside of SoI").
+  wait 5.
   reboot.
 }
 
