@@ -22,14 +22,6 @@ function uiConsole {
   print "T+" + round(time:seconds) + " " + prefix + ": " + msg.
 }
 
-function uiStatus {
-  parameter prefix.
-  parameter msg.
-
-  uiConsole(prefix, msg).
-  hudtext(msg, 10, 4, 24, GREEN, false).
-}
-
 function uiBanner {
   parameter prefix.
   parameter msg.

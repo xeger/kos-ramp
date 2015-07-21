@@ -13,7 +13,7 @@ function missionAccomplished {
 }
 
 if ship:status = "prelaunch" {
-  uiStatus("Mission", "Ascent from " + body:name).
+  uiBanner("Mission", "Ascent from " + body:name).
   stage.
   wait 1.
 }
@@ -39,7 +39,7 @@ if ship:status = "escaping" {
 if ship:status = "orbiting" {
   // TODO handle non-final orbit (finish transfer)
   if missionAccomplished() {
-    uiStatus("Mission", "Mission accomplished").
+    uiBanner("Mission", "Mission accomplished").
   } else {
     set target to mission_goal.
     run transfer.

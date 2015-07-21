@@ -18,5 +18,5 @@ if ship:status = "prelaunch" {
   }
 
   run lib_ui.
-  uiStatus("Boot", "Prepare flight control software").
+  uiBanner("Boot", "Prepare flight control software").
 }

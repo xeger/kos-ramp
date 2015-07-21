@@ -45,7 +45,7 @@ function launchAscDir {
 if stage:solidfuel > 0 {
   set ship:control:pilotmainthrottle to 0.5.
   when stage:solidfuel < epsilon then {
-    uiStatus("Launch", "Booster separation").
+    uiBanner("Launch", "Booster separation").
     set ship:control:pilotmainthrottle to 1.
     stage.
   }
@@ -61,14 +61,14 @@ sas off.
 lock steering to heading(90, 90).
 
 when ship:altitude >= gt0 then {
-  uiStatus("Launch", "Gravity turn entry").
+  uiBanner("Launch", "Gravity turn entry").
   lock steering to launchAscDir(ship:altitude).
 }
 
 // Shut off throttle exactly at apoapsis
 when ship:obt:apoapsis >= apo then {
   set ship:control:pilotmainthrottle to 0.
-  uiStatus("Launch", "Coast to apoapsis").
+  uiBanner("Launch", "Coast to apoapsis").
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ until ship:control:pilotmainthrottle = 0 {
 
   if Neng = Nout {
     wait until stage:ready.
-    uiStatus("Launch", "Stage " + stage:number + " separation").
+    uiBanner("Launch", "Stage " + stage:number + " separation").
     stage.
     wait launch_interstage.
   } else {
