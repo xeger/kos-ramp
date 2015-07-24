@@ -18,21 +18,23 @@ local ship_orbital_angular_vel is (ship:velocity:orbit:mag / (body:radius+ship:a
 local time_to_node is angle_to_node / ship_orbital_angular_vel.
 local time_to_opposite_node is angle_to_opposite_node / ship_orbital_angular_vel.
 
-local t is t0.
-
+// the nearest node might be in the past, in which case we want the opposite
+// node. test this by looking at our angular velocity w/r/t the node. There's
+// probably a more straightforward way to do this...
+local t is 0.
 if angle_to_node_delta < 0 {
-	set t to t0 + time_to_node.
+	set t to (time + time_to_node):seconds.
 } else {
-	set t to t0 + time_to_opposite_node.
+	set t to (time + time_to_opposite_node):seconds.
 }
 
 local v is velocityat(ship, t):orbit.
+local vt is velocityat(target, t):orbit.
+local diff is vt - v.
 local dv is 2 * v:mag * sin(relative_inclination / 2).
 
-if v:y > 0 {
-  // burn anti-normal at ascending node
-	add node(t, 0, -dv, 0).
-} else {
-  // burn normal at descending node
+if (diff:y > 0)  {
 	add node(t, 0, dv, 0).
+} else {
+	add node(t, 0, -dv, 0).
 }
