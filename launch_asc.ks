@@ -11,6 +11,9 @@ parameter gt0.
 // End of gravity turn (m altitude)
 parameter gt1.
 
+// How steep to turn
+parameter sharpness.
+
 // Final apoapsis (m altitude)
 parameter apo.
 
@@ -24,14 +27,14 @@ local epsilon is 1.
 
 // Gravity turn parameters
 local gtd is gt1 - gt0.  // overall depth
-local k is 90.          // sharpness, 90 = pure cosine
+local k is 90 * sharpness. // sharpness, 90 = pure cosine
 
 // Gravity turn: determine ship elevation for a given altitude.
 // Uses a cosine function to turn smoothly.
 function launchAscDir {
   parameter altitude.
 
-  local elev is max(0, 90 * cos(k * (altitude - gt0)/gtd)).
+  local elev is max(0, k * cos(k * (altitude - gt0)/gtd)).
   return heading(90, elev).
 }
 
