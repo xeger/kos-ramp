@@ -21,48 +21,43 @@ lock steering to lookdirup(nd:deltav, ship:facing:topvector).
 local np is lookdirup(nd:deltav, ship:facing:topvector).
 local dob is (nd:deltav:mag / accel).
 
-wait until vdot(facing:forevector, np:forevector) >= 0.95.
+wait until vdot(facing:forevector, np:forevector) >= 0.99.
 
 run warp(nd:eta - dob/2 - 1).
 
-local tset to 0.
+local tset is 0.
 lock throttle to tset.
 
-local done is false.
-local dv0 to nd:deltav.
+local done  is false.
+local dv0   is nd:deltav.
+local dvMin is dv0:mag.
 
 until done
 {
-    if accel > 0 {
-      if vdot(ship:facing:vector, steering:vector) >= 0.99 or nd:deltav:mag < 1 {
-        // we're aligned (more or less)
-        //throttle is 100% until there is less than 1 second of time left to burn
-        //when there is less than 1 second - decrease the throttle linearly
-        set tset to min(nd:deltav:mag/accel, 1.0).
-      } else {
-        //cut throttle if we're not aligned with the burn vector
-        set tset to 0.
-      }
+    if(nd:deltav:mag < dvMin) {
+        set dvMin to nd:deltav:mag.
+    }
 
-      //here's the tricky part, we need to cut the throttle as soon as our nd:deltav and initial deltav start facing opposite directions
-      //this check is done via checking the dot product of those 2 vectors
-      if vdot(dv0, nd:deltav) < 0
-      {
+    if accel > 0 {
+      //feather the throttle
+      set tset to min(dvMin/accel, 1.0).
+
+      if vdot(dv0, nd:deltav) < 0 {
+          // cut the throttle as soon as our nd:deltav and initial deltav
+          // start facing opposite dir ections
           lock throttle to 0.
           set done to true.
-      } else if nd:deltav:mag < 1
-      {
-          wait until vdot(dv0, nd:deltav) < 0.1.
+      } else if nd:deltav:mag > dvMin + 0.1 {
           lock throttle to 0.
           set done to true.
       }
     } else {
-      // out of fuel; time to auto stage!
-      wait until stage:ready.
-      uiWarning("Node", "Stage " + stage:number + " separation during burn").
-      stage.
-      local t0 is time.
-      wait until accel > 0 or (time - t0):seconds > 3.
+        // no accel -- out of fuel; time to auto stage!
+        wait until stage:ready.
+        uiWarning("Node", "Stage " + stage:number + " separation during burn").
+        stage.
+        local t0 is time.
+        wait until accel > 0 or (time - t0):seconds > 3.
     }
 }
 
@@ -70,10 +65,30 @@ unlock steering.
 unlock throttle.
 set ship:control:pilotmainthrottle to 0.
 
-if nd:deltav:mag < 0.5 {
-  remove nd.
-} else {
+if nd:deltav:mag > 0.1 {
+  rcs on.
+  local t0 is time.
+  until nd:deltav:mag < 0.1 or (time - t0):seconds > 15 {
+    local sense is ship:facing.
+    local dirV is V(
+      vdot(nd:deltav, sense:starvector),
+      vdot(nd:deltav, sense:upvector),
+      vdot(nd:deltav, sense:vector)
+    ).
+
+    set ship:control:translation to dirV:normalized.
+  }
+  set ship:control:translation to 0.
+  rcs off.
+}
+
+if nd:deltav:mag > dv0:mag * 0.05 {
+  uiError("Node", "VARIANCE " + round(nd:deltav:mag, 1) + " m/s").
+  wait 5.
+  reboot.
+} else if nd:deltav:mag > 0.1 {
   uiWarning("Node", "VARIANCE " + round(nd:deltav:mag, 1) + " m/s").
 }
 
+remove nd.
 sas on.
