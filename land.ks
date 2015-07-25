@@ -6,11 +6,10 @@
 
 run lib_ui.
 
-global land_descend is 3.0.  // max descent rate
+global land_descend is 3.0.  // max speed after braking (m/s)
 global land_slip    is 0.01. // transverse speed @ touchdown (m/s)
-global land_fall    is 0.1.  // vertical speed @ touchdown (m/s)
-global land_final   is 10.   // touchdown distance (m)
-
+global land_warp    is 3.    // warp factor during descent
+global land_final   is 10.   // height for final descent (m)
 sas off.
 
 until status <> "ORBITING" {
@@ -21,62 +20,71 @@ until status <> "ORBITING" {
 }
 
 if status = "SUB_ORBITAL" or status = "FLYING" {
+  uiBanner("Landing", "Initial descent").
+  lock steering to lookdirup(-ship:velocity:surface, ship:facing:upvector).
+
   local braking is false.
   local final is false.
 
   until status <> "SUB_ORBITAL" and status <> "FLYING" {
     local accel is uiAssertAccel("Landing").
-    local geo is ship:geoposition.
-    local ground is -geo:position:normalized.
     local v is ship:velocity:surface.
-    local vy is vdot(v, ground).           // vertical speed (down < 0)
-    local height is geo:position:mag.
     local dtBrake is abs(v:mag / accel).
-    local dyBrake is abs((vy * (dtBrake+2)) - (0.5 * accel * dtBrake^2)).
-
-    print "acc  " + round(accel) + "    " at(0,0).
-    print "dyB  " + round(dyBrake) + "    " at(0,1).
-    print " tB  " + round(dtBrake, 1) + "    " at (0,2).
-    print "alt  " + round(height) + "    " at(0,3).
-    print "..." at(0,4).
+    local geo is ship:geoposition.
+    local ground is geo:position:normalized.
+    local vr is vdot(v, ground) * ground.
+    local vt is v - vr.
 
     if final {
-      set legs to true.
-      local vr is ground * vdot(v, ground).  // radial velocity
-      local vt is v - vr.                    // transverse velocity
-      if vt:mag > land_slip and vy < land_fall {
-        lock steering to lookdirup(-v, ship:facing:upvector).
-        lock throttle to min(v:mag/accel, 1.0).
-      } else if vy < land_fall {
-        lock steering to lookdirup(ground, ship:facing:upvector).
-        lock throttle to min(v:mag/accel, 1.0).
+      local g is body:mu / (body:position:mag ^ 2).
+      local dtGround is (sqrt(4 * g * abs(geo:position:mag) + v:mag^2) - v:mag) / (2*g).
+      print "dtBrake  " + round(dtBrake, 1) at(0,0).
+      print "dtGround " + round(dtGround, 1) at(0,1).
+      print "..." at(0, 2).
+
+      if vt:mag > land_slip {
+        set ship:control:translation to vt.
       } else {
-        lock steering to lookdirup(ground, ship:facing:upvector).
+        set ship:control:translation to 0.
+      }
+
+      if geo:position:mag < land_final {
+        set legs to true.
+      }
+
+      if dtBrake >= dtGround-1 {
+        lock throttle to min(v:mag / accel, 1.0).
+      } else {
         lock throttle to 0.
       }
-    } else if braking {
-      if vy < -land_descend {
-        lock steering to lookdirup(-v, ship:facing:upvector).
-        lock throttle to min((v:mag-land_descend)/accel, 1.0).
+    } else if braking  {
+      if v:mag > land_descend {
+        lock throttle to min(v:mag / accel, 1.0).
       } else {
-        lock steering to lookdirup(ground, ship:facing:upvector).
-        lock throttle to 0.
+        uiBanner("Landing", "Final descent").
+        lock steering to lookdirup(-ship:geoposition:position:normalized, ship:facing:upvector).
+        rcs on.
+        set final to true.
       }
-    } else if height < land_final {
-      uiBanner("Landing", "Final descent").
-      set final to true.
-    } else if height < dyBrake {
-      uiBanner("Landing", "Retro burn").
-      set braking to true.
     } else {
-      lock steering to lookdirup(-v, ship:facing:upvector).
-      lock throttle to 0.
+      // Predict when we'll need to brake
+      local rF is positionat(ship, time:seconds + dtBrake).
+      local geoF is body:geopositionof(rF).
+      local altF is rf:y - geoF:position:y.
+
+      if altF < land_final {
+        uiBanner("Landing", "Braking burn").
+        set braking to true.
+      } else {
+
+      }
     }
   }
 }
 
 if status = "LANDED" or status = "SPLASHED" {
   lock throttle to 0.
+  rcs off.
   sas on.
   uiBanner("Landing", "Landing completed").
 } else {
