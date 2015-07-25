@@ -37,7 +37,7 @@ if target:obt:eccentricity > 0.1 {
   uiWarning("Node", "Eccentric target e=" +  + round(target:obt:eccentricity, 1)).
 }
 local ri is abs(obt:inclination - target:obt:inclination).
-if ri > 0.1 {
+if ri > 0.2 {
   uiWarning("Node", "Bad alignment ri=" +  + round(ri, 1)).
 }
 
