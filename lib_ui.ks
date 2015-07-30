@@ -5,7 +5,7 @@ global ui_announce is 0.
 global ui_announceMsg is "".
 
 global ui_debug     is true.  // Debug messages on console and screen
-global ui_debugNode is false. // Explain node planning
+global ui_debugNode is true. // Explain node planning
 global ui_debugAxes is false. // Explain 3-axis navigation e.g. docking
 
 global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stb", 1, false).
@@ -103,13 +103,14 @@ function uiDebug {
 
 function uiDebugNode {
   parameter T.
+  parameter mdv.
   parameter msg.
 
   if ui_debugNode {
-    local nd is node(T, 0, 0, 0).
+    local nd is node(T, mdv:x, mdv:y, mdv:z).
     add(nd).
     uiDebug(msg).
-    wait(1).
+    wait(0.5).
     remove(nd).
   }
 }
