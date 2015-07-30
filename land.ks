@@ -6,7 +6,7 @@
 
 run lib_ui.
 
-global land_descend is 3.0.  // max speed after braking (m/s)
+global land_descend is 10.0. // max speed after braking (m/s)
 global land_slip    is 0.01. // transverse speed @ touchdown (m/s)
 global land_warp    is 3.    // warp factor during descent
 global land_final   is 10.   // height for final descent (m)
@@ -36,11 +36,10 @@ if status = "SUB_ORBITAL" or status = "FLYING" {
     local vt is v - vr.
 
     if final {
+      // Final descent: continuously cancel transverse velocity;
+      // fall straight down; fire retros before impact.
       local g is body:mu / (body:position:mag ^ 2).
       local dtGround is (sqrt(4 * g * abs(geo:position:mag) + v:mag^2) - v:mag) / (2*g).
-      print "dtBrake  " + round(dtBrake, 1) at(0,0).
-      print "dtGround " + round(dtGround, 1) at(0,1).
-      print "..." at(0, 2).
 
       if vt:mag > land_slip {
         set ship:control:translation to vt.
@@ -58,12 +57,14 @@ if status = "SUB_ORBITAL" or status = "FLYING" {
         lock throttle to 0.
       }
     } else if braking  {
+      // Braking burn: scrub velocity down to final-descent speed
       if v:mag > land_descend {
         lock throttle to min(v:mag / accel, 1.0).
       } else {
         uiBanner("Landing", "Final descent").
         lock steering to lookdirup(-ship:geoposition:position:normalized, ship:facing:upvector).
         rcs on.
+        lock throttle to 0.
         set final to true.
       }
     } else {
