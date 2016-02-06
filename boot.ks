@@ -10,9 +10,10 @@
 // long antennas so the archive is always in reach!
 /////////////////////////////////////////////////////////////////////////////
 
+// TODO: handle unavailable archive, copying to volumes at start, etc
+switch to 0.
+
 if ship:status = "prelaunch" {
-  switch to 0.
-  wait 5.
   run mission.
 } else {
   run mission.

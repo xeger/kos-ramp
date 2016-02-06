@@ -4,7 +4,7 @@
 // Make groundfall
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
+run once lib_ui.
 
 global land_descend is 10.0. // max speed after braking (m/s)
 global land_slip    is 0.01. // transverse speed @ touchdown (m/s)

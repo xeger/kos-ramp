@@ -5,8 +5,8 @@
 // small (typically < 1 m/s) and pointed directly at the target.
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
-run lib_util.
+run once lib_ui.
+run once lib_util.
 
 // Don't let unbalanced RCS mess with our velocity
 rcs off.

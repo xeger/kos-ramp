@@ -12,8 +12,8 @@
 /////////////////////////////////////////////////////////////////////////////
 
 clearvecdraws().
-run lib_ui.
-run lib_dock.
+run once lib_ui.
+run once lib_dock.
 
 local myPort is dockChooseDeparturePort().
 local station is ship.

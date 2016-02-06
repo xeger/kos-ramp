@@ -17,7 +17,7 @@ parameter sharpness.
 // Final apoapsis (m altitude)
 parameter apo.
 
-run lib_ui.
+run once lib_ui.
 
 global launch_tick is 0.25.          // autostage loop idle time
 global launch_interstage is 1.0.     // delay between stages
@@ -48,7 +48,6 @@ function launchAscDir {
 if stage:solidfuel > 0 {
   set ship:control:pilotmainthrottle to 0.5.
   when stage:solidfuel < epsilon then {
-    uiBanner("Launch", "Booster separation").
     set ship:control:pilotmainthrottle to 1.
     stage.
   }
@@ -60,24 +59,28 @@ if stage:solidfuel > 0 {
 // Setup gravity-turn behavior
 /////////////////////////////////////////////////////////////////////////////
 
-sas off.
-lock steering to heading(90, 90).
+lock steering to heading(0, 90).
+
+if ship:altitude < gt0 {
+  sas on.
+}
 
 when ship:altitude >= gt0 then {
-  uiBanner("Launch", "Gravity turn entry").
+  sas off.
   lock steering to launchAscDir(ship:altitude).
+  when ship:altitude >= gt1 then {
+    lock steering to ship:prograde.
+  }
 }
 
 // Shut off throttle exactly at apoapsis
 when ship:obt:apoapsis >= apo then {
   set ship:control:pilotmainthrottle to 0.
-  uiBanner("Launch", "Coast to apoapsis").
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // Enter auto-stage loop; separate stage as soon as all engines are flameout
 /////////////////////////////////////////////////////////////////////////////
-
 until ship:control:pilotmainthrottle = 0 {
   local Neng is 0.
   local Nout is 0.
@@ -94,7 +97,6 @@ until ship:control:pilotmainthrottle = 0 {
 
   if Neng = Nout {
     wait until stage:ready.
-    uiBanner("Launch", "Stage " + stage:number + " separation").
     stage.
     wait launch_interstage.
   } else {

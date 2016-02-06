@@ -4,7 +4,7 @@
 // Kills transverse velocity w/r/t target and establishes forward velocity.
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
+run once lib_ui.
 
 local accel is uiAssertAccel("Maneuver").
 lock vel to (ship:velocity:orbit - target:velocity:orbit).

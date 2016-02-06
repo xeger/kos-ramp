@@ -4,7 +4,7 @@
 // Shared logic for docking. Assumes that every ship has one port!
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_pid.
+run once lib_pid.
 
 // Constant docking parameters
 global dock_scale is 25.   // alignment speed scaling factor (m)

@@ -20,8 +20,8 @@
 //   - choose port better
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
-run lib_dock.
+run once lib_ui.
+run once lib_dock.
 
 local myPort is dockChoosePorts().
 local hisPort is target.

@@ -7,8 +7,8 @@
 // rendezvous.
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
-run lib_util.
+run once lib_ui.
+run once lib_util.
 
 // Figure out some basics
 local T is utilClosestApproach(ship, target).

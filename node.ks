@@ -53,11 +53,9 @@ until done
       }
     } else {
         // no accel -- out of fuel; time to auto stage!
-        wait until stage:ready.
         uiWarning("Node", "Stage " + stage:number + " separation during burn").
         stage.
-        local t0 is time.
-        wait until accel > 0 or (time - t0):seconds > 3.
+        wait until stage:ready.
     }
 }
 

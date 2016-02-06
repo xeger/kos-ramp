@@ -4,7 +4,7 @@
 // Circularizes at the nearest apsis.
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
+run once lib_ui.
 
 if obt:transition = "ESCAPE" or eta:periapsis < eta:apoapsis {
   run node_apo(obt:periapsis).

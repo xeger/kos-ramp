@@ -4,8 +4,8 @@
 // Maneuver close to another vessel orbiting the same body.
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
-run lib_util.
+run once lib_ui.
+run once lib_util.
 
 if ship:body <> target:body {
   uiError("Rendezvous", "Target outside of SoI").
