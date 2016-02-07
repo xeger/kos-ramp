@@ -1,25 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////
-// Test boot. Ascend to stable orbit around any planet.
+// Test boot. Do not prepare for archive-free operation; execute a simple
+// mission of ascending to a stable orbit.
 /////////////////////////////////////////////////////////////////////////////
 
 switch to archive.
 run once lib_ui.
 
 if ship:status = "prelaunch" {
-  wait 1.
+  wait until stage:ready.
   stage.
+  wait 1.
 }
 
-if ship:status = "prelaunch" or ship:status = "flying" or ship:status = "sub_orbital" {
-  local atmo is body:atm:height.
-  local gt0  is atmo * 0.2.
-  local gt1  is atmo * 0.4.
-  local apo  is atmo + (body:radius / 4).
-
-  uiBanner("Mission", "Ascend from " + body:name).
-  run launch_asc(gt0, gt1, 1.0, apo).
-}
-
-if ship:status = "orbiting" {
-  uiBanner("Mission", "Orbit " + body:name).
+if ship:status <> "orbiting" {
+  run launch_asc(body:atm:height + (body:radius / 4)).
 }

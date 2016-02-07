@@ -22,21 +22,19 @@ function missionAccomplished {
 
 if ship:status = "prelaunch" {
   wait 1.
+  uiBanner("Mission", "Launch!").
+  set ship:control:pilotmainthrottle to 1.
   stage.
+  wait 1. // allow ascent p
 }
 
-if ship:status = "prelaunch" or ship:status = "flying" or ship:status = "sub_orbital" {
-  local atmo is body:atm:height.
-  local gt0  is atmo * 0.2.
-  local gt1  is atmo * 0.4.
-  local apo  is atmo + (body:radius / 4).
-
+if ship:status = "flying" or ship:status = "sub_orbital" {
   if missionAccomplished() {
     uiBanner("Mission", "Descend to " + body:name).
     run land.
   } else {
     uiBanner("Mission", "Ascend from " + body:name).
-    run launch_asc(gt0, gt1, 1.0, apo).
+    run launch_asc(body:atm:height + (body:radius / 4)).
   }
 }
 

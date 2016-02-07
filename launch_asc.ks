@@ -2,107 +2,85 @@
 // Ascent phase of launch.
 /////////////////////////////////////////////////////////////////////////////
 // Ascend from a planet, performing a gravity turn and staging as necessary.
-// Circularize at apoapsis.
+// Achieve circular orbit with desired apoapsis.
 /////////////////////////////////////////////////////////////////////////////
-
-// Beginning of gravity turn (m altitude)
-parameter gt0.
-
-// End of gravity turn (m altitude)
-parameter gt1.
-
-// How steep to turn
-parameter sharpness.
 
 // Final apoapsis (m altitude)
 parameter apo.
 
-run once lib_ui.
+// Maximum observed dynamic pressue
+global launch_maxQ is 0.
 
-global launch_tick is 0.25.          // autostage loop idle time
-global launch_interstage is 1.0.     // delay between stages
-
-// A very small amount (of propellant) left in tanks when we auto stage
-local epsilon is 1.
-
-// Gravity turn parameters
-local gtd is gt1 - gt0.  // overall depth
-local k is 90 * sharpness. // sharpness, 90 = pure cosine
-
-// Gravity turn: determine ship elevation for a given altitude.
-// Uses a cosine function to turn smoothly.
-function launchAscDir {
-  parameter altitude.
-
-  local elev is max(0, k * cos(k * (altitude - gt0)/gtd)).
-  return heading(90, elev).
-}
+// Fraction of max-Q that pressure must fall to before we turn to prograde
+global launch_fracQ is 0.1.
 
 /////////////////////////////////////////////////////////////////////////////
-// Setup booster-separation behavior. Boosters are special because we stage
-// the moment they run out, regardless of the status of any other engines.
-// This assumes that the vessel's initial stage separation will drop SRBs
-// and not other useful engines!
+// Steering logic; hidden inside a function so we
+// can re-lock to it later on.
+//
+// This style of ascent steering relies solely on dynamic pressure (Q) and is
+// best for lifting large, ungainly craft through thick atmosphere (i.e. Kerbin
+// ascent).
 /////////////////////////////////////////////////////////////////////////////
 
-if stage:solidfuel > 0 {
-  set ship:control:pilotmainthrottle to 0.5.
-  when stage:solidfuel < epsilon then {
-    set ship:control:pilotmainthrottle to 1.
-    stage.
-  }
-} else {
-  set ship:control:pilotmainthrottle to 1.
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Setup gravity-turn behavior
-/////////////////////////////////////////////////////////////////////////////
-
-lock steering to heading(0, 90).
-
-if ship:altitude < gt0 {
-  sas on.
-}
-
-when ship:altitude >= gt0 then {
-  sas off.
-  lock steering to launchAscDir(ship:altitude).
-  when ship:altitude >= gt1 then {
-    lock steering to ship:prograde.
+function ascentSteering {
+  set launch_maxQ to max(ship:Q, launch_maxQ).
+  if ship:Q >= launch_maxQ {
+    return heading(0, 90).
+  } else if (ship:Q > launch_maxQ * launch_fracQ) {
+    // TODO be smarter about choosing a direction, e.g. blend
+    // "up" with prograde so we gently cant over
+    return heading(90, 85).
+  } else {
+    return ship:prograde.
   }
 }
 
-// Shut off throttle exactly at apoapsis
-when ship:obt:apoapsis >= apo then {
-  set ship:control:pilotmainthrottle to 0.
-}
+/////////////////////////////////////////////////////////////////////////////
+// Staging logic.
+/////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// Enter auto-stage loop; separate stage as soon as all engines are flameout
-/////////////////////////////////////////////////////////////////////////////
-until ship:control:pilotmainthrottle = 0 {
+function ascentStaging {
   local Neng is 0.
+  local Nsrb is 0.
   local Nout is 0.
 
   list engines in engs.
   for eng in engs {
     if eng:ignition {
       set Neng to Neng + 1.
+      if not eng:allowshutdown {
+        set Nsrb to Nsrb + 1.
+      }
       if eng:flameout {
         set Nout to Nout + 1.
       }
     }
   }
 
-  if Neng = Nout {
+  if (Nsrb > 0) and (stage:solidfuel < 10) {
+    stage.
+  } else if (Nout = Neng) {
     wait until stage:ready.
     stage.
-    wait launch_interstage.
-  } else {
-    wait launch_tick.
   }
 }
+
+lock steering to ascentSteering().
+lock throttle to 1.
+set ship:control:pilotmainthrottle to 1.
+
+/////////////////////////////////////////////////////////////////////////////
+// Enter staging loop. Steering is handled by the LOCK STEERING above.
+/////////////////////////////////////////////////////////////////////////////
+
+until ship:obt:apoapsis >= apo {
+  ascentStaging().
+  wait 1.
+}
+
+unlock throttle.
+set ship:control:pilotmainthrottle to 0.
 
 /////////////////////////////////////////////////////////////////////////////
 // Circularize at apoapsis
@@ -110,5 +88,4 @@ until ship:control:pilotmainthrottle = 0 {
 
 lock steering to ship:prograde.
 wait until ship:altitude > body:atm:height.
-
 run circ.
