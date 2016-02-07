@@ -27,7 +27,9 @@ function synodicPeriod {
   return 1 / ( (1 / o1:period) - (1 / o2:period) ).
 }
 
-function hohmann {
+// Compute prograde delta-vee required to achieve Hohmann transfer; < 0 means
+// retrograde burn.
+function hohmannDv {
   local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
   local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
   local approach is 0.
@@ -38,9 +40,19 @@ function hohmann {
     set approach to -approachDistance().
   }
 
+  return sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1).
+}
+
+// Compute time of Hohmann transfer window
+function hohmann {
+  parameter dvMag.
+
+  local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
+  local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
+
   // dv is not a vector in cartesian space, but rather in "maneuver space"
   // (z = prograde/retrograde dv)
-  local dv is V(0, 0, sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1)).
+  local dv is V(0, 0, dvMag).
   local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
   local ft is pt - floor(pt).
 
@@ -119,10 +131,11 @@ if abs(obt:inclination - target:obt:inclination) > 0.2 {
   uiWarning("Node", "Bad alignment ri=" +  + round(ri, 1)).
 }
 
-local T is hohmann().
+global node_dv is hohmannDv().
+global node_T is hohmann(node_dv).
 
-if T > 0 {
-  add node(T, 0, 0, dv).
+if node_T > 0 {
+  add node(node_T, 0, 0, node_dv).
 } else {
   uiError("Node", "NO TRANSFER WINDOW").
 }
