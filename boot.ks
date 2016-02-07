@@ -18,4 +18,4 @@ if ship:status = "prelaunch" {
 }
 
 switch to core:volume.
-run mission.
+run mission_mun.

@@ -1,7 +1,15 @@
 /////////////////////////////////////////////////////////////////////////////
-// Idempotent mission script
+// Idempotent mission script: Voyage to Mun.
 /////////////////////////////////////////////////////////////////////////////
-// Carry out the vessel's mission. Run at any time to resume the mission.
+// Launches from Kerbin, transfers to Munar orbit, and lands on Mun.
+//
+// Can be safely resumed at ALMOST any point during the mission and it will
+// make progress (hence "idempotent.") A few conditions that it doesn't yet
+// handle:
+//   - when landed on any body, does nothing.
+//   - when current orbit is non-final (i.e. if resumed when nodes are already
+//     planned, or during a transfer orbit), makes bad decisions and plans
+//     unneccessary nodes.
 /////////////////////////////////////////////////////////////////////////////
 
 run once lib_ui.
@@ -24,10 +32,10 @@ if ship:status = "prelaunch" or ship:status = "flying" or ship:status = "sub_orb
   local apo  is atmo + (body:radius / 4).
 
   if missionAccomplished() {
-    uiBanner("Mission", "Final descent to " + body:name).
+    uiBanner("Mission", "Descend to " + body:name).
     run land.
   } else {
-    uiBanner("Mission", "Ascent from " + body:name).
+    uiBanner("Mission", "Ascend from " + body:name).
     run launch_asc(gt0, gt1, 1.0, apo).
   }
 }
@@ -38,11 +46,12 @@ if ship:status = "escaping" {
 }
 
 if ship:status = "orbiting" {
-  // TODO handle non-final orbit (finish transfer)
+  // TODO handle non-final orbit (finish transfer if resumed during it)
   if missionAccomplished() {
-    //run land.
+    run land.
   } else {
-    //set target to mission_goal.
-    //run transfer.
+    uiBanner("Mission", "Transfer to " + mission_goal:name)
+    set target to mission_goal.
+    run transfer.
   }
 }
