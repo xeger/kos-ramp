@@ -4,8 +4,6 @@
 // Shared logic for docking. Assumes that every ship has one port!
 /////////////////////////////////////////////////////////////////////////////
 
-run once lib_pid.
-
 // Constant docking parameters
 global dock_scale is 25.   // alignment speed scaling factor (m)
 global dock_start is 10.   // ideal start distance (m) & approach speed scaling factor
@@ -15,16 +13,18 @@ global dock_apchV is 1.    // max approach speed (m/s)
 global dock_dockV is 0.2.  // final approach speed (m/s)
 global dock_scale is 2.    // max speed multiple when ship is far from target
 
+//global dock_Z is pidloop(1.4, 0, 0.4, -1, 1).
+
 // Velocity controllers (during alignment)
-global dock_X1 is pidInit(1.4, 0.4, 0.2, -1, 1).
-global dock_Y1 is pidInit(1.4, 0.4, 0.2, -1, 1).
+global dock_X1 is pidloop(1.4, 0.4, 0.2, -1, 1).
+global dock_Y1 is pidloop(1.4, 0.4, 0.2, -1, 1).
 
 // Position controllers (during approach)
-global dock_X2 is pidInit(0.4, 0, 1.2, -1, 1).
-global dock_Y2 is pidInit(0.4, 0, 1.2, -1, 1).
+global dock_X2 is pidloop(0.4, 0, 1.2, -1, 1).
+global dock_Y2 is pidloop(0.4, 0, 1.2, -1, 1).
 
 // Shared velocity controller
-global dock_Z is pidInit(1.4, 0, 0.4, -1, 1).
+global dock_Z is pidloop(1.4, 0, 0.4, -1, 1).
 
 // Prepare to dock by orienting the ship and priming SAS/RCS
 function dockPrepare {
@@ -49,7 +49,8 @@ function dockFinish {
 function dockBack {
   parameter pos, vel.
 
-  set ship:control:fore to -pidSeek(dock_Z, dock_algnV, vel:Z).
+  set dockz:setpoint to dock_algnV.
+  set ship:control:fore to -dock_Z:update(time:seconds, vel:Z).
 }
 
 // Center docking ports in X/Y while slowly moving forward
@@ -76,9 +77,12 @@ function dockAlign {
   }
 
   // Drift into alignment
-  set ship:control:starboard to -1 * pidSeek(dock_X1, vWantX, vel:X).
-  set ship:control:top to -1 * pidSeek(dock_Y1, vWantY, vel:Y).
-  set ship:control:fore to -1 * pidSeek(dock_Z, vWantZ, vel:Z).
+  set dock_X1:setpoint to vWantX.
+  set dock_Y1:setpoint to vWantY.
+  set dock_Z:setpoint to vWantZ.
+  set ship:control:starboard to -1 * dock_X1:update(time:seconds, vel:X).
+  set ship:control:top to -1 * dock_Y1:update(time:seconds, vel:Y).
+  set ship:control:fore to -1 * dock_Z:update(time:seconds, vel:Z).
 }
 
 // Close remaining distance to the target, slowing drastically near
@@ -99,11 +103,14 @@ function dockApproach {
     set vWantZ to -max(dock_dockV, dock_apchV*vScaleZ).
   }
 
-  set ship:control:fore to -pidSeek(dock_Z, vWantZ, vel:Z).
+  set dock_Z:setpoint to vWantZ.
+  set ship:control:fore to -dock_Z:update(time:seconds, vel:Z).
 
   // Stay aligned
-  set ship:control:starboard to -1 * pidSeek(dock_X2, 0, pos:X).
-  set ship:control:top to -1 * pidSeek(dock_Y2, 0, pos:Y).
+  set dock_X2:setpoint to 0.
+  set dock_Y2:setpoint to 0.
+  set ship:control:starboard to -1 * dock_X2:update(time:seconds, pos:X).
+  set ship:control:top to -1 * dock_Y2:update(time:seconds, pos:Y).
 }
 
 // Figure out how to undock
