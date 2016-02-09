@@ -43,7 +43,7 @@ function hohmannDv {
   return sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1).
 }
 
-// Compute time of Hohmann transfer window
+// Compute time of Hohmann transfer window.
 function hohmann {
   parameter dvMag.
 
@@ -127,8 +127,10 @@ if ship:obt:eccentricity > 0.1 {
 if target:obt:eccentricity > 0.1 {
   uiWarning("Node", "Eccentric target e=" +  + round(target:obt:eccentricity, 1)).
 }
-if abs(obt:inclination - target:obt:inclination) > 0.2 {
-  uiWarning("Node", "Bad alignment ri=" +  + round(ri, 1)).
+
+global node_ri is obt:inclination - target:obt:inclination.
+if abs(node_ri) > 0.2 {
+  uiWarning("Node", "Bad alignment ri=" + round(node_ri, 1)).
 }
 
 global node_dv is hohmannDv().

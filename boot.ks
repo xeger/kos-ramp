@@ -1,9 +1,11 @@
 /////////////////////////////////////////////////////////////////////////////
-// Combined prep-and-mission boot script.
+// Automated-mission boot script.
 /////////////////////////////////////////////////////////////////////////////
-// Prepare local volume for archive-free operation if necessary; run mission
-// script. This is suitable for single-CPU vessels that will be operating
-// out of comms range from KSC.
+// Copy all scripts to local volume; run mission script. This is suitable for
+// single-CPU vessels that will be operating out of comms range from KSC.
+//
+// To customize the mission, edit mission.ks before launch; it will be
+// persisted onto the craft you launch, suitable for archive-free operation.
 /////////////////////////////////////////////////////////////////////////////
 
 if ship:status = "prelaunch" {
@@ -19,3 +21,5 @@ if ship:status = "prelaunch" {
 
 switch to core:volume.
 run mission.
+wait 15.
+reboot.

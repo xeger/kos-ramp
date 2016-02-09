@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 // Test boot. Do not prepare for archive-free operation; execute a simple
-// mission of ascending to a stable orbit.
+// mission of ascending to a stable orbit outside the atmosphere.
 /////////////////////////////////////////////////////////////////////////////
 
 switch to archive.
@@ -15,3 +15,6 @@ if ship:status = "prelaunch" {
 if ship:status <> "orbiting" {
   run launch_asc(body:atm:height + (body:radius / 4)).
 }
+
+wait 15.
+reboot.
