@@ -8,6 +8,9 @@
 // Final apoapsis (m altitude)
 parameter apo.
 
+// Number of seconds to sleep during staging loop
+global launch_tick is 1.
+
 // Maximum observed dynamic pressue
 global launch_maxQ is 0.
 
@@ -15,8 +18,7 @@ global launch_maxQ is 0.
 global launch_fracQ is 0.1.
 
 /////////////////////////////////////////////////////////////////////////////
-// Steering logic; hidden inside a function so we
-// can re-lock to it later on.
+// Steering logic; hidden inside a function so we can re-lock to it later on.
 //
 // This style of ascent steering relies solely on dynamic pressure (Q) and is
 // best for lifting large, ungainly craft through thick atmosphere (i.e. Kerbin
@@ -76,7 +78,7 @@ set ship:control:pilotmainthrottle to 1.
 
 until ship:obt:apoapsis >= apo {
   ascentStaging().
-  wait 1.
+  wait launch_tick.
 }
 
 unlock throttle.

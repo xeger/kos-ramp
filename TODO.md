@@ -1,5 +1,14 @@
 TODO.md
 
+- eliminate lib_pid; use built-in PID controllers
+
+- verify rendezvous/docking still work
+
+- troubleshoot Hohmann
+    - not always finding a window
+    - buggy Minmus dv
+    - runs smack into Mun
+
 - syntax highlighting: add "warp" to special variable names
 
 - warp during landing
@@ -7,9 +16,5 @@ TODO.md
 - troubleshoot node runner
     - ???
 
-- troubleshoot Hohmann
-    - not always finding a window
-    - buggy Minmus dv
-    - smack into Mun
-
 - troubleshoot node_inc_tgt
+    - ???
