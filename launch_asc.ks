@@ -5,17 +5,22 @@
 // Achieve circular orbit with desired apoapsis.
 /////////////////////////////////////////////////////////////////////////////
 
+run once lib_ui.
+
 // Final apoapsis (m altitude)
 parameter apo.
 
 // Number of seconds to sleep during staging loop
 global launch_tick is 1.
 
-// Maximum observed dynamic pressue
+// Maximum observed dynamic pressure
 global launch_maxQ is 0.
 
 // Fraction of max-Q that pressure must fall to before we turn to prograde
-global launch_fracQ is 0.1.
+global launch_fracQ is 0.8.
+
+// Time at which SRB separation occurred
+global launch_tSrbSep is 0.
 
 /////////////////////////////////////////////////////////////////////////////
 // Steering logic; hidden inside a function so we can re-lock to it later on.
@@ -27,14 +32,29 @@ global launch_fracQ is 0.1.
 
 function ascentSteering {
   set launch_maxQ to max(ship:Q, launch_maxQ).
-  if ship:Q >= launch_maxQ {
-    return heading(0, 90).
-  } else if (ship:Q > launch_maxQ * launch_fracQ) {
-    // TODO be smarter about choosing a direction, e.g. blend
-    // "up" with prograde so we gently cant over
-    return heading(90, 85).
+  local fracQ is 1.0 - ((1 + ship:Q) / (1 + launch_maxQ)).
+
+  if launch_tSrbSep > 0 and (time:seconds - launch_tSrbSep) < 10 {
+    return ship:facing:forevector.
+  } else if ship:Q >= launch_maxQ {
+    return heading(90, 90).
+  } else if ship:Q > launch_maxQ * launch_fracQ {
+    return heading(90, 90 - 90 * fracQ).
   } else {
     return ship:prograde.
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Throttle logic.
+/////////////////////////////////////////////////////////////////////////////
+
+function ascentThrottle {
+  // TODO guard against going too fast too low (heat?)
+  if vdot(ship:facing:vector, ship:velocity:surface) < 0.6 {
+    return 0.
+  } else {
+    return 1.
   }
 }
 
@@ -62,14 +82,30 @@ function ascentStaging {
 
   if (Nsrb > 0) and (stage:solidfuel < 10) {
     stage.
+    set launch_tSrbSep to time:seconds.
   } else if (Nout = Neng) {
     wait until stage:ready.
     stage.
   }
 }
 
+function ascentWarping {
+  if stage:solidfuel > 10 and ship:status = "flying" {
+    set warp to 1.
+  } else if ship:altitude > body:atm:height {
+    set warp to 1.
+  } else {
+    set warp to 0.
+  }
+}
+
+// don't bother with post-SRB-sep pause
+if stage:solidfuel = 0 {
+  set launch_tSrbSep to time:seconds.
+}
+
 lock steering to ascentSteering().
-lock throttle to 1.
+lock throttle to ascentThrottle().
 set ship:control:pilotmainthrottle to 1.
 
 /////////////////////////////////////////////////////////////////////////////
@@ -78,6 +114,7 @@ set ship:control:pilotmainthrottle to 1.
 
 until ship:obt:apoapsis >= apo {
   ascentStaging().
+  ascentWarping().
   wait launch_tick.
 }
 
@@ -88,6 +125,9 @@ set ship:control:pilotmainthrottle to 0.
 // Circularize at apoapsis
 /////////////////////////////////////////////////////////////////////////////
 
+rcs on.
 lock steering to ship:prograde.
-wait until ship:altitude > body:atm:height.
+until ship:altitude > body:atm:height {
+  ascentWarping().
+}
 run circ.

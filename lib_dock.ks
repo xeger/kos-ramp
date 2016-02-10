@@ -16,8 +16,8 @@ global dock_scale is 2.    // max speed multiple when ship is far from target
 //global dock_Z is pidloop(1.4, 0, 0.4, -1, 1).
 
 // Velocity controllers (during alignment)
-global dock_X1 is pidloop(1.4, 0.4, 0.2, -1, 1).
-global dock_Y1 is pidloop(1.4, 0.4, 0.2, -1, 1).
+global dock_X1 is pidloop(1.4, 0, 0.2, -1, 1).
+global dock_Y1 is pidloop(1.4, 0, 0.2, -1, 1).
 
 // Position controllers (during approach)
 global dock_X2 is pidloop(0.4, 0, 1.2, -1, 1).

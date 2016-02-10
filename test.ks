@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
-// Test boot. Do not prepare for archive-free operation; run test script.
+// Ascend to a stable orbit.
 /////////////////////////////////////////////////////////////////////////////
 
-switch to archive.
-run test.
+if ship:status <> "orbiting" {
+  run launch_asc(body:atm:height + (body:radius / 4)).
+}

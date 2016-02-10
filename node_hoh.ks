@@ -4,7 +4,7 @@
 run once lib_ui.
 
 // TODO deal properly with approach distance...
-// this is VERY rough and might not work for all mu/radii!
+// for now, just wimp out and try to hit everything dead-on
 function approachDistance {
   local ratio is target:mass / ship:mass.
 

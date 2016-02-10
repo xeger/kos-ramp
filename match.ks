@@ -29,16 +29,18 @@ wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.99.
 uiBanner("Maneuver", "Braking burn").
 lock throttle to min(vel:mag / accel, 1.0).
 when vel:mag < 3 then {
-  unlock steering.
-  sas on.
-  lock throttle to min(vel:mag / accel, 0.1).
+  lock throttle to min(vel:mag / accel, 0.05).
 }
-wait until vel:mag < 0.2 and vel:z <= 0.
-set throttle to 0.
+wait until vel:mag <= 0.2 and vel:z <= 0.
+unlock throttle.
+set ship:control:pilotmainthrottle to 0.
 
 // TODO use RCS to cancel remaining dv
 
 unlock vel.
+
+lock steering to lookdirup(station:position, ship:facing:upvector).
+wait until vdot(station:position, ship:facing:forevector) >= 0.99.
 
 unlock steering.
 sas on.
