@@ -48,7 +48,7 @@ if ship:status = "orbiting" {
   if missionAccomplished() {
     run land.
   } else {
-    uiBanner("Mission", "Transfer to " + mission_goal:name)
+    uiBanner("Mission", "Transfer to " + mission_goal:name).
     set target to mission_goal.
     run transfer.
   }
