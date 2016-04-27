@@ -1,25 +1,24 @@
 /////////////////////////////////////////////////////////////////////////////
-// Automated-mission boot script.
+// Simple ascend-to-orbit boot script.
 /////////////////////////////////////////////////////////////////////////////
-// Copy all scripts to local volume; run mission script. This is suitable for
-// single-CPU vessels that will be operating out of comms range from KSC.
+// Launch and ascend to a fixed altitude.
 //
-// To customize the mission, edit mission.ks before launch; it will be
-// persisted onto the craft you launch, suitable for archive-free operation.
+// MUST NOT be used for vessels that will operate out of comms range!!
 /////////////////////////////////////////////////////////////////////////////
+
+switch to archive.
+
+run once lib_ui.
 
 if ship:status = "prelaunch" {
-  switch to archive.
-
-  list files in scripts.
-  for file in scripts {
-    if file:name:endswith(".ks") {
-      copy file to core:volume.
-    }
-  }
+  uiBanner("Mission", "Launch!").
+  stage.
+  wait 1.
 }
 
-switch to core:volume.
-run mission.
-wait 15.
-reboot.
+if ship:status = "flying" or ship:status = "sub_orbital" {
+  uiBanner("Mission", "Ascend to kerbosynchronous orbit.").
+  // KEO: 2863334.06
+  // parking: body:atm:height + (body:radius / 4)
+  run launch_asc(body:atm:height + (body:radius / 4)).
+}

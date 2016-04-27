@@ -22,32 +22,35 @@ every script explain what it does and which parameters it needs.
 Run the launch program to ascend to a circular orbit a few hundred km above
 your local atmosphere:
 
-    run mission.
+    run boot.
 
 After you reach a stable orbit, select a target. Use the transfer or rendezvous script to reach your target.
 
     set target to vessel("My Other Vessel").
-    run rendezvous. // matches velocity with target on arrival
+    run rendezvous. // travel to another vessel
 
     set target to body("Mun").
-    run transfer.   // fudges Hohmann transfer to avoid hitting target!
+    run transfer. // or, travel to a moon
 
-The mission, rendezvous and transfer scripts are [idempotent](https://en.wikipedia.org/wiki/Idempotence):
+The boot, rendezvous and transfer scripts are [idempotent](https://en.wikipedia.org/wiki/Idempotence):
 you can safely run them at any time; they either make progress toward your goal, or error out
 with an explanation as to why they can't.
+
+Maneuvers
+=========
 
 Other idempotent scripts include:
 
     run circ.             // circularize at nearest apsis
     run circ_alt(250000). // circularize to specific altitude of 250km
 
-Planning Maneuvers
-------------------
+Planning Burns by Hand
+----------------------
 
 You can also plan and execute on-orbit maneuvers by hand using the `node_*` scripts.
 
     run node_apo(1000000). // plan to make our apogee huge!
-    run node               // make it so
+    run node.              // make it so
 
 Automating a Mission
 ====================

@@ -4,13 +4,13 @@
 // Ascend from a planet, performing a gravity turn and staging as necessary.
 // Achieve circular orbit with desired apoapsis.
 /////////////////////////////////////////////////////////////////////////////
-
-run once lib_ui.
+// NOTE: must run lib_ui BEFORE running this file (we call UI functions)
+/////////////////////////////////////////////////////////////////////////////
 
 // Final apoapsis (m altitude)
 parameter apo.
 
-// Number of seconds to sleep during staging loop
+// Number of seconds to sleep during ascent loop
 global launch_tick is 1.
 
 // Time of SRB separation
@@ -19,25 +19,38 @@ global launch_tSrbSep is 0.
 // Time of last stage
 global launch_tStage is time:seconds.
 
+// Starting/ending height of gravity turn
+// TODO adjust for atmospheric pressure; this works for Kerbin
+global launch_gt0 is body:atm:height * 0.1.
+global launch_gt1 is body:atm:height * 0.8.
+
+// "Sharpness" of gravity turn; we use a cosine function to modulate the
+// turn, and the sharpness is a scaling factor for the input to the cosine
+// function. Higher numbers are sharper, lower numbers are gentler.
+// TODO get rid of this once we solve "tipping" issue
+global launch_gtScale is 1.
+
 /////////////////////////////////////////////////////////////////////////////
-// Steering function.
+// Steering function that uses the launch_gt* to perform a gravity turn.
 /////////////////////////////////////////////////////////////////////////////
 
 function ascentSteering {
-  local atmo is body:atm:height.
-  local gt0 is atmo * 0.1.
-  local gt1 is atmo * 0.8.
-  local gtd is gt1 - gt0.
-  local inclin is max(0, 90 * cos(1 * 90 * (ship:altitude - gt0)/gtd)).
-  local gtvector is heading(90, inclin):vector.
+  // How far through our gravity turn are we? (0..1)
+  local gtPct is (ship:altitude - launch_gt0) / (launch_gt1 - launch_gt0).
+
+  // Ideal gravity-turn azimuth (inclination) and facing at present altitude.
+  local inclin is min(90, max(0, 90 * cos(launch_gtScale * 90 * gtPct))).
+  local gtFacing is heading(90, inclin):vector.
+
   local prodot is vdot(ship:facing:vector, prograde:vector).
 
-  if ship:altitude < gt0 {
+  if gtPct < 0 {
     return heading(0, 90).
-  } else if ship:altitude < gt1 and prodot < 0.975 {
-    return lookdirup(gtvector, ship:facing:upvector).
+  } else if gtPct < 1 and prodot < 0.99 {
+    return lookdirup(gtFacing, ship:facing:upvector).
   } else {
-    return lookdirup(prograde:vector, ship:facing:upvector).
+    return lookdirup(gtFacing, ship:facing:upvector).
+    //return lookdirup(prograde:vector, ship:facing:upvector).
   }
 }
 
@@ -46,15 +59,19 @@ function ascentSteering {
 /////////////////////////////////////////////////////////////////////////////
 
 function ascentThrottle {
-  local head is vdot(ship:facing:vector, ship:velocity:surface).
+  // angle of attack
+  local aoa is vdot(ship:facing:vector, ship:velocity:surface).
+  // how far through the soup are we?
+  local atmPct is ship:altitude / (body:atm:height+1).
   local spd is ship:velocity:surface:mag.
-  // TODO adjust cutoff for ship alt & atmo pressure
-  local cutoff is 100.
 
-  if spd > 3 and head < 0.95 {
-    return 0.
-  } else if launch_tSrbSep = 0 and spd > cutoff {
-    return 1 - (1 * (spd - cutoff) / 100).
+  // TODO adjust cutoff for atmospheric pressure; this works for kerbin
+  local cutoff is 200 + (400 * max(0, atmPct)).
+
+  if spd > cutoff and launch_tSrbSep = 0 {
+    // going too fast during SRB ascent; avoid overheat or
+    // aerodynamic catastrophe by limiting throttle
+    return 1 - (1 * (spd - cutoff) / cutoff).
   } else {
     return 1.
   }
@@ -108,20 +125,16 @@ function ascentWarping {
 // Perform initial setup; trim ship for ascent.
 /////////////////////////////////////////////////////////////////////////////
 
+sas off.
+
 if ship:status <> "prelaunch" and stage:solidfuel = 0 {
-  // No SRBs; trim for liquid-fueled ascent.
+  // note that there's no SRB
   set launch_tSrbSep to time:seconds.
-} else {
-  // Turn SAS on during SRB ascent, but turn it off when maneuvering starts.
-  sas on.
-  when ship:altitude > body:atm:height * 0.8 then {
-    sas off.
-  }
 }
 
 lock steering to ascentSteering().
 lock throttle to ascentThrottle().
-set ship:control:pilotmainthrottle to 1.
+set ship:control:pilotmainthrottle to 0.
 
 /////////////////////////////////////////////////////////////////////////////
 // Enter ascent loop.
@@ -135,6 +148,8 @@ until ship:obt:apoapsis >= apo {
 
 unlock throttle.
 set ship:control:pilotmainthrottle to 0.
+
+uiDebug("Reached apoapsis " + round(ship:obt:apoapsis / 1000, 1) + " km").
 
 /////////////////////////////////////////////////////////////////////////////
 // Coast to apoapsis and hand off to circularization program.
@@ -152,10 +167,14 @@ lock steering to ship:prograde.
 until vdot(ship:facing:vector, ship:prograde:vector) > 0.975 {
   wait 1.
 }
-rcs off.
+
+uiDebug("Coast to edge of atmosphere").
 
 until ship:altitude > body:atm:height {
   ascentWarping().
 }
+set warp to 0.
+
+uiDebug("Circularize").
 
 run circ.

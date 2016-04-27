@@ -6,10 +6,16 @@
 
 run lib_ui.
 
+// quo vadis?
 local nd is nextnode.
-local epsilon is 0.25.
 
-local nstages is 0.
+// a delta-v so small that it might as well be nothing...
+local epsilon is 0.01.
+
+// Remember fuel level when we autostage to keep us from autostaging the
+// craft to death. This assumes that  "terminal stages" have no fuel, just
+// chutes and other descend-y things.
+local stageFuelInit is 0.
 
 lock accel to ship:availablethrust / ship:mass.
 
@@ -21,9 +27,15 @@ lock steering to lookdirup(nd:deltav, ship:facing:topvector).
 local np is lookdirup(nd:deltav, ship:facing:topvector).
 local dob is (nd:deltav:mag / accel).
 
+uiDebug("Orient to burn").
 wait until vdot(facing:forevector, np:forevector) >= 0.99.
+local nodeOrientT is time.
+wait until vdot(facing:forevector, np:forevector) >= 0.999 or nd:eta < dob / 2.
+local nodeHang is nd:eta - dob/2.
 
-run warp(nd:eta - dob/2 - 1).
+if nodeHang > 0 {
+  run warp(nodeHang).
+}
 
 local tset is 0.
 lock throttle to tset.
@@ -32,13 +44,15 @@ local done  is false.
 local dv0   is nd:deltav.
 local dvMin is dv0:mag.
 
+uiDebug("Begin burn").
+
 until done
 {
     if(nd:deltav:mag < dvMin) {
         set dvMin to nd:deltav:mag.
     }
 
-    if accel > 0 {
+    if accel > epsilon {
       //feather the throttle
       set tset to min(dvMin/accel, 1.0).
 
@@ -54,8 +68,13 @@ until done
     } else {
         // no accel -- out of fuel; time to auto stage!
         uiWarning("Node", "Stage " + stage:number + " separation during burn").
-        stage.
-        wait until stage:ready.
+        local now is time:seconds.
+
+        if stageFuelInit = 0 or stage:liquidfuel < stageFuelInit {
+          stage.
+          wait until stage:ready.
+          set stageFuelInit to stage:liquidfuel.
+        }
     }
 }
 
@@ -80,7 +99,7 @@ if nd:deltav:mag > 0.1 {
   rcs off.
 }
 
-if nd:deltav:mag > dv0:mag * 0.05 {
+if nd:deltav:mag > dv0:mag * 0.05 and nd:deltav:mag > epsilon {
   uiError("Node", "VARIANCE " + round(nd:deltav:mag, 1) + " m/s").
   wait 5.
   reboot.
