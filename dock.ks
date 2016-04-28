@@ -23,16 +23,16 @@
 run once lib_ui.
 run once lib_dock.
 
-local myPort is dockChoosePorts().
-local hisPort is target.
-local station is target:ship.
+global dock_myPort is dockChoosePorts().
+global dock_hisPort is target.
+global dock_station is target:ship.
 
-if myPort <> 0 {
-  uiBanner("Dock", "Dock with " + station:name).
-  dockPrepare(myPort, target).
+if dock_myPort <> 0 {
+  uiBanner("Dock", "Dock with " + dock_station:name).
+  dockPrepare(dock_myPort, target).
 
-  until target <> hisPort or dockComplete(myPort) {
-    local rawD is target:position - myPort:position.
+  until target <> dock_hisPort or dockComplete(dock_myPort) {
+    local rawD is target:position - dock_myPort:position.
     local sense is ship:facing.
 
     local dockD is V(
@@ -40,7 +40,7 @@ if myPort <> 0 {
       vdot(rawD, sense:upvector),
       vdot(rawD, sense:vector)
     ).
-    local rawV is station:velocity:orbit - ship:velocity:orbit.
+    local rawV is dock_station:velocity:orbit - ship:velocity:orbit.
     local dockV is V(
       vdot(rawV, sense:starvector),
       vdot(rawV, sense:upvector),
@@ -48,14 +48,17 @@ if myPort <> 0 {
     ).
     local needAlign is vdot(target:position:normalized, target:facing:forevector) > -0.9975.
 
-    uiShowPorts(myPort, target, dock_start / 2, not needAlign).
-    uiDebugAxes(myPort:position, sense, v(10,10,10)).
+    uiShowPorts(dock_myPort, target, dock_start / 2, not needAlign).
+    uiDebugAxes(dock_myPort:position, sense, v(10,10,10)).
 
     if dockD:Z < 0 {
+      uiDebug("Move back").
       dockBack(dockD, dockV).
     } else if needAlign or dockD:Z > dock_start {
+      uiDebug("Align").
       dockAlign(dockD, dockV).
     } else {
+      uiDebug("Approach").
       dockApproach(dockD, dockV).
     }
   }

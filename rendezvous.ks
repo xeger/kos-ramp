@@ -46,6 +46,7 @@ set approachT to utilClosestApproach(ship, target).
 local aprVship is velocityat(ship, approachT):orbit.
 local aprVtgt is velocityat(target, approachT):orbit.
 local brakingT is (aprVtgt - aprVship):mag / accel.
+
 sas off.
 run node_vel_tgt.
 lock steering to lookdirup(nextnode:deltav, ship:facing:topvector).

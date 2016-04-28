@@ -32,7 +32,8 @@ function dockPrepare {
 
   sas off.
   lock steering to lookdirup(-hisPort:portfacing:forevector, v(0,1,0)).
-  wait until vdot(myPort:portfacing:forevector, hisPort:portfacing:forevector) < -0.99.
+  set t0 to time:seconds.
+  wait until vdot(myPort:portfacing:forevector, hisPort:portfacing:forevector) < -0.9 or (time:seconds - t0 > 15).
   rcs on.
 }
 
@@ -49,7 +50,7 @@ function dockFinish {
 function dockBack {
   parameter pos, vel.
 
-  set dockz:setpoint to dock_algnV.
+  set dock_Z:setpoint to dock_algnV.
   set ship:control:fore to -dock_Z:update(time:seconds, vel:Z).
 }
 
@@ -124,8 +125,41 @@ function dockChooseDeparturePort {
   return 0.
 }
 
-// Find suitable docking ports on self and target
 function dockChoosePorts {
+  local myPort is 0.
+  local hisPort is 0.
+
+  // HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
+  if target:mass > 2 {
+    // ship is targeted; find a good port
+    local hisMods is target:modulesnamed("ModuleDockingNode").
+    for mod in hisMods {
+      if mod:part:state = "Ready" and mod:part:mass > hisPort:mass {
+        set hisPort to mod:part.
+      }
+    }
+  }
+  else {
+    set hisPort to target.
+  }
+
+  local myMods is ship:modulesnamed("ModuleDockingNode").
+  for mod in myMods {
+    if mod:part:mass = hisPort:mass {
+      set myPort to mod:part.
+    }
+  }
+
+  if hisPort <> 0 and myPort <> 0 {
+    set target to hisPort.
+    return myPort.
+  } else {
+    return 0.
+  }
+}
+
+// Find suitable docking ports on self and target
+function xxxDockChoosePorts {
   local myPort is 0.
   local hisPort is 0.
 

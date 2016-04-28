@@ -4,8 +4,6 @@
 // Ascend from a planet, performing a gravity turn and staging as necessary.
 // Achieve circular orbit with desired apoapsis.
 /////////////////////////////////////////////////////////////////////////////
-// NOTE: must run lib_ui BEFORE running this file (we call UI functions)
-/////////////////////////////////////////////////////////////////////////////
 
 // Final apoapsis (m altitude)
 parameter apo.
@@ -149,8 +147,6 @@ until ship:obt:apoapsis >= apo {
 unlock throttle.
 set ship:control:pilotmainthrottle to 0.
 
-uiDebug("Reached apoapsis " + round(ship:obt:apoapsis / 1000, 1) + " km").
-
 /////////////////////////////////////////////////////////////////////////////
 // Coast to apoapsis and hand off to circularization program.
 /////////////////////////////////////////////////////////////////////////////
@@ -168,13 +164,9 @@ until vdot(ship:facing:vector, ship:prograde:vector) > 0.975 {
   wait 1.
 }
 
-uiDebug("Coast to edge of atmosphere").
-
 until ship:altitude > body:atm:height {
   ascentWarping().
 }
 set warp to 0.
-
-uiDebug("Circularize").
 
 run circ.
