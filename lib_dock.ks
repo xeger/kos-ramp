@@ -125,6 +125,7 @@ function dockChooseDeparturePort {
   return 0.
 }
 
+// Find suitable docking ports on self and target
 function dockChoosePorts {
   local myPort is 0.
   local hisPort is 0.
@@ -152,6 +153,7 @@ function dockChoosePorts {
 
   if hisPort <> 0 and myPort <> 0 {
     set target to hisPort.
+    myPort:controlfrom.
     return myPort.
   } else {
     return 0.
