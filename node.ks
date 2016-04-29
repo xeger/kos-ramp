@@ -28,14 +28,13 @@ local np is lookdirup(nd:deltav, ship:facing:topvector).
 local dob is (nd:deltav:mag / accel).
 
 uiDebug("Orient to burn").
-wait until vdot(facing:forevector, np:forevector) >= 0.99.
-local nodeOrientT is time.
-wait until vdot(facing:forevector, np:forevector) >= 0.999 or nd:eta < dob / 2.
+wait until vdot(facing:forevector, np:forevector) >= 0.9975 or nd:eta <= dob / 2.
 local nodeHang is nd:eta - dob/2.
 
 if nodeHang > 0 {
-  run warp(nodeHang).
+  run warp(nodeHang - 3).
 }
+wait 3.
 
 local tset is 0.
 lock throttle to tset.

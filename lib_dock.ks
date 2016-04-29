@@ -125,7 +125,10 @@ function dockChooseDeparturePort {
   return 0.
 }
 
-// Find suitable docking ports on self and target
+// Find suitable docking ports on self and target. Works using a heuristic:
+//   - if target is a vessel, target biggest unoccupied port
+//   - (else target is already a port)
+//   - find port on ship with same mass
 function dockChoosePorts {
   local myPort is 0.
   local hisPort is 0.
@@ -160,7 +163,8 @@ function dockChoosePorts {
   }
 }
 
-// Find suitable docking ports on self and target
+// Find suitable docking ports on self and target -- OLD version
+// Looks for best-aligned port with same mass
 function xxxDockChoosePorts {
   local myPort is 0.
   local hisPort is 0.

@@ -52,13 +52,10 @@ if dock_myPort <> 0 {
     uiDebugAxes(dock_myPort:position, sense, v(10,10,10)).
 
     if dockD:Z < 0 {
-      uiDebug("Move back").
       dockBack(dockD, dockV).
     } else if needAlign or dockD:Z > dock_start {
-      uiDebug("Align").
       dockAlign(dockD, dockV).
     } else {
-      uiDebug("Approach").
       dockApproach(dockD, dockV).
     }
   }

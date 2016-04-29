@@ -1,5 +1,8 @@
 TODO.md
 
+- troubleshoot rendezvous/approach
+    - rendezvous gets stuck on final approach; it cancels forward velocity too well!
+
 - rework ascent code to account for vessel aerodynamics to keep it from "tipping"
   due to 1.x aerodynamics model when vessel is massive and/or wide. Two ideas:
     - adjust gt0 and gtScale according to biggest part (ugh)

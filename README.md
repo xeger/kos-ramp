@@ -43,6 +43,8 @@ Other idempotent scripts include:
 
     run circ.             // circularize at nearest apsis
     run circ_alt(250000). // circularize to specific altitude of 250km
+    run approach.         // get close to target and stop
+    run match.            // match velocity at closest approach to target
 
 Planning Burns by Hand
 ----------------------

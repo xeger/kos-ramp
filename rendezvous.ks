@@ -53,8 +53,10 @@ lock steering to lookdirup(nextnode:deltav, ship:facing:topvector).
 wait until vdot(nextnode:deltav:normalized, ship:facing:vector) > 0.99.
 unlock steering.
 remove nextnode.
-run warp(approachT - time:seconds - brakingT).
+run warp(approachT - time:seconds - 2*brakingT).
 
 run approach.
+
+uiBanner("Rendezvous", "Final approach").
 wait until target:position:mag < 150.
 run dock.
