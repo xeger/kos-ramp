@@ -78,15 +78,22 @@ function uiShowPorts {
   }
 }
 
+function uiFatal {
+  parameter prefix.
+  parameter message.
+
+  uiError(prefix, message + " - RESUME CONTROL").
+  wait 3.
+  reboot.
+}
+
 function uiAssertAccel {
   parameter prefix.
 
   local accel is ship:availablethrust / ship:mass. // kN over tonnes; 1000s cancel
 
   if accel <= 0 {
-    uiError(prefix, "ENGINE FAULT - RESUME CONTROL").
-    wait 5.
-    reboot.
+    uiFatal("Maneuver", "ENGINE FAULT").
   } else {
     return accel.
   }

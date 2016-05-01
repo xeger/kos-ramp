@@ -4,6 +4,7 @@
 // Kills transverse velocity w/r/t target and establishes forward velocity.
 /////////////////////////////////////////////////////////////////////////////
 
+run once lib_dock.
 run once lib_ui.
 
 local accel is uiAssertAccel("Maneuver").
@@ -14,11 +15,6 @@ lock velT to vel - velR.
 // Don't let unbalanced RCS mess with our velocity
 rcs off.
 sas off.
-
-// HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
-if target:mass < 2 {
-  set target to target:vessel.
-}
 
 if target:position:mag / vel:mag < 15 {
   // Nearby target; come to a stop first
@@ -66,10 +62,10 @@ local dt is time:seconds - t0.
 lock steering to lookdirup(-velR:normalized, ship:facing:upvector).
 wait until vdot(-velR:normalized, ship:facing:forevector) >= 0.99.
 local stopDistance is 0.5 * accel * (vel:mag / accel)^2.
-local dt is (target:position:mag - stopDistance - 100) / vel:mag.
+local dt is (target:position:mag - stopDistance - 10) / vel:mag.
 run warp(dt).
 
-run match.
+dockMatchVelocity(max(5.0, min(1.0, target:position:mag / 100.0))).
 
 unlock velR.
 unlock velT.

@@ -28,7 +28,7 @@ local np is lookdirup(nd:deltav, ship:facing:topvector).
 local dob is (nd:deltav:mag / accel).
 
 uiDebug("Orient to burn").
-wait until vdot(facing:forevector, np:forevector) >= 0.9975 or nd:eta <= dob / 2.
+wait until vdot(facing:forevector, np:forevector) >= 0.995 or nd:eta <= dob / 2.
 local nodeHang is nd:eta - dob/2.
 
 if nodeHang > 0 {
@@ -99,11 +99,9 @@ if nd:deltav:mag > 0.1 {
 }
 
 if nd:deltav:mag > dv0:mag * 0.05 and nd:deltav:mag > epsilon {
-  uiError("Node", "VARIANCE " + round(nd:deltav:mag, 1) + " m/s").
-  wait 5.
-  reboot.
+  uiFatal("Node", "BURN FAULT " + round(nd:deltav:mag, 1) + " m/s").
 } else if nd:deltav:mag > 0.1 {
-  uiWarning("Node", "VARIANCE " + round(nd:deltav:mag, 1) + " m/s").
+  uiWarning("Node", "BURN FAULT " + round(nd:deltav:mag, 1) + " m/s").
 }
 
 remove nd.

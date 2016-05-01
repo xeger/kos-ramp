@@ -133,8 +133,7 @@ function dockChoosePorts {
   local myPort is 0.
   local hisPort is 0.
 
-  // HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
-  if target:mass > 2 {
+  if not target:name:contains("docking") {
     // ship is targeted; find a good port
     local hisMods is target:modulesnamed("ModuleDockingNode").
     for mod in hisMods {
@@ -144,6 +143,7 @@ function dockChoosePorts {
     }
   }
   else {
+    // dock is already targeted
     set hisPort to target.
   }
 
@@ -157,53 +157,6 @@ function dockChoosePorts {
   if hisPort <> 0 and myPort <> 0 {
     set target to hisPort.
     myPort:controlfrom.
-    return myPort.
-  } else {
-    return 0.
-  }
-}
-
-// Find suitable docking ports on self and target -- OLD version
-// Looks for best-aligned port with same mass
-function xxxDockChoosePorts {
-  local myPort is 0.
-  local hisPort is 0.
-
-  local myMods is ship:modulesnamed("ModuleDockingNode").
-  for mod in myMods {
-    // TODO get this to work on ships with more than one port
-    //if mod:part:controlfrom = true {
-      set myPort to mod:part.
-    //}
-  }
-
-  if myPort <> 0 {
-    local myMass is myPort:mass.
-
-    // HACK: distinguish between targeted vessel and targeted port using mass > 2 tonnes
-    if target:mass > 2 {
-      local hisMods is target:modulesnamed("ModuleDockingNode").
-      local bestAngle is 180.
-
-      for mod in hisMods {
-        if abs(mod:part:mass - myMass) < 0.1 and
-          mod:part:targetable and mod:part:state = "Ready" and
-          vang(target:position, mod:part:portfacing:vector) < bestAngle
-        {
-          set hisPort to mod:part.
-        }
-      }
-    } else {
-      set hisPort to target.
-    }
-
-    if hisPort = 0 {
-      set myPort to 0.
-    }
-  }
-
-  if hisPort <> 0 and myPort <> 0 {
-    set target to hisPort.
     return myPort.
   } else {
     return 0.
@@ -228,4 +181,47 @@ function dockComplete {
   } else {
     return false.
   }
+}
+
+// Cancel most velocity with respect to target. Leave residual speed
+function dockMatchVelocity {
+  parameter residual.
+
+  set residual to max(0.2, residual).
+
+  // Don't let unbalanced RCS mess with our velocity
+  rcs off.
+  sas off.
+
+  local station is 0.
+  if target:name:contains("docking") {
+    set station to target:ship.
+  } else {
+    set station to target.
+  }
+
+  local accel is uiAssertAccel("Dock").
+  lock vel to (ship:velocity:orbit - station:velocity:orbit).
+
+  // Point away from relative velocity vector
+  lock steering to lookdirup(-vel:normalized, ship:facing:upvector).
+  wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.99.
+
+  // Cancel velocity
+  lock throttle to min(vel:mag / accel, 1.0).
+
+  wait until vel:z <= 0 and vel:mag <= residual and (residual = 0 or vel:mag > residual * 0.8).
+
+  unlock throttle.
+  set ship:control:pilotmainthrottle to 0.
+
+  // TODO use RCS to cancel remaining dv
+
+  unlock vel.
+
+  lock steering to lookdirup(station:position, ship:facing:upvector).
+  wait until vdot(station:position, ship:facing:forevector) >= 0.99.
+
+  unlock steering.
+  sas on.
 }
