@@ -42,13 +42,10 @@ function ascentSteering {
 
   local prodot is vdot(ship:facing:vector, prograde:vector).
 
-  if gtPct < 0 {
+  if gtPct <= 0 {
     return heading(0, 90).
-  } else if gtPct < 1 and prodot < 0.99 {
-    return lookdirup(gtFacing, ship:facing:upvector).
   } else {
     return lookdirup(gtFacing, ship:facing:upvector).
-    //return lookdirup(prograde:vector, ship:facing:upvector).
   }
 }
 
@@ -159,10 +156,7 @@ if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:ca
 }
 
 rcs on.
-lock steering to ship:prograde.
-until vdot(ship:facing:vector, ship:prograde:vector) > 0.975 {
-  wait 1.
-}
+sas on.
 
 until ship:altitude > body:atm:height {
   ascentWarping().
