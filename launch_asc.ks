@@ -148,15 +148,18 @@ set ship:control:pilotmainthrottle to 0.
 // Coast to apoapsis and hand off to circularization program.
 /////////////////////////////////////////////////////////////////////////////
 
+sas on.
+
 // Get rid of ascent stage if less that 20% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
 // TODO stop being wasteful; compute burn duration & compare to remaining dv (need fuel flow data, yech!)
 if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.2 {
+  set ship:control:pilotmainthrottle to 0.
   stage.
+  wait 1.
 }
 
 rcs on.
-sas on.
 
 until ship:altitude > body:atm:height {
   ascentWarping().

@@ -48,27 +48,27 @@ function dockFinish {
 
 // Back off from target in order to approach from the correct side.
 function dockBack {
-  parameter pos, vel.
+  parameter backPos, backVel.
 
   set dock_Z:setpoint to dock_algnV.
-  set ship:control:fore to -dock_Z:update(time:seconds, vel:Z).
+  set ship:control:fore to -dock_Z:update(time:seconds, backVel:Z).
 }
 
 // Center docking ports in X/Y while slowly moving forward
 function dockAlign {
-  parameter pos, vel.
+  parameter alignPos, alignVel.
 
   // Taper X/Y/Z speed according to distance from target
-  local vScaleX is min(abs(pos:X / dock_scale), dock_scale).
-  local vScaleY is min(abs(pos:Y / dock_scale), dock_scale).
-  local vScaleZ is min(abs(pos:Z / dock_start), dock_scale).
+  local vScaleX is min(abs(alignPos:X / dock_scale), dock_scale).
+  local vScaleY is min(abs(alignPos:Y / dock_scale), dock_scale).
+  local vScaleZ is min(abs(alignPos:Z / dock_start), dock_scale).
 
   // Never align slower than final-approach speed
-  local vWantX is -(pos:X / abs(pos:X)) * min(dock_dockV, dock_algnV * vScaleX).
-  local vWantY is -(pos:Y / abs(pos:Y)) * min(dock_dockV, dock_algnV * vScaleY).
+  local vWantX is -(alignPos:X / abs(alignPos:X)) * min(dock_dockV, dock_algnV * vScaleX).
+  local vWantY is -(alignPos:Y / abs(alignPos:Y)) * min(dock_dockV, dock_algnV * vScaleY).
   local vWantZ is 0.
 
-  if pos:Z >= dock_start {
+  if alignPos:Z >= dock_start {
     // Move forward at a distance-dependent speed between
     // approach and final-approach
     set vWantZ to -max(dock_dockV, dock_apchV*vScaleZ).
@@ -81,21 +81,21 @@ function dockAlign {
   set dock_X1:setpoint to vWantX.
   set dock_Y1:setpoint to vWantY.
   set dock_Z:setpoint to vWantZ.
-  set ship:control:starboard to -1 * dock_X1:update(time:seconds, vel:X).
-  set ship:control:top to -1 * dock_Y1:update(time:seconds, vel:Y).
-  set ship:control:fore to -1 * dock_Z:update(time:seconds, vel:Z).
+  set ship:control:starboard to -1 * dock_X1:update(time:seconds, alignVel:X).
+  set ship:control:top to -1 * dock_Y1:update(time:seconds, alignVel:Y).
+  set ship:control:fore to -1 * dock_Z:update(time:seconds, alignVel:Z).
 }
 
 // Close remaining distance to the target, slowing drastically near
 // the end.
 function dockApproach {
-  parameter pos, vel.
+  parameter aprchPos, aprchVel.
 
   // Taper Z speed according to distance from target
-  local vScaleZ is min(abs(pos:Z / dock_start), dock_scale).
+  local vScaleZ is min(abs(aprchPos:Z / dock_start), dock_scale).
   local vWantZ is 0.
 
-  if pos:Z < dock_final {
+  if aprchPos:Z < dock_final {
     // Final approach: barely inch forward!
     set vWantZ to -dock_dockV.
   } else {
@@ -105,12 +105,12 @@ function dockApproach {
   }
 
   set dock_Z:setpoint to vWantZ.
-  set ship:control:fore to -dock_Z:update(time:seconds, vel:Z).
+  set ship:control:fore to -dock_Z:update(time:seconds, aprchVel:Z).
 
   // Stay aligned
   set dock_X2:setpoint to 0.
   set dock_Y2:setpoint to 0.
-  set ship:control:starboard to -1 * dock_X2:update(time:seconds, pos:X).
+  set ship:control:starboard to -1 * dock_X2:update(time:seconds, aprchPos:X).
   set ship:control:top to -1 * dock_Y2:update(time:seconds, pos:Y).
 }
 
@@ -193,34 +193,34 @@ function dockMatchVelocity {
   rcs off.
   sas off.
 
-  local station is 0.
+  local matchStation is 0.
   if target:name:contains("docking") {
-    set station to target:ship.
+    set matchStation to target:ship.
   } else {
-    set station to target.
+    set matchStation to target.
   }
 
-  local accel is uiAssertAccel("Dock").
-  lock vel to (ship:velocity:orbit - station:velocity:orbit).
+  local matchAccel is uiAssertAccel("Dock").
+  lock matchVel to (ship:velocity:orbit - matchStation:velocity:orbit).
 
   // Point away from relative velocity vector
-  lock steering to lookdirup(-vel:normalized, ship:facing:upvector).
-  wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.99.
+  lock steering to lookdirup(-matchVel:normalized, ship:facing:upvector).
+  wait until vdot(-matchVel:normalized, ship:facing:forevector) >= 0.99.
 
   // Cancel velocity
-  lock throttle to min(vel:mag / accel, 1.0).
+  lock throttle to min(matchVel:mag / matchAccel, 1.0).
 
-  wait until vel:z <= 0 and vel:mag <= residual and (residual = 0 or vel:mag > residual * 0.8).
+  wait until matchVel:z <= 0 and matchVel:mag <= residual and (residual = 0 or matchVel:mag > residual * 0.8).
 
   unlock throttle.
   set ship:control:pilotmainthrottle to 0.
 
   // TODO use RCS to cancel remaining dv
 
-  unlock vel.
+  unlock matchVel.
 
-  lock steering to lookdirup(station:position, ship:facing:upvector).
-  wait until vdot(station:position, ship:facing:forevector) >= 0.99.
+  lock steering to lookdirup(matchStation:position, ship:facing:upvector).
+  wait until vdot(matchStation:position, ship:facing:forevector) >= 0.99.
 
   unlock steering.
   sas on.
