@@ -17,7 +17,7 @@ if ship:status = "prelaunch" {
 }
 
 if ship:status = "flying" or ship:status = "sub_orbital" {
-  uiBanner("Mission", "Ascend to kerbosynchronous orbit.").
+  uiBanner("Mission", "Ascend to orbit.").
   //     KEO: 2863334.06
   // parking: body:atm:height + (body:radius / 4)
   run launch_asc(body:atm:height + (body:radius / 4)).
