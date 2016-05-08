@@ -153,10 +153,15 @@ sas on.
 // Get rid of ascent stage if less that 20% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
 // TODO stop being wasteful; compute burn duration & compare to remaining dv (need fuel flow data, yech!)
-if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.2 {
-  set ship:control:pilotmainthrottle to 0.
+if stage:resourceslex:haskey("LiquidFuel") and stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.2 {
   stage.
-  wait 1.
+  wait until stage:ready.
+}
+// Corner case: circularization stage is not bottom most (i.e. there is an
+// aeroshell ejection in a lower stage).   
+until ship:availablethrust > 0 {
+  stage.
+  wait until stage:ready.
 }
 
 rcs on.

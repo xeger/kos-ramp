@@ -149,7 +149,7 @@ function dockChoosePorts {
 
   local myMods is ship:modulesnamed("ModuleDockingNode").
   for mod in myMods {
-    if mod:part:mass = hisPort:mass {
+    if abs(mod:part:mass - hisPort:mass) < 0.1 {
       set myPort to mod:part.
     }
   }

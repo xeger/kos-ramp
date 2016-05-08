@@ -90,12 +90,12 @@ function uiFatal {
 function uiAssertAccel {
   parameter prefix.
 
-  local accel is ship:availablethrust / ship:mass. // kN over tonnes; 1000s cancel
+  local uiAccel is ship:availablethrust / ship:mass. // kN over tonnes; 1000s cancel
 
-  if accel <= 0 {
+  if uiAccel <= 0 {
     uiFatal("Maneuver", "ENGINE FAULT").
   } else {
-    return accel.
+    return uiAccel.
   }
 }
 
@@ -117,7 +117,7 @@ function uiDebugNode {
     local nd is node(T, mdv:x, mdv:y, mdv:z).
     add(nd).
     uiDebug(msg).
-    wait(0.5).
+    wait(0.25).
     remove(nd).
   }
 }

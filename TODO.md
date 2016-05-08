@@ -2,11 +2,10 @@ TODO.md
 
 - troubleshoot rendezvous/approach
     - rendezvous gets stuck on final approach; it cancels forward velocity too well!
+    - freeze on "final approach"
 
-- rework ascent code to account for vessel aerodynamics to keep it from "tipping"
-  due to 1.x aerodynamics model when vessel is massive and/or wide. Two ideas:
-    - adjust gt0 and gtScale according to biggest part (ugh)
-    - use vessel mass to decide how far ship is allowed to stray from surface velocity vector
+- troubleshoot landing
+    - final descent far too early? unnecessary braking?
 
 - warp during ascent is too frisky (wait till out of atmo)
 
