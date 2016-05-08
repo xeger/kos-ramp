@@ -7,89 +7,91 @@
 run lib_ui.
 
 // quo vadis?
-local nd is nextnode.
+global nodeNd is nextnode.
 
 // a delta-v so small that it might as well be nothing...
-local epsilon is 0.01.
+global nodeEpislon is 0.01.
 
 // Remember fuel level when we autostage to keep us from autostaging the
 // craft to death. This assumes that  "terminal stages" have no fuel, just
 // chutes and other descend-y things.
-local stageFuelInit is 0.
-
-lock accel to ship:availablethrust / ship:mass.
+global nodeStageFuelInit is 0.
 
 // keep ship pointed at node
 sas off.
-lock steering to lookdirup(nd:deltav, ship:facing:topvector).
+lock steering to lookdirup(nodeNd:deltav, ship:facing:topvector).
 
-// estimate direction & duration
-local np is lookdirup(nd:deltav, ship:facing:topvector).
-local dob is (nd:deltav:mag / accel).
+// estimate burn direction & duration
+global nodeAccel is uiAssertAccel("Node").
+global nodeFacing is lookdirup(nodeNd:deltav, ship:facing:topvector).
+global nodeDob is (nodeNd:deltav:mag / nodeAccel).
 
 uiDebug("Orient to burn").
-wait until vdot(facing:forevector, np:forevector) >= 0.995 or nd:eta <= dob / 2.
-local nodeHang is nd:eta - dob/2.
+wait until vdot(facing:forevector, nodeFacing:forevector) >= 0.995 or nodeNd:eta <= nodeDob / 2.
 
+// warp to burn time; give 3 seconds slack for final steering adjustments
+global nodeHang is (nodeNd:eta - nodeDob/2) - 3.
 if nodeHang > 0 {
-  run warp(nodeHang - 3).
+  run warp(nodeHang).
+  wait 3.
 }
-wait 3.
 
-local tset is 0.
-lock throttle to tset.
-
-local done  is false.
-local dv0   is nd:deltav.
-local dvMin is dv0:mag.
+global nodeDone  is false.
+global nodeDv0   is nodeNd:deltav.
+global nodeDvMin is nodeDv0:mag.
 
 uiDebug("Begin burn").
 
-until done
+until nodeDone
 {
-    if(nd:deltav:mag < dvMin) {
-        set dvMin to nd:deltav:mag.
+    set nodeAccel to ship:availablethrust / ship:mass.
+
+    if(nodeNd:deltav:mag < nodeDvMin) {
+        set nodeDvMin to nodeNd:deltav:mag.
     }
 
-    if accel > epsilon {
+    if nodeAccel > nodeEpislon {
       //feather the throttle
-      set tset to min(dvMin/accel, 1.0).
+      set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
 
-      if vdot(dv0, nd:deltav) < 0 {
-          // cut the throttle as soon as our nd:deltav and initial deltav
-          // start facing opposite dir ections
-          lock throttle to 0.
-          set done to true.
-      } else if nd:deltav:mag > dvMin + 0.1 {
-          lock throttle to 0.
-          set done to true.
+      if vdot(nodeDv0, nodeNd:deltav) < 0 {
+          // cut the throttle as soon as our nodeNd:deltav and initial deltav
+          // start facing opposite directions (i.e. if we overshoot)
+          set ship:control:pilotmainthrottle to 0.
+          set nodeDone to true.
+      } else if nodeNd:deltav:mag > nodeDvMin + 0.05 {
+          // our burn dv has started to INCREASE again; we haven't overshot,
+          // but node has gone all wobbly and we can't rely on main engine
+          // for any more dv progress.
+          set ship:control:pilotmainthrottle to 0.
+          set nodeDone to true.
       }
     } else {
-        // no accel -- out of fuel; time to auto stage!
+        // no nodeAccel -- out of fuel; time to auto stage!
         uiWarning("Node", "Stage " + stage:number + " separation during burn").
         local now is time:seconds.
 
-        if stageFuelInit = 0 or stage:liquidfuel < stageFuelInit {
+        if nodeStageFuelInit = 0 or stage:liquidfuel < nodeStageFuelInit {
           stage.
           wait until stage:ready.
-          set stageFuelInit to stage:liquidfuel.
+          set nodeStageFuelInit to stage:liquidfuel.
         }
     }
 }
 
 unlock steering.
-unlock throttle.
 set ship:control:pilotmainthrottle to 0.
 
-if nd:deltav:mag > 0.1 {
+// Make fine adjustments using RCS (for up to 15 seconds)
+if nodeNd:deltav:mag > 0.1 {
   rcs on.
   local t0 is time.
-  until nd:deltav:mag < 0.1 or (time - t0):seconds > 15 {
+  until nodeNd:deltav:mag < 0.1 or (time - t0):seconds > 15 {
     local sense is ship:facing.
     local dirV is V(
-      vdot(nd:deltav, sense:starvector),
-      vdot(nd:deltav, sense:upvector),
-      vdot(nd:deltav, sense:vector)
+      vdot(nodeNd:deltav, sense:starvector),
+      vdot(nodeNd:deltav, sense:upvector),
+      vdot(nodeNd:deltav, sense:vector)
     ).
 
     set ship:control:translation to dirV:normalized.
@@ -98,11 +100,11 @@ if nd:deltav:mag > 0.1 {
   rcs off.
 }
 
-if nd:deltav:mag > dv0:mag * 0.05 and nd:deltav:mag > epsilon {
-  uiFatal("Node", "BURN FAULT " + round(nd:deltav:mag, 1) + " m/s").
-} else if nd:deltav:mag > 0.1 {
-  uiWarning("Node", "BURN FAULT " + round(nd:deltav:mag, 1) + " m/s").
+if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > nodeEpislon {
+  uiFatal("Node", "BURN FAULT " + round(nodeNd:deltav:mag, 1) + " m/s").
+} else if nodeNd:deltav:mag > 0.1 {
+  uiWarning("Node", "BURN FAULT " + round(nodeNd:deltav:mag, 1) + " m/s").
 }
 
-remove nd.
+remove nodeNd.
 sas on.
