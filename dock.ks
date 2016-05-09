@@ -31,7 +31,7 @@ if dock_myPort <> 0 {
   uiBanner("Dock", "Dock with " + dock_station:name).
   dockPrepare(dock_myPort, target).
 
-  until target <> dock_hisPort or dockComplete(dock_myPort) {
+  until hastarget = false or target <> dock_hisPort or dockComplete(dock_myPort) {
     local rawD is target:position - dock_myPort:position.
     local sense is ship:facing.
 

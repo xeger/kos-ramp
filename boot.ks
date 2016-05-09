@@ -16,9 +16,15 @@ if ship:status = "prelaunch" {
   wait 1.
 }
 
-if ship:status = "flying" or ship:status = "sub_orbital" {
-  uiBanner("Mission", "Ascend to orbit.").
-  //     KEO: 2863334.06
-  // parking: body:atm:height + (body:radius / 4)
-  run launch_asc(body:atm:height + (body:radius / 4)).
+if (ship:status = "flying" or ship:status = "sub_orbital") {
+  if (body:name = "Kerbin") {
+    uiBanner("Mission", "Ascend to orbit.").
+    //     KEO: 2863334.06
+    // parking: body:atm:height + (body:radius / 4)
+    run launch_asc(body:atm:height + (body:radius / 4)).
+  }
+  else {
+    uiBanner("Mission", "Land on " + body:name + ".").
+    run land.
+  }
 }
