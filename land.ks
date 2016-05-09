@@ -6,10 +6,10 @@
 
 run once lib_ui.
 
-global land_descend is 10.0. // max speed after braking (m/s)
-global land_slip    is 0.01. // transverse speed @ touchdown (m/s)
+global land_slip    is 0.05. // transverse speed @ touchdown (m/s)
 global land_warp    is 3.    // warp factor during descent
-global land_final   is 10.   // height for final descent (m)
+global land_descend is 10.0. // max speed during final descent (m/s)
+global land_touch   is 10.   // touchdown height during final descent (m)
 sas off.
 
 until status <> "ORBITING" {
@@ -20,64 +20,77 @@ until status <> "ORBITING" {
 }
 
 if status = "SUB_ORBITAL" or status = "FLYING" {
-  uiBanner("Landing", "Initial descent").
-  lock steering to lookdirup(-ship:velocity:surface, ship:facing:upvector).
+  lock steering to lookdirup(-ship:velocity:surface, v(1,0,0)).
 
-  local braking is false.
+  local grav is body:mu / (body:position:mag ^ 2).
+  local accel is uiAssertAccel("Landing").
+  local brake is false.
   local final is false.
+  local touchdown is false.
 
   until status <> "SUB_ORBITAL" and status <> "FLYING" {
-    local accel is uiAssertAccel("Landing").
-    local v is ship:velocity:surface.
-    local dtBrake is abs(v:mag / accel).
     local geo is ship:geoposition.
     local ground is geo:position:normalized.
-    local vr is vdot(v, ground) * ground.
-    local vt is v - vr.
+    local sv is ship:velocity:surface.
+    local svR is vdot(sv, ground) * ground.
+    local svT is sv - svR.
+    local dtBrake is abs(sv:mag / accel).
+    local dtGround is (sqrt(4 * grav * abs(geo:position:mag) + sv:mag^2) - sv:mag) / (2*grav).
 
     if final {
-      // Final descent: continuously cancel transverse velocity;
-      // fall straight down; fire retros before impact.
-      local g is body:mu / (body:position:mag ^ 2).
-      local dtGround is (sqrt(4 * g * abs(geo:position:mag) + v:mag^2) - v:mag) / (2*g).
+      // Final descent: fall straight down; fire retros at touchdown.
+      legs on.
 
-      if vt:mag > land_slip {
-        set ship:control:translation to vt.
-      } else {
+      // decide when to touch down
+      if dtBrake >= dtGround-1 {
+        set touchdown to true.
+      }
+
+      // control transverse speed; keep it below allowable slip
+      if svT:mag > land_slip {
+        local sense is ship:facing.
+        local dirV is V(
+          vdot(svT, sense:starvector),
+          0,
+          vdot(svT, sense:vector)
+        ).
+
+        set ship:control:translation to -(dirV / land_slip / 2).
+      }
+      else {
         set ship:control:translation to 0.
       }
 
-      if geo:position:mag < land_final {
-        set legs to true.
+      // deploy legs and fire retros for soft touchdown
+      if touchdown and vdot(svR, ground) > 0 {
+        lock throttle to (sv:mag / accel) * 0.8.
       }
-
-      if dtBrake >= dtGround-1 {
-        lock throttle to min(v:mag / accel, 1.0).
-      } else {
+      else {
         lock throttle to 0.
       }
-    } else if braking  {
+    }
+    else if brake  {
       // Braking burn: scrub velocity down to final-descent speed
-      if v:mag > land_descend {
-        lock throttle to min(v:mag / accel, 1.0).
-      } else {
+      if sv:mag > land_descend {
+        lock throttle to min((sv:mag - land_descend * 0.5) / accel, 1.0).
+      }
+      else {
         uiBanner("Landing", "Final descent").
-        lock steering to lookdirup(-ship:geoposition:position:normalized, ship:facing:upvector).
+        lock steering to lookdirup(-ship:geoposition:position:normalized, v(1, 0, 0)).
         rcs on.
         lock throttle to 0.
         set final to true.
       }
-    } else {
-      // Predict when we'll need to brake
+    }
+    else {
+      // Deorbit: monitor & predict when to perform braking burn
       local rF is positionat(ship, time:seconds + dtBrake).
       local geoF is body:geopositionof(rF).
       local altF is rf:y - geoF:position:y.
 
-      if altF < land_final {
+      if altF < -100 {
         uiBanner("Landing", "Braking burn").
-        set braking to true.
-      } else {
-
+        set brake to true.
       }
     }
   }
