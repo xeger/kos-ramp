@@ -9,9 +9,6 @@ run lib_ui.
 // quo vadis?
 global nodeNd is nextnode.
 
-// a delta-v so small that it might as well be nothing...
-global nodeEpislon is 0.01.
-
 // Remember fuel level when we autostage to keep us from autostaging the
 // craft to death. This assumes that  "terminal stages" have no fuel, just
 // chutes and other descend-y things.
@@ -50,22 +47,17 @@ until nodeDone
         set nodeDvMin to nodeNd:deltav:mag.
     }
 
-    if nodeAccel > nodeEpislon {
+    if nodeAccel > 0 {
       //feather the throttle
       set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
 
-      if vdot(nodeDv0, nodeNd:deltav) < 0 {
-          // cut the throttle as soon as our nodeNd:deltav and initial deltav
-          // start facing opposite directions (i.e. if we overshoot)
-          set ship:control:pilotmainthrottle to 0.
-          set nodeDone to true.
-      } else if nodeNd:deltav:mag > nodeDvMin + 0.05 {
-          // our burn dv has started to INCREASE again; we haven't overshot,
-          // but node has gone all wobbly and we can't rely on main engine
-          // for any more dv progress.
-          set ship:control:pilotmainthrottle to 0.
-          set nodeDone to true.
-      }
+      // three conditions for being done:
+      //   1) overshot (node delta vee is pointing opposite from initial)
+      //   2) burn DV increases (off target due to wobbles)
+      //   3) burn DV gets too small for main engines to cope with
+      set nodeDone to (vdot(nodeDv0, nodeNd:deltav) < 0) or
+                      (nodeNd:deltav:mag > nodeDvMin + 0.1) or
+                      (nodeNd:deltav:mag <= 0.2).
     } else {
         // no nodeAccel -- out of fuel; time to auto stage!
         uiWarning("Node", "Stage " + stage:number + " separation during burn").
@@ -78,12 +70,13 @@ until nodeDone
         }
     }
 }
-
-unlock steering.
+lock throttle to 0.
 set ship:control:pilotmainthrottle to 0.
+unlock steering.
 
 // Make fine adjustments using RCS (for up to 15 seconds)
 if nodeNd:deltav:mag > 0.1 {
+  uiDebug("Fine tune with RCS").
   rcs on.
   local t0 is time.
   until nodeNd:deltav:mag < 0.1 or (time - t0):seconds > 15 {
@@ -100,7 +93,8 @@ if nodeNd:deltav:mag > 0.1 {
   rcs off.
 }
 
-if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > nodeEpislon {
+// Fault if remaining dv > 5% of initial AND mag is > 0.1 m/s
+if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > 0.1 {
   uiFatal("Node", "BURN FAULT " + round(nodeNd:deltav:mag, 1) + " m/s").
 } else if nodeNd:deltav:mag > 0.1 {
   uiWarning("Node", "BURN FAULT " + round(nodeNd:deltav:mag, 1) + " m/s").
