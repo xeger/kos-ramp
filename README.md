@@ -4,9 +4,9 @@ Introduction
 Relatively Adequate Mission Planner (RAMP) is a set of kOS programs that aims
 to improve your [KSP](http://kerbalspaceprogram.com) experience in several ways:
 
-1. Maximize the precision of your maneuvers
-2. Let you focus on the fun parts of spaceflight by automating the drudgework
-3. Teach you about orbital mechanics and physics
+ - Maximize the precision of your maneuvers
+ - Let you focus on the fun parts of spaceflight by automating the drudgework
+ - Teach you about orbital mechanics and physics
 
 You can use the scripts as a kind of autopilot or poke into them to
 see how everything works, learn about the underlying science, or customize
@@ -79,8 +79,9 @@ Clone my repo. Hack to your enjoyment. Pull requests are gladly accepted!
 *WARNING*: notice the control flow between programs is fairly flat. I try never
 to call more than 2-3 programs deep. This is because the kOS VM seems to have
 bugs with programs and functions calling one another. Specifically:
-1) Local variables from inner programs sometimes overwrite same-named variables from the outer program
-2) Function libraries don't seem to work when they are compiled code
+
+1. Local variables from inner programs sometimes overwrite same-named variables from the outer program
+2. Function libraries don't seem to work when they are compiled code
 
 See comments in `node_apo`/`node_peri` for an example of #1.
 Try to compile `lib_ui` and run it from another program for an example of #2.
@@ -90,11 +91,11 @@ Design Principles
 
 RAMP's code should be:
 
-1) Safe: scripts should check for errors and harmful conditions
-2) Modular: each script accomplishes a specific purpose
-3) Reusable: scripts call library functions rather than copy-pasting code
-4) Educational: comments explain each script and provide science and math background
-5) Ethical: anything copied or derived from an outside work includes a link to the original
+1. Safe: scripts should check for errors and harmful conditions
+2. Modular: each script accomplishes a specific purpose
+3. Reusable: scripts call library functions rather than copy-pasting code
+4. Educational: comments explain each script and provide science and math background
+5. Ethical: anything copied or derived from an outside work includes a link to the original
 
 Program Naming
 --------------
@@ -107,7 +108,7 @@ Program names must be as short as possible while still conveying the purpose
 of the program.
 
 Names must follow lexical ordering, i.e. all programs related to maneuver-node
-management begin with `node-`: `node_apo`, `node_peri` and so forth. The program
+management begin with `node`: `node_apo`, `node_peri` and so forth. The program
 simply named `node` is standalone; it executes the next node, then halts.
 
 The additional words of a program name should convey _what_ the program
@@ -132,7 +133,9 @@ Function Libraries
 ------------------
 
 Programs beginning with `lib_` contain reusable functions and are invoked by
-other programs.
+other programs using `RUN ONCE`.
+
+Beware that libs cannot run other libs! If two library scripts depend on one anothers' functions, then you must make sure to `RUN ONCE` both scripts from every top-level program that uses either oft hem!
 
 Comments and Documentation
 --------------------------
