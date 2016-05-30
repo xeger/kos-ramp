@@ -3,18 +3,6 @@
 
 run once lib_ui.
 
-// TODO deal properly with approach distance...
-// for now, just wimp out and try to hit everything dead-on
-function approachDistance {
-  local ratio is target:mass / ship:mass.
-
-  if ratio > 1000 {
-    return 0.
-  } else {
-    return 0.
-  }
-}
-
 function synodicPeriod {
   parameter o1, o2.
 
@@ -32,15 +20,8 @@ function synodicPeriod {
 function hohmannDv {
   local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
   local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
-  local approach is 0.
 
-  if r2 > r1 {
-    set approach to approachDistance().
-  } else {
-    set approach to -approachDistance().
-  }
-
-  return sqrt(body:mu / r1) * (sqrt( (2*(r2-approach)) / (r1+r2-approach) ) - 1).
+  return sqrt(body:mu / r1) * (sqrt( (2*r2) / (r1+r2) ) - 1).
 }
 
 // Compute time of Hohmann transfer window.
@@ -62,8 +43,11 @@ function hohmann {
   local phi is 180 - theta.
 
   local T is time:seconds.
-  local Tmax is T + 1.5 * synodicPeriod(ship:obt, target:obt).
-  local dt is (Tmax - T) / 20.
+  local Tsynodic is synodicPeriod(ship:obt, target:obt).
+  local Tmax is T + (3 * Tsynodic).
+
+  local dt is (Tmax - T) / 36.
+  local etaError is min(ship:obt:period, target:obt:period) / 360.
 
   until false {
     local ps is positionat(ship, T) - body:position.
@@ -91,9 +75,6 @@ function hohmann {
       set eta to (phiT + phi) / (omega2 - omega).
     }
 
-    // TODO make sure this heuristic works for all cases:
-    //   - rendezvous up (untested)
-    //   - transfer down (untested)
     if T > Tmax {
       return 0.
     } else if r2 > r1 and norm:y > 0 {
@@ -105,12 +86,12 @@ function hohmann {
     } else if (r2 > r1 and dot > 0) or (r2 < r1 and dot < 0) {
       uiDebugNode(T, dv, "ship is opposite target").
       set T to T + dt.
-    } else if eta < -1 {
-      uiDebugNode(T, dv, "eta is in the past").
-      set T to T + dt.
-    } else if abs(eta) > 1 {
-      uiDebugNode(T, dv, "eta is too far").
-      set T to T + eta / 2.
+    } else if eta < 0 {
+      uiDebugNode(T, dv, "eta is in the past + (" + round(eta, 0) + ")").
+      set T to T + min(1, eta / 8).
+    } else if abs(eta) > etaError {
+      uiDebugNode(T, dv, "eta is too far (" + round(eta, 0) + ")").
+      set T to T + min(1, eta / 4).
     } else {
       uiDebugNode(T, dv, "found window! eta=" + round(eta) + " phiT=" + round(phiT, 1) + " phi=" + round(phi, 1)).
       return T + eta.
@@ -138,6 +119,9 @@ global node_T is hohmann(node_dv).
 
 if node_T > 0 {
   add node(node_T, 0, 0, node_dv).
-} else {
-  uiError("Node", "NO TRANSFER WINDOW").
+  uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
+}
+else {
+  add node(time:seconds + 3600, 0, 0, node_dv).
+  uiFatal("Node", "STRANDED").
 }
