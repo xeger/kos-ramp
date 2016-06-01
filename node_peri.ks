@@ -10,7 +10,7 @@ local mu is body:mu.
 local br is body:radius.
 
 // present orbit properties
-local vom is velocity:orbit:mag.               // actual velocity
+local vom is ship:orbit:velocity:orbit:mag.    // actual velocity
 local r is br + altitude.                      // actual distance to body
 local ra is br + apoapsis.                     // radius at burn apsis
 local v1 is sqrt( vom^2 + 2*mu*(1/ra - 1/r) ). // velocity at burn apsis
