@@ -25,9 +25,9 @@ run once lib_dock.
 
 global dock_myPort is dockChoosePorts().
 global dock_hisPort is target.
-global dock_station is target:ship.
 
 if dock_myPort <> 0 {
+  global dock_station is dock_hisPort:ship.
   uiBanner("Dock", "Dock with " + dock_station:name).
   dockPrepare(dock_myPort, target).
 

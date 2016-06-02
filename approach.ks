@@ -16,33 +16,38 @@ lock velT to vel - velR.
 rcs off.
 sas off.
 
-if target:position:mag / vel:mag < 15 {
-  // Nearby target; come to a stop first
-  lock steering to lookdirup(-vel:normalized, ship:facing:upvector).
-  wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.99.
+if target:position:mag > 5000 or vel:mag > 25 {
+  run node_vel_tgt.
+  local crit is 2 * vel:mag / accel.
+  if nextnode:eta > crit {
+    run warp(nextnode:eta - crit).
+  }
 
-  uiBanner("Maneuver", "Match velocity").
-  lock throttle to min(vel:mag / accel, 1.0).
-  wait until vel:mag < 0.5.
-  set throttle to 0.
-} else if velT:mag > 1 {
-  // Far-away target; cancel transverse velocity first
-  lock steering to lookdirup(-velT:normalized, ship:facing:upvector).
-  wait until vdot(-velT:normalized, ship:facing:forevector) >= 0.99.
+  if target:position:mag / vel:mag < 30 { // Nearby target; come to a stop first
+    lock steering to lookdirup(-vel:normalized, ship:facing:upvector).
+    wait until vdot(-vel:normalized, ship:facing:forevector) >= 0.95.
 
-  uiBanner("Maneuver", "Match transverse velocity").
-  lock throttle to min(velT:mag / accel, 1.0).
-  wait until velT:mag < 0.5.
-  set throttle to 0.
+    uiBanner("Maneuver", "Match velocity").
+    lock throttle to min(vel:mag / accel, 1.0).
+    wait until vel:mag < 0.5.
+    set throttle to 0.
+  } else if velT:mag > 1 { // Far-away target; cancel transverse velocity first
+    lock steering to lookdirup(-velT:normalized, ship:facing:upvector).
+    wait until vdot(-velT:normalized, ship:facing:forevector) >= 0.99.
+
+    uiBanner("Maneuver", "Match transverse velocity").
+    lock throttle to min(velT:mag / accel, 1.0).
+    wait until velT:mag < 0.5.
+    set throttle to 0.
+  }
 }
 
 uiBanner("Maneuver", "Begin approach").
 lock dot to vdot(target:position, velR).
 if dot < 0 {
   lock steering to lookdirup(-velR:normalized, ship:facing:upvector).
-  wait until vdot(-velR:normalized, ship:facing:forevector) >= 0.99.
+  wait until vdot(-velR:normalized, ship:facing:forevector) >= 0.9.
   unlock steering.
-  sas on.
   lock throttle to 1.
   wait until dot > 0.
   set throttle to 0.
@@ -51,7 +56,7 @@ if dot < 0 {
 unlock dot.
 
 lock steering to lookdirup(velR:normalized, ship:facing:upvector).
-wait until vdot(velR:normalized, ship:facing:forevector) >= 0.99.
+wait until vdot(velR:normalized, ship:facing:forevector) >= 0.9.
 
 local t0 is time:seconds.
 lock throttle to 1.
@@ -65,7 +70,7 @@ local stopDistance is 0.5 * accel * (vel:mag / accel)^2.
 local dt is (target:position:mag - stopDistance - 10) / vel:mag.
 run warp(dt).
 
-dockMatchVelocity(max(5.0, min(1.0, target:position:mag / 100.0))).
+dockMatchVelocity(max(1.0, min(10.0, target:position:mag / 60.0))).
 
 unlock velR.
 unlock velT.

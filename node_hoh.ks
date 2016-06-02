@@ -47,7 +47,7 @@ function hohmann {
   local Tmax is T + (3 * Tsynodic).
 
   local dt is (Tmax - T) / 36.
-  local etaError is min(ship:obt:period, target:obt:period) / 360.
+  local etaError is min(ship:obt:period, target:obt:period) / 720.
 
   until false {
     local ps is positionat(ship, T) - body:position.
@@ -88,10 +88,10 @@ function hohmann {
       set T to T + dt.
     } else if eta < 0 {
       uiDebugNode(T, dv, "eta is in the past + (" + round(eta, 0) + ")").
-      set T to T + min(1, eta / 8).
+      set T to T - max(1, abs(eta) / 8).
     } else if abs(eta) > etaError {
       uiDebugNode(T, dv, "eta is too far (" + round(eta, 0) + ")").
-      set T to T + min(1, eta / 4).
+      set T to T + max(1, eta / 4).
     } else {
       uiDebugNode(T, dv, "found window! eta=" + round(eta) + " phiT=" + round(phiT, 1) + " phi=" + round(phi, 1)).
       return T + eta.

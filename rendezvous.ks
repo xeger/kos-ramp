@@ -4,7 +4,7 @@
 // Maneuver close to another vessel orbiting the same body.
 /////////////////////////////////////////////////////////////////////////////
 
-run once lib_ui.
+run once lib_ui.nod
 run once lib_util.
 
 if ship:body <> target:body {
@@ -40,23 +40,11 @@ if target:position:mag > 25000 and approachX > 25000 {
   run node.
 }
 
-// Match velocity at closest approach
-// TODO make node_vel_tgt more accurate and use it here (currently only used for steering guidance)
-set approachT to utilClosestApproach(ship, target).
-local aprVship is velocityat(ship, approachT):orbit.
-local aprVtgt is velocityat(target, approachT):orbit.
-local brakingT is (aprVtgt - aprVship):mag / accel.
-
-sas off.
-run node_vel_tgt.
-lock steering to lookdirup(nextnode:deltav, ship:facing:topvector).
-wait until vdot(nextnode:deltav:normalized, ship:facing:vector) > 0.99.
-unlock steering.
-remove nextnode.
-run warp(approachT - time:seconds - 2*brakingT).
-
 run approach.
 
-uiBanner("Rendezvous", "Final approach").
+uiBanner("Rendezvous", "Approach to 150m").
 wait until target:position:mag < 150.
+
+run match.
+
 run dock.

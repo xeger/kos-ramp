@@ -11,7 +11,6 @@ global dock_final is 1.    // final-approach distance (m)
 global dock_algnV is 2.5.  // max alignment speed (m/s)
 global dock_apchV is 1.    // max approach speed (m/s)
 global dock_dockV is 0.2.  // final approach speed (m/s)
-global dock_scale is 2.    // max speed multiple when ship is far from target
 
 //global dock_Z is pidloop(1.4, 0, 0.4, -1, 1).
 
@@ -59,9 +58,9 @@ function dockAlign {
   parameter alignPos, alignVel.
 
   // Taper X/Y/Z speed according to distance from target
-  local vScaleX is min(abs(alignPos:X / dock_scale), dock_scale).
-  local vScaleY is min(abs(alignPos:Y / dock_scale), dock_scale).
-  local vScaleZ is min(abs(alignPos:Z / dock_start), dock_scale).
+  local vScaleX is min(abs(alignPos:X / dock_scale), dock_algnV).
+  local vScaleY is min(abs(alignPos:Y / dock_scale), dock_algnV).
+  local vScaleZ is min(abs(alignPos:Z / dock_start), dock_algnV).
 
   // Never align slower than final-approach speed
   local vWantX is -(alignPos:X / abs(alignPos:X)) * min(dock_dockV, dock_algnV * vScaleX).
@@ -133,18 +132,20 @@ function dockChoosePorts {
   local myPort is 0.
   local hisPort is 0.
 
-  if not target:name:contains("docking") {
-    // ship is targeted; find a good port
+  if target:name:contains("docki") { // dock is already targeted
+    set hisPort to target.
+  }
+  else { // ship is targeted; find biggest ready-to-dock port
     local hisMods is target:modulesnamed("ModuleDockingNode").
     for mod in hisMods {
-      if mod:part:state = "Ready" and mod:part:mass > hisPort:mass {
+      if mod:part:state = "Ready" and (hisPort = 0 or mod:part:mass > hisPort:mass) {
         set hisPort to mod:part.
       }
     }
   }
-  else {
-    // dock is already targeted
-    set hisPort to target.
+
+  if hisPort = 0 {
+      return 0.
   }
 
   local myMods is ship:modulesnamed("ModuleDockingNode").

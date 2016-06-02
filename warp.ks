@@ -14,6 +14,11 @@ global warp_physics is true.
 global warp_t0 is time:seconds.
 global warp_t1 is warp_t0 + dt - 1.
 
+// special case: negative interval means skip all loop iterations & return
+if dt < 0 {
+  set warp_t1 to warp_t0.
+}
+
 lock warp_dt to warp_t1 - time:seconds.
 lock warp_atmo to ship:altitude / max(ship:altitude, body:atm:height).
 
