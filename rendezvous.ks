@@ -4,7 +4,7 @@
 // Maneuver close to another vessel orbiting the same body.
 /////////////////////////////////////////////////////////////////////////////
 
-run once lib_ui.nod
+run once lib_ui.
 run once lib_util.
 
 if ship:body <> target:body {

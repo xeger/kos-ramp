@@ -87,8 +87,12 @@ function hohmann {
       uiDebugNode(T, dv, "ship is opposite target").
       set T to T + dt.
     } else if eta < 0 {
-      uiDebugNode(T, dv, "eta is in the past + (" + round(eta, 0) + ")").
-      set T to T - max(1, abs(eta) / 8).
+      uiDebugNode(T, dv, "eta is in the past + (" + round(eta, 0) + ")")
+      if abs(eta) < dt {
+        set T to T - max(1, abs(eta) / 2).
+      } else {
+        set T to T + dt.
+      }
     } else if abs(eta) > etaError {
       uiDebugNode(T, dv, "eta is too far (" + round(eta, 0) + ")").
       set T to T + max(1, eta / 4).
@@ -135,5 +139,5 @@ if node_T > 0 {
   uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
 }
 else {
-  uiFatal("Node", "STRANDED: no Hohmann window").
+  uiError("Node", "No transfer window").
 }
