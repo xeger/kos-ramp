@@ -119,9 +119,21 @@ global node_T is hohmann(node_dv).
 
 if node_T > 0 {
   add node(node_T, 0, 0, node_dv).
+
+  // Fudge injection burn to avoid tranferring INTO planetary targets!
+  // HACK: use target mass to determine whether it's a planet.
+  if target:mass / ship:mass > 1000 {
+    local safety is target:radius * 0.05 + target:atm:height.
+    local encounterOrbit is orbitat(ship, time:seconds + nextnode:eta + 5):nextpatch.
+    local fudge is 0.5 * (target:obt:semimajoraxis - ship:obt:semimajoraxis) / abs(target:obt:semimajoraxis - ship:obt:semimajoraxis). // init to +/- 1 second
+    until encounterOrbit:periapsis > safety {
+      set nextnode:prograde to nextnode:prograde + fudge.
+      set encounterOrbit to orbitat(ship, time:seconds + nextnode:eta + 5):nextpatch.
+    }
+  }
+
   uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
 }
 else {
-  add node(time:seconds + 3600, 0, 0, node_dv).
-  uiFatal("Node", "STRANDED").
+  uiFatal("Node", "STRANDED: no Hohmann window").
 }

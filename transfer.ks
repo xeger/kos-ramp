@@ -28,7 +28,5 @@ until obt:transition <> "encounter" {
   run warp(eta:transition+1).
 }
 
-// TODO - deal with collision (radial burn)
-
 uiBanner("Transfer", "Transfer braking burn").
 run circ.
