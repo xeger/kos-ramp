@@ -1,40 +1,53 @@
-// Match inclinations with target by planning a burn at the ascending or
-// descending node, whichever comes first.
+/////////////////////////////////////////////////////////////////////////////
+// Change alignment relative to equator.
+/////////////////////////////////////////////////////////////////////////////
+// Perform a plane-change maneuver at the next ascending or descending node
+// with the equatorial orbit. Limit plane change to +/- 30 degrees and halt
+// with a fatal error if plane change would lead to an escaping or terminal
+// orbit.
+/////////////////////////////////////////////////////////////////////////////
 
-// Desired orbital inclination
-parameter target_inclination.
+parameter desiredInclin.
 
-local position is ship:position-ship:body:position.
-local velocity is ship:velocity:orbit.
-local ang_vel is 4 * ship:obt:inclination / ship:obt:period.
+local pos0 is ship:position-ship:body:position.
+local vel0 is ship:velocity:orbit.
 
-local equatorial_position is V(position:x, 0, position:z).
-local angle_to_equator is vang(position,equatorial_position).
+local posEqu is V(pos0:x, 0, pos0:z).
+local angEqu is vang(pos0,posEqu).
 
-if position:y > 0 {
-	if velocity:y > 0 {
+if pos0:y > 0 {
+	if vel0:y > 0 {
 		// above & traveling away from equator; need to rise to inc, then fall back to 0
-		set angle_to_equator to 2 * ship:obt:inclination - abs(angle_to_equator).
+		set angEqu to 2 * ship:obt:inclination - abs(angEqu).
 	}
 } else {
-	if velocity:y < 0 {
+	if vel0:y < 0 {
 		// below & traveling away from the equator; need to fall to inc, then rise back to 0
-		set angle_to_equator to 2 * ship:obt:inclination - abs(angle_to_equator).
+		set angEqu to 2 * ship:obt:inclination - abs(angEqu).
 	}
 }
 
-local frac is (angle_to_equator / (4 * ship:obt:inclination)).
+local frac is (angEqu / (4 * ship:obt:inclination)).
 local dt is frac * ship:obt:period.
-local t is time + dt.
+local T is time + dt.
 
-local relative_inclination is abs(ship:obt:inclination - target_inclination).
-local v is velocityat(ship, T):orbit.
-local dv is 2 * v:mag * sin(relative_inclination / 2).
+local relInclin is abs(ship:obt:inclination - desiredInclin).
+if abs(relInclin) > 30 {
+	// clamp inclination change to (-30, 30) degrees to avoid escaping
+	set relInclin to relInclin / abs(relInclin / 30).
+}
 
-if v:y > 0 {
-  // burn anti-normal at ascending node
-	add node(T:seconds, 0, -dv, 0).
-} else {
-  // burn normal at descending node
+local velEqu is velocityat(ship, T):orbit.
+local dv is 2 * velEqu:mag * sin(relInclin / 2).
+
+if vel0:y <= 0 and velEqu:y <= 0 {
 	add node(T:seconds, 0, dv, 0).
+} else {
+	add node(T:seconds, 0, -dv, 0).
+}
+
+local trans is orbitat(ship, time:seconds + nextnode:eta + 5):transition.
+if trans <> "FINAL" {
+	remove nextnode.
+	uiFatal("Node", "STRANDED: unstable plane change").
 }

@@ -14,6 +14,11 @@ local angle_to_opposite_node is vang(positionat(ship,t0)-ship:body:position,-1*l
 local relative_inclination is vang(ship_orbit_normal,target_orbit_normal).
 local angle_to_node_delta is angle_to_node2-angle_to_node.
 
+if abs(relative_inclination) > 30 {
+	// clamp inclination change to (-30, 30) degrees to avoid escaping
+	set relative_inclination to relative_inclination / abs(relative_inclination / 30).
+}
+
 local ship_orbital_angular_vel is (ship:velocity:orbit:mag / (body:radius+ship:altitude))  * (180/constant():pi).
 local time_to_node is angle_to_node / ship_orbital_angular_vel.
 local time_to_opposite_node is angle_to_opposite_node / ship_orbital_angular_vel.
@@ -37,4 +42,10 @@ if (v:y <= 0 and vt:y <= 0)  {
 	add node(t, 0, dv, 0).
 } else {
 	add node(t, 0, -dv, 0).
+}
+
+local trans is orbitat(ship, time:seconds + nextnode:eta + 5):transition.
+if trans <> "FINAL" {
+	remove nextnode.
+	uiFatal("Node", "STRANDED: unstable plane change").
 }
