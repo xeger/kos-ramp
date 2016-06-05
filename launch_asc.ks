@@ -20,13 +20,7 @@ global launch_tStage is time:seconds.
 // Starting/ending height of gravity turn
 // TODO adjust for atmospheric pressure; this works for Kerbin
 global launch_gt0 is body:atm:height * 0.1.
-global launch_gt1 is body:atm:height * 0.8.
-
-// "Sharpness" of gravity turn; we use a cosine function to modulate the
-// turn, and the sharpness is a scaling factor for the input to the cosine
-// function. Higher numbers are sharper, lower numbers are gentler.
-// TODO get rid of this once we solve "tipping" issue
-global launch_gtScale is 1.
+global launch_gt1 is 1 + body:atm:height * 0.8.
 
 /////////////////////////////////////////////////////////////////////////////
 // Steering function that uses the launch_gt* to perform a gravity turn.
@@ -37,7 +31,7 @@ function ascentSteering {
   local gtPct is (ship:altitude - launch_gt0) / (launch_gt1 - launch_gt0).
 
   // Ideal gravity-turn azimuth (inclination) and facing at present altitude.
-  local inclin is min(90, max(0, 90 * cos(launch_gtScale * 90 * gtPct))).
+  local inclin is min(90, max(0, 90 * cos(90 * gtPct))).
   local gtFacing is heading(90, inclin):vector.
 
   local prodot is vdot(ship:facing:vector, prograde:vector).
@@ -57,13 +51,13 @@ function ascentThrottle {
   // angle of attack
   local aoa is vdot(ship:facing:vector, ship:velocity:surface).
   // how far through the soup are we?
-  local atmPct is ship:altitude / (body:atm:height+1).
+  local atmPct is max(1, ship:altitude / (body:atm:height+1)).
   local spd is ship:velocity:surface:mag.
 
   // TODO adjust cutoff for atmospheric pressure; this works for kerbin
-  local cutoff is 200 + (400 * max(0, atmPct)).
+  local cutoff is 200 + (400 * atmPct).
 
-  if spd > cutoff and launch_tSrbSep = 0 {
+  if atmPct < 0.8 and spd > cutoff and launch_tSrbSep = 0 {
     // going too fast during SRB ascent; avoid overheat or
     // aerodynamic catastrophe by limiting throttle
     return 1 - (1 * (spd - cutoff) / cutoff).
@@ -126,10 +120,9 @@ if ship:status <> "prelaunch" and stage:solidfuel = 0 {
   // note that there's no SRB
   set launch_tSrbSep to time:seconds.
 }
-
 lock steering to ascentSteering().
 lock throttle to ascentThrottle().
-set ship:control:pilotmainthrottle to 0.
+set ship:control:pilotmainthrottle to 1.
 
 /////////////////////////////////////////////////////////////////////////////
 // Enter ascent loop.
