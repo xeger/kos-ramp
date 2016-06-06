@@ -87,12 +87,8 @@ function hohmann {
       uiDebugNode(T, dv, "ship is opposite target").
       set T to T + dt.
     } else if eta < 0 {
-      uiDebugNode(T, dv, "eta is in the past + (" + round(eta, 0) + ")")
-      if abs(eta) < dt {
-        set T to T - max(1, abs(eta) / 2).
-      } else {
-        set T to T + dt.
-      }
+      uiDebugNode(T, dv, "eta is in the past + (" + round(eta, 0) + ")").
+      set T to T + dt.
     } else if abs(eta) > etaError {
       uiDebugNode(T, dv, "eta is too far (" + round(eta, 0) + ")").
       set T to T + max(1, eta / 4).

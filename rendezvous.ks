@@ -42,6 +42,10 @@ if target:position:mag > 25000 and approachX > 25000 {
 
 run approach.
 
+if utilHasNextNode() {
+  remove nextnode.
+}
+
 uiBanner("Rendezvous", "Approach to 150m").
 wait until target:position:mag < 150.
 

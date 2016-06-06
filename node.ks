@@ -49,7 +49,11 @@ until nodeDone
 
     if nodeAccel > 0 {
       //feather the throttle
-      set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
+      if vdot(facing:forevector, nodeFacing:forevector) > 0.9 {
+        set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
+      } else {
+        set ship:control:pilotmainthrottle to 0.
+      }
 
       // three conditions for being done:
       //   1) overshot (node delta vee is pointing opposite from initial)
