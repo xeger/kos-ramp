@@ -1,11 +1,10 @@
 TODO.md
 
+- troubleshoot landing
+    - braking prediction is off ... why?
+
 - integrate deorbit & landing
   - don't mess up trajectory; use different approach? e.g. positionat(perigee) vs terrain height?
-
-- troubleshoot landing
-    - braking burn doesn't work right! fails when coming in "hot"
-    - final descent far too early? unnecessary braking?
 
 - troubleshoot rendezvous/approach
     - rendezvous gets stuck on final approach

@@ -65,9 +65,9 @@ function landNodeDeorbit {
   // find ideal deorbit burn point not accounting for planetary spin
   local geoShip is positionat(ship, time + etaGeo:y).
   local geoLng is body:geopositionof(geoShip).
-  local geoPeriHeight is body:radius * 0.05.
+  local geoPeriHeight is body:radius * 0.025.
   if body:atm:height > 0 {
-    set geoPeriHeight to body:atm:height * 0.05.
+    set geoPeriHeight to body:atm:height * 0.2.
   }
   local geoHeight is (geoShip - geoLng:altitudeposition(geoPeriHeight)):mag.
   local newSMA is ship:orbit:semimajoraxis - geoHeight.
