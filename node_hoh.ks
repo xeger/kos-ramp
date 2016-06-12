@@ -119,20 +119,31 @@ global node_T is hohmann(node_dv).
 
 if node_T > 0 {
   add node(node_T, 0, 0, node_dv).
+  local futureOrbit is orbitat(ship, time:seconds + nextnode:eta + 5).
 
   // Fudge injection burn to avoid tranferring INTO planetary targets!
   // HACK: use target mass to determine whether it's a planet.
-  if target:mass / ship:mass > 1000 {
-    local safety is target:radius * 0.05 + target:atm:height.
-    local encounterOrbit is orbitat(ship, time:seconds + nextnode:eta + 5):nextpatch.
+  if target:mass / ship:mass > 1000 and futureOrbit:hasnextpatch {
+    local safety is target:radius * 0.1 + target:atm:height.
+    local encounterOrbit is futureOrbit:nextpatch.
     local fudge is 0.5 * (target:obt:semimajoraxis - ship:obt:semimajoraxis) / abs(target:obt:semimajoraxis - ship:obt:semimajoraxis). // init to +/- 1 second
+    if encounterOrbit:inclination > 90 {
+      set fudge to -fudge.
+    }
     until encounterOrbit:periapsis > safety {
       set nextnode:prograde to nextnode:prograde + fudge.
-      set encounterOrbit to orbitat(ship, time:seconds + nextnode:eta + 5):nextpatch.
+      set futureOrbit to orbitat(ship, time:seconds + nextnode:eta + 5).
+      if futureOrbit:hasnextpatch {
+        set encounterOrbit to futureOrbit:nextpatch.
+      }
     }
   }
 
-  uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
+  if futureOrbit:hasnextpatch {
+    uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
+  } else {
+    uiError("Node", "No encounter; check for bad alignment!").
+  }
 }
 else {
   uiError("Node", "No transfer window").
