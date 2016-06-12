@@ -40,7 +40,7 @@ if abs(relInclin) > 30 {
 local velEqu is velocityat(ship, T):orbit.
 local dv is 2 * velEqu:mag * sin(relInclin / 2).
 
-if vel0:y <= 0 and velEqu:y <= 0 {
+if vdot(v, vt) < 0 {
 	add node(T:seconds, 0, dv, 0).
 } else {
 	add node(T:seconds, 0, -dv, 0).

@@ -1,10 +1,11 @@
 TODO.md
 
 - troubleshoot landing
-    - braking prediction is off ... why?
+    - suicide-burn timing is off ... why?
 
-- integrate deorbit & landing
-  - don't mess up trajectory; use different approach? e.g. positionat(perigee) vs terrain height?
+- make deorbit work for nontrivial cases
+    - high-inclination orbit (> 90)
+    - account for latitude too
 
 - troubleshoot rendezvous/approach
     - rendezvous gets stuck on final approach

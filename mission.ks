@@ -3,6 +3,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // Launches from Kerbin, transfers to Munar orbit, and lands on Mun.
 //
+// Set mission_goal to Minmus in order to go there instead.
+//
 // Can be safely resumed at ALMOST any point during the mission and it will
 // make progress (hence "idempotent.") A few conditions that it doesn't yet
 // handle:

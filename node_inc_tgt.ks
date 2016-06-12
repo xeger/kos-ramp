@@ -38,7 +38,7 @@ local vt is velocityat(target, t):orbit.
 local diff is vt - v.
 local dv is 2 * v:mag * sin(relative_inclination / 2).
 
-if (v:y <= 0 and vt:y <= 0)  {
+if (vdot(v, vt) < 0)  {
 	add node(t, 0, dv, 0).
 } else {
 	add node(t, 0, -dv, 0).
