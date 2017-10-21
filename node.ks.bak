@@ -89,7 +89,7 @@ if nodeNd:deltav:mag > 0.1 {
 
     set ship:control:translation to dirV:normalized.
   }
-  set ship:control:translation to v(0,0,0).
+  set ship:control:translation to 0.
   rcs off.
 }
 
