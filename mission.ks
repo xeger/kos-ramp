@@ -16,7 +16,7 @@
 
 run once lib_ui.
 
-global mission_goal is body("Mun").
+global mission_goal is body("Minmus").
 
 function missionAccomplished {
   return ship:body = mission_goal.
