@@ -7,6 +7,7 @@
 
 // Final apoapsis (m altitude)
 parameter apo.
+// Heading of the launch (Degrees, default 90 = East)
 parameter hdglaunch is 90. 
 
 // Number of seconds to sleep during ascent loop

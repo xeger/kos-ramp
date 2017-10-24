@@ -65,13 +65,35 @@ FUNCTION OffsetSteering {
 // This function is intended to use with shuttles and spaceplanes that have engines not in line with CoM.
 // Usage: LOCK STEERING TO OffsetSteering(THEDIRECTIONYOUWANTTOSTEER).
 // Example: LOCK STEERING TO OffsetSteering(PROGRADE).
-// 2017 FellipeC 
+// 2017 FellipeC - Released under https://creativecommons.org/licenses/by-nc/4.0/
 
   PARAMETER DIRTOSTEER. // The direction you want the ship to steer to
   LOCAL NEWDIRTOSTEER IS DIRTOSTEER. // Return value. Defaults to original direction.
 
-  LOCAL LOCK trueacc TO ship:sensors:acc - ship:sensors:grav.
-  LOCAL OSS IS LEXICON().
+  LOCAL OSS IS LEXICON(). // Used to store all persistent data
+  LOCAL trueacc IS 0. // Used to store ship acceleration vector
+
+  FUNCTION HasSensors { 
+    // Checks if ship have required sensors:
+    // - Accelerometer (Double-C Seismic Accelerometer) 
+    // - Gravity Sensor (GRAVMAX Negative Gravioli Detector)
+    LOCAL HasA IS False.
+    LOCAL HasG IS False.
+    LIST SENSORS IN SENSELIST.
+    FOR S IN SENSELIST {
+      IF S:TYPE = "ACC" { SET HasA to True. }
+      IF S:TYPE = "GRAV" { SET HasG to True. }
+    }
+    IF HasA AND HasG { RETURN TRUE. }
+    ELSE { RETURN FALSE. }
+  }
+
+  IF HasSensors() { // Checks for sensors
+    LOCK trueacc TO ship:sensors:acc - ship:sensors:grav.
+  }
+  ELSE { // If ship have no sensors, just returns direction without any correction
+    RETURN DIRTOSTEER. 
+  }
 
   FUNCTION InitOSS {
     // Initialize persistent data.
