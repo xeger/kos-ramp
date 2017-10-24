@@ -5,6 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 run lib_ui.
+run once lib_util.
 
 // quo vadis?
 global nodeNd is nextnode.
@@ -16,7 +17,8 @@ global nodeStageFuelInit is 0.
 
 // keep ship pointed at node
 sas off.
-lock steering to lookdirup(nodeNd:deltav, ship:facing:topvector).
+//lock steering to lookdirup(nodeNd:deltav, ship:facing:topvector). // ORIGINAL CODE
+lock steering to OffsetSteering(lookdirup(nodeNd:deltav, ship:facing:topvector)). //LFC's mod
 
 // estimate burn direction & duration
 global nodeAccel is uiAssertAccel("Node").
@@ -101,4 +103,5 @@ if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > 0.1 {
 }
 
 remove nodeNd.
+unlock steering.
 sas on.
