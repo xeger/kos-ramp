@@ -1,5 +1,9 @@
 TODO.md
 
+- use global var to control physics warp
+
+- rename OffsetSteering to utilFaceBurn
+
 - integrate deorbit & landing
   - don't mess up trajectory; use different approach? e.g. positionat(perigee) vs terrain height?
 
@@ -9,8 +13,6 @@ TODO.md
 
 - troubleshoot rendezvous/approach
     - rendezvous gets stuck on final approach
-
-- warp during ascent is too frisky (wait till out of atmo)
 
 - warp during landing
 
@@ -22,4 +24,3 @@ Hohmann: maybe find a new way...
 - troubleshoot Hohmann
     - not always finding a window
     - buggy Minmus dv
-    - runs smack into Mun

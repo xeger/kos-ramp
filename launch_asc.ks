@@ -7,6 +7,8 @@
 
 // Final apoapsis (m altitude)
 parameter apo.
+// Heading of the launch (Degrees, default 90 = East)
+parameter hdglaunch is 90. 
 
 // Number of seconds to sleep during ascent loop
 global launch_tick is 1.
@@ -19,33 +21,26 @@ global launch_tStage is time:seconds.
 
 // Starting/ending height of gravity turn
 // TODO adjust for atmospheric pressure; this works for Kerbin
-global launch_gt0 is body:atm:height * 0.1.
-global launch_gt1 is body:atm:height * 0.8.
+global launch_gt0 is body:atm:height * 0.007. // About 500m in Kerbin
+global launch_gt1 is body:atm:height * 0.6. // About 42000m in Kerbin
 
-// "Sharpness" of gravity turn; we use a cosine function to modulate the
-// turn, and the sharpness is a scaling factor for the input to the cosine
-// function. Higher numbers are sharper, lower numbers are gentler.
-// TODO get rid of this once we solve "tipping" issue
-global launch_gtScale is 1.
-
-/////////////////////////////////////////////////////////////////////////////
-// Steering function that uses the launch_gt* to perform a gravity turn.
-/////////////////////////////////////////////////////////////////////////////
-
+// Can't figure out the original formula for Gravity Turn, changed to use ARCCOS. 
+// The original algorithm didn't work with most of my rockets, so changed.
+// TODO: Figure a better formula for Gravity Turn.
 function ascentSteering {
   // How far through our gravity turn are we? (0..1)
   local gtPct is (ship:altitude - launch_gt0) / (launch_gt1 - launch_gt0).
 
   // Ideal gravity-turn azimuth (inclination) and facing at present altitude.
-  local inclin is min(90, max(0, 90 * cos(launch_gtScale * 90 * gtPct))).
-  local gtFacing is heading(90, inclin):vector.
+  local inclin is min(90, max(0, arccos(min(1,max(0,gtPct))))).
+  local gtFacing is heading ( hdglaunch, inclin) * r(0,0,180). //180 for shuttles, doesn't matter for rockets.
 
-  local prodot is vdot(ship:facing:vector, prograde:vector).
+  //local prodot is vdot(ship:facing:vector, prograde:vector).
 
   if gtPct <= 0 {
-    return heading(0, 90).
+    return heading (hdglaunch,90) + r(0,0,180). //Straight up.
   } else {
-    return lookdirup(gtFacing, ship:facing:upvector).
+    return gtFacing.
   }
 }
 
@@ -58,10 +53,10 @@ function ascentThrottle {
   local aoa is vdot(ship:facing:vector, ship:velocity:surface).
   // how far through the soup are we?
   local atmPct is ship:altitude / (body:atm:height+1).
-  local spd is ship:velocity:surface:mag.
+  local spd is ship:airspeed.
 
   // TODO adjust cutoff for atmospheric pressure; this works for kerbin
-  local cutoff is 200 + (400 * max(0, atmPct)).
+  local cutoff is 200 + (400 * max(0, (atmPct*3))).
 
   if spd > cutoff and launch_tSrbSep = 0 {
     // going too fast during SRB ascent; avoid overheat or
@@ -95,7 +90,7 @@ function ascentStaging {
     }
   }
 
-  if (Nsrb > 0) and (stage:solidfuel < 10) {
+  if (Nsrb > 0) and (stage:solidfuel < 50) {
     stage.
     set launch_tSrbSep to time:seconds.
     set launch_tStage to launch_tSrbSep.
@@ -108,11 +103,15 @@ function ascentStaging {
 
 function ascentWarping {
   if stage:solidfuel > 10 and ship:status = "flying" {
-    set warp to 1.
+    if warp <> 0 {
+      set warp to 0. // Don't allow warp while burning SRBs. Change to force warp.
+    }
   } else if ship:altitude > body:atm:height {
     set warp to 1.
   } else {
-    set warp to 0.
+    if warp <> 0 {
+      set warp to 0. // Don't allow warp inside Atmosphere. Change to force warp.
+    }
   }
 }
 
@@ -121,8 +120,12 @@ function ascentWarping {
 /////////////////////////////////////////////////////////////////////////////
 
 sas off.
+bays off.
+panels off.
+radiators off.
 
-if ship:status <> "prelaunch" and stage:solidfuel = 0 {
+
+if ship:status <> "PRELAUNCH" and stage:solidfuel = 0 {
   // note that there's no SRB
   set launch_tSrbSep to time:seconds.
 }
@@ -148,20 +151,29 @@ set ship:control:pilotmainthrottle to 0.
 // Coast to apoapsis and hand off to circularization program.
 /////////////////////////////////////////////////////////////////////////////
 
+// Roll with top up.
+lock steering to heading (hdglaunch,0). wait 15.//Horizon, ceiling up.
+
+unlock steering. //Added by LFC
+fuelcells on.
 sas on.
 
 // Get rid of ascent stage if less that 10% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
 // TODO stop being wasteful; compute burn duration & compare to remaining dv (need fuel flow data, yech!)
-if stage:resourceslex:haskey("LiquidFuel") and stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.1 {
-  stage.
-  wait until stage:ready.
-}
-// Corner case: circularization stage is not bottom most (i.e. there is an
-// aeroshell ejection in a lower stage).
-until ship:availablethrust > 0 {
-  stage.
-  wait until stage:ready.
+if stage:resourceslex:haskey("LiquidFuel") {
+  if stage:resourceslex["LiquidFuel"]:capacity > 0 { // Checks to avoid NaN error
+    if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.1 {
+      stage.
+      wait until stage:ready.
+    }
+    // Corner case: circularization stage is not bottom most (i.e. there is an
+    // aeroshell ejection in a lower stage).
+    until ship:availablethrust > 0 {
+      stage.
+      wait until stage:ready.
+    }
+  }
 }
 
 rcs on.

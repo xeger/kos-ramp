@@ -24,11 +24,26 @@ run node_hoh.
 uiBanner("Transfer", "Transfer injection burn").
 run node.
 
-until obt:transition <> "encounter" {
+until obt:transition <> "ENCOUNTER" {
   run warp(eta:transition+1).
 }
+set warp to 0.
+wait 10.
+// Deal with collisions
+local minperi is (body:atm:height + (body:radius / 10)).
 
-// TODO - deal with collision (radial burn)
+if ship:periapsis < minperi {
+  sas off.
+  LOCK STEERING TO heading(90,0).
+  wait 10.
+  LOCK deltaPct TO (ship:periapsis - minperi) / minperi.
+  LOCK throttle TO max(1,min(0.1,deltaPct)).
+  Wait Until ship:periapsis > minperi.
+  LOCK throttle to 0.
+  UNLOCK throttle.
+  UNLOCK STEERING.
+  sas on.
+}
 
 uiBanner("Transfer", "Transfer braking burn").
 run circ.
