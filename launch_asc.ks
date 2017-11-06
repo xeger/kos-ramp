@@ -7,8 +7,9 @@
 
 // Final apoapsis (m altitude)
 parameter apo.
-// Heading of the launch (Degrees, default 90 = East)
 parameter hdglaunch is 90. 
+
+CLEARSCREEN.
 
 // Number of seconds to sleep during ascent loop
 global launch_tick is 1.
@@ -142,6 +143,7 @@ until ship:obt:apoapsis >= apo {
   ascentStaging().
   ascentWarping().
   wait launch_tick.
+  PRINT "Apoapsis: " + round(ship:obt:apoapsis) AT (0,0).
 }
 
 unlock throttle.
@@ -152,7 +154,7 @@ set ship:control:pilotmainthrottle to 0.
 /////////////////////////////////////////////////////////////////////////////
 
 // Roll with top up.
-lock steering to heading (hdglaunch,0). wait 15.//Horizon, ceiling up.
+lock steering to heading (hdglaunch,0). wait 30.//Horizon, ceiling up.
 
 unlock steering. //Added by LFC
 fuelcells on.
