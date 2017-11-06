@@ -20,7 +20,7 @@ global nodeStageFuelInit is 0.
 // keep ship pointed at node
 sas off.
 //lock steering to lookdirup(nodeNd:deltav, ship:facing:topvector). // ORIGINAL CODE
-lock steering to OffsetSteering(lookdirup(nodeNd:deltav, ship:up:vector)). //LFC's mod
+lock steering to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). //LFC's mod
 
 // estimate burn direction & duration
 global nodeAccel is uiAssertAccel("Node").

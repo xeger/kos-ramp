@@ -60,11 +60,11 @@ function utilHasNextNode {
   }
 }
 
-FUNCTION OffsetSteering {
+FUNCTION utilFaceBurn {
 
 // This function is intended to use with shuttles and spaceplanes that have engines not in line with CoM.
-// Usage: LOCK STEERING TO OffsetSteering(THEDIRECTIONYOUWANTTOSTEER).
-// Example: LOCK STEERING TO OffsetSteering(PROGRADE).
+// Usage: LOCK STEERING TO utilFaceBurn(THEDIRECTIONYOUWANTTOSTEER).
+// Example: LOCK STEERING TO utilFaceBurn(PROGRADE).
 // 2017 FellipeC - Released under https://creativecommons.org/licenses/by-nc/4.0/
 
   PARAMETER DIRTOSTEER. // The direction you want the ship to steer to

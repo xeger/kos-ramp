@@ -2,8 +2,6 @@ TODO.md
 
 - use global var to control physics warp
 
-- rename OffsetSteering to utilFaceBurn
-
 - integrate deorbit & landing
   - don't mess up trajectory; use different approach? e.g. positionat(perigee) vs terrain height?
 
