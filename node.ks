@@ -7,6 +7,8 @@
 run lib_ui.
 run once lib_util.
 
+//if exists("oss.json") {deletepath("oss.json").} //Clears offset thrust data before maneuver
+
 // quo vadis?
 global nodeNd is nextnode.
 
@@ -18,7 +20,7 @@ global nodeStageFuelInit is 0.
 // keep ship pointed at node
 sas off.
 //lock steering to lookdirup(nodeNd:deltav, ship:facing:topvector). // ORIGINAL CODE
-lock steering to OffsetSteering(lookdirup(nodeNd:deltav, ship:facing:topvector)). //LFC's mod
+lock steering to OffsetSteering(lookdirup(nodeNd:deltav, ship:up:vector)). //LFC's mod
 
 // estimate burn direction & duration
 global nodeAccel is uiAssertAccel("Node").
@@ -26,13 +28,16 @@ global nodeFacing is lookdirup(nodeNd:deltav, ship:facing:topvector).
 global nodeDob is (nodeNd:deltav:mag / nodeAccel).
 
 uiDebug("Orient to burn").
-wait until vdot(facing:forevector, nodeFacing:forevector) >= 0.995 or nodeNd:eta <= nodeDob / 2.
+// If have time, wait to ship almost align with maneuver node.
+// If have little time, wait at least to ship face inside 40º cone from the node. This prevents backwards burns.
+wait until (vdot(facing:forevector, nodeFacing:forevector) >= 0.995) or
+           ((nodeNd:eta <= nodeDob / 2) and (vdot(facing:forevector, nodeFacing:forevector) >= 0.94)). WAIT 5.
 
-// warp to burn time; give 3 seconds slack for final steering adjustments
-global nodeHang is (nodeNd:eta - nodeDob/2) - 3.
+// warp to burn time; give 15 seconds slack for final steering adjustments
+global nodeHang is (nodeNd:eta - nodeDob/2) - 15.
 if nodeHang > 0 {
   run warp(nodeHang).
-  wait 3.
+  wait 15.
 }
 
 global nodeDone  is false.
@@ -72,7 +77,7 @@ until nodeDone
         }
     }
 }
-lock throttle to 0.
+
 set ship:control:pilotmainthrottle to 0.
 unlock steering.
 
