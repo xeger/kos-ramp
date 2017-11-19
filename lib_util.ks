@@ -60,11 +60,11 @@ function utilHasNextNode {
   }
 }
 
-FUNCTION OffsetSteering {
+FUNCTION utilFaceBurn {
 
 // This function is intended to use with shuttles and spaceplanes that have engines not in line with CoM.
-// Usage: LOCK STEERING TO OffsetSteering(THEDIRECTIONYOUWANTTOSTEER).
-// Example: LOCK STEERING TO OffsetSteering(PROGRADE).
+// Usage: LOCK STEERING TO utilFaceBurn(THEDIRECTIONYOUWANTTOSTEER).
+// Example: LOCK STEERING TO utilFaceBurn(PROGRADE).
 // 2017 FellipeC - Released under https://creativecommons.org/licenses/by-nc/4.0/
 
   PARAMETER DIRTOSTEER. // The direction you want the ship to steer to
@@ -105,7 +105,7 @@ FUNCTION OffsetSteering {
     OSS:add("yaw_sum",0).
     OSS:add("Average_samples",0).
     OSS:add("Average_Interval",1).
-    OSS:add("Average_Interval_Max",10).
+    OSS:add("Average_Interval_Max",5).
     OSS:add("Ship_Name",SHIP:NAME:TOSTRING).
     
     RETURN OSS.
@@ -148,18 +148,74 @@ FUNCTION OffsetSteering {
           // exclude the left/right vector to leave only forwards and up/down
           LOCAL pitch_error_vec IS VXCL(FACING:STARVECTOR,trueacc).
           LOCAL pitch_error_ang IS VANG(FACING:VECTOR,pitch_error_vec).
+          If VDOT(FACING:TOPVECTOR,pitch_error_vec) > 0{
+            SET pitch_error_ang TO -pitch_error_ang.
+          }
+
           // exclude the up/down vector to leave only forwards and left/right
           LOCAL yaw_error_vec IS VXCL(FACING:TOPVECTOR,trueacc).
           LOCAL yaw_error_ang IS VANG(FACING:VECTOR,yaw_error_vec).
-
+          IF VDOT(FACING:STARVECTOR,yaw_error_vec) < 0{
+            SET yaw_error_ang TO -yaw_error_ang.
+          }
+          //LOG "P: " + pitch_error_ang TO "0:/oss.txt".
+          //LOG "Y: " + yaw_error_ang TO "0:/oss.txt".
           set OSS["pitch_sum"] to OSS["pitch_sum"] + pitch_error_ang.
           set OSS["yaw_sum"] to OSS["yaw_sum"] + yaw_error_ang.
           SET OSS["Average_samples"] TO OSS["Average_samples"] + 1.
       }
       // Set the return value to original direction combined with the thrust offset
-      SET NEWDIRTOSTEER TO DIRTOSTEER * r(0-OSS["pitch_angle"],OSS["yaw_angle"],0).
-  }
+      //SET NEWDIRTOSTEER TO r(0-OSS["pitch_angle"],OSS["yaw_angle"],0) * DIRTOSTEER.
+      SET NEWDIRTOSTEER TO DIRTOSTEER.
+      IF ABS(OSS["pitch_angle"]) > 1 { // Don't bother correcting small errors
+        SET NEWDIRTOSTEER TO ANGLEAXIS(-OSS["pitch_angle"],SHIP:FACING:STARVECTOR) * NEWDIRTOSTEER.
+      }
+      IF ABS(OSS["yaw_angle"]) > 1 { // Don't bother correcting small errors
+        SET NEWDIRTOSTEER TO ANGLEAXIS(OSS["yaw_angle"],SHIP:FACING:UPVECTOR) * NEWDIRTOSTEER.
+      }
+  } 
   // Saves the persistent values to a file.
   WRITEJSON(OSS,"oss.json").
   RETURN NEWDIRTOSTEER.
+}
+
+
+FUNCTION utilRCSCancelVelocity {
+  // MUST Be a delegate to a vector
+  // Example:
+  //
+  // LOCK myVec to myNode:DeltaV.
+  // utilRCSCancelVelocity(myVec@).
+  parameter CancelVec. 
+  parameter residualSpeed is 0.01. // Admissible residual speed.
+  parameter MaximumTime is 15. // Maximum time to achieve results.
+
+  local lock tgtVel to -CancelVec().
+
+  //Save ship's systems status
+  local rstatus is rcs. 
+  local sstatus is sas.
+
+  // Prevents ship to rotate
+  sas off.
+  lock steering to ship:facing. 
+  uiDebug("Fine tune with RCS").
+  // Cancel the speed.
+  rcs on.
+  local t0 is time.
+  until tgtVel:mag < residualSpeed or (time - t0):seconds > MaximumTime {
+    local sense is ship:facing.
+    local dirV is V(
+      vdot(tgtVel, sense:starvector),
+      vdot(tgtVel, sense:upvector),
+      vdot(tgtVel, sense:vector)
+    ).
+    set ship:control:translation to dirV:normalized.
+    wait 0.
+  }
+
+  //Return ship controls to previus condition
+  set ship:control:translation to v(0,0,0).
+  set rcs to rstatus.
+  set sas to sstatus.  
 }
