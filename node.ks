@@ -7,11 +7,11 @@
 run lib_ui.
 run once lib_util.
 
-// Configuration constants; these are pre-set for automated missions; if you
+// Configuration constants; these are pre-set for automated missions. If you
 // have a ship that turns poorly, you may need to decrease these and perform
 // manual corrections.
-global node_bestFacing = 0.995. // ~5  degrees error (10 degree cone)
-global node_okFacing   = 0.94.  // ~20 degrees error (40 degree cone)
+global node_bestFacing is 0.995. // ~5  degrees error (10 degree cone)
+global node_okFacing   is 0.94.  // ~20 degrees error (40 degree cone)
 
 //if exists("oss.json") {deletepath("oss.json").} //Clears offset thrust data before maneuver
 
