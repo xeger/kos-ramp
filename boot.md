@@ -16,10 +16,12 @@ Craft start-up script
 
 You should provide a craft start-up script in `/start` folder. If no such script is found, `boot.ks` will just copy all RAMP scripts to the vessel's drive and stop. 
 You can use the script `util_makestartup.ks` to create a sample file for your ship. You'll find it in the `/start` folder, and the sample code is similar to this:
+```
     IF SHIP:STATUS = "PRELAUNCH" {
         RUN launch_asc(120000). // Launches to 120km
         SET TARGET TO MUN. //We choose go to to the Mun and do the other things!
         RUN transfer.
         // TODO: Do the other things, not because they are easy, but because they are hard!
     }
+```
 Fell free to change that to anything that suits your mission! 
