@@ -30,7 +30,7 @@ if target:position:mag > 25000 and approachX > 25000 {
 
   run node_hoh.
 
-  if utilHasNextNode() = false {
+  until utilHasNextNode() {
     uiBanner("Rendezvous", "Transfer to phasing orbit").
     run circ_alt(target:altitude * 1.666).
     run node_hoh.

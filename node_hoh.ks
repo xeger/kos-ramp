@@ -122,6 +122,5 @@ if node_T > 0 {
   uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
 }
 else {
-  add node(time:seconds + 3600, 0, 0, node_dv).
-  uiFatal("Node", "STRANDED").
+  uiError("Node", "STRANDED").
 }

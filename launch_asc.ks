@@ -6,10 +6,12 @@
 /////////////////////////////////////////////////////////////////////////////
 
 // Final apoapsis (m altitude)
-parameter apo.
+parameter apo is 200000.
 parameter hdglaunch is 90. 
 
-CLEARSCREEN.
+RUNONCEPATH("lib_parts.ks"). 
+
+print "Launching to an orbit of " + round(apo/1000) + "km and heading of " + hdglaunch + "º". 
 
 // Number of seconds to sleep during ascent loop
 global launch_tick is 1.
@@ -108,10 +110,10 @@ function ascentWarping {
       set warp to 0. // Don't allow warp while burning SRBs. Change to force warp.
     }
   } else if ship:altitude > body:atm:height {
-    set warp to 1.
+    set warp to 1. 
   } else {
     if warp <> 0 {
-      set warp to 0. // Don't allow warp inside Atmosphere. Change to force warp.
+      set warp to 1. 
     }
   }
 }
@@ -141,9 +143,7 @@ set ship:control:pilotmainthrottle to 0.
 
 until ship:obt:apoapsis >= apo {
   ascentStaging().
-  ascentWarping().
   wait launch_tick.
-  PRINT "Apoapsis: " + round(ship:obt:apoapsis) AT (0,0).
 }
 
 unlock throttle.
@@ -156,10 +156,6 @@ set ship:control:pilotmainthrottle to 0.
 // Roll with top up.
 lock steering to heading (hdglaunch,0). wait 30.//Horizon, ceiling up.
 
-unlock steering. //Added by LFC
-fuelcells on.
-sas on.
-
 // Get rid of ascent stage if less that 10% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
 // TODO stop being wasteful; compute burn duration & compare to remaining dv (need fuel flow data, yech!)
@@ -167,22 +163,28 @@ if stage:resourceslex:haskey("LiquidFuel") {
   if stage:resourceslex["LiquidFuel"]:capacity > 0 { // Checks to avoid NaN error
     if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.1 {
       stage.
+      print "Discard tank".
       wait until stage:ready.
     }
     // Corner case: circularization stage is not bottom most (i.e. there is an
     // aeroshell ejection in a lower stage).
     until ship:availablethrust > 0 {
       stage.
+      print "Discard fairings".
       wait until stage:ready.
     }
   }
 }
-
-rcs on.
-
+// Warp to end of atmosphere
 until ship:altitude > body:atm:height {
   ascentWarping().
 }
-set warp to 0.
 
+// Give power and communication to the ship
+fuelcells on.
+panels on.
+ExtendAntennas().
+// Release controls. Turn on RCS to help steer to circularization burn.
+unlock steering.
+rcs on.
 run circ.

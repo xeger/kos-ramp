@@ -22,13 +22,13 @@ if obt:eccentricity < 0.1 { // For (almost) circular orbits, just change the alt
   //Added by FellipeC
   if alt > obt:periapsis {
     // Decrease apoapsis
-    run node_apo(alt).
-    run node_peri(alt).
+    run node_apo(alt). run node.
+    run node_peri(alt). run node.
   }
   else {
     // Decresase periapsis
-    run node_peri(alt).
-    run node_apo(alt).
+    run node_peri(alt). run node.
+    run node_apo(alt). run node.
   }
 
 }

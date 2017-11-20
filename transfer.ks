@@ -30,7 +30,7 @@ until obt:transition <> "ENCOUNTER" {
 set warp to 0.
 wait 10.
 // Deal with collisions
-local minperi is (body:atm:height + (body:radius / 10)).
+local minperi is (body:atm:height + (body:radius * 0.3)).
 
 if ship:periapsis < minperi {
   sas off.

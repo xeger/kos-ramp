@@ -11,7 +11,7 @@ local mu is constant():G * ship:obt:body:mass.
 local rb is ship:obt:body:radius.
 
 // present orbit properties
-local vom is velocity:orbit:mag.  // actual velocity
+local vom is ship:velocity:orbit:mag.  // actual velocity
 local r is rb + altitude.
 local va is sqrt( vom^2 ). // velocity in periapsis
 local a is (periapsis + 2*rb + apoapsis)/2. // semi major axis present orbit

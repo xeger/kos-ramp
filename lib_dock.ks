@@ -127,7 +127,9 @@ function dockChooseDeparturePort {
 // Find suitable docking ports on self and target. Works using a heuristic:
 //   - if target is a vessel, target biggest unoccupied port
 //   - (else target is already a port)
-//   - find port on ship with same mass
+//   - find port on ship with rougly same mass
+// TODO: Invert the logic: Find a docking port on the ship and match it o a docking port on the target.
+// TODO: Use a better way to match port sizes. Mass isn't reliable at all. 
 function dockChoosePorts {
   local myPort is 0.
   local hisPort is 0.
@@ -149,8 +151,10 @@ function dockChoosePorts {
   }
 
   local myMods is ship:modulesnamed("ModuleDockingNode").
+  local deltaMass is 9999999.
   for mod in myMods {
-    if abs(mod:part:mass - hisPort:mass) < 0.1 {
+    if abs(mod:part:mass - hisPort:mass) < deltaMass {
+      set deltaMass to abs(mod:part:mass - hisPort:mass).
       set myPort to mod:part.
     }
   }
@@ -211,12 +215,35 @@ function dockMatchVelocity {
   // Cancel velocity
   lock throttle to min(matchVel:mag / matchAccel, 1.0).
 
-  wait until matchVel:z <= 0 and matchVel:mag <= residual and (residual = 0 or matchVel:mag > residual * 0.8).
-
+// This make not much sense...
+//wait until matchVel:z <= 0 and matchVel:mag <= residual and (residual = 0 or matchVel:mag > residual * 0.8).
+wait until matchVel:mag <= residual.
+  
+  lock throttle to 0.
   unlock throttle.
   set ship:control:pilotmainthrottle to 0.
 
-  // TODO use RCS to cancel remaining dv
+// Use RCS to cancel remaining dv
+if matchVel:mag > residual {
+  local tgtVel is -matchVel.
+  unlock steering. sas on.
+  uiDebug("Fine tune with RCS").
+  rcs on.
+  local t0 is time.
+  until matchVel:mag < residual or (time - t0):seconds > 15 {
+    set tgtVel to -matchVel.
+    local sense is ship:facing.
+    local dirV is V(
+      vdot(tgtVel, sense:starvector),
+      vdot(tgtVel, sense:upvector),
+      vdot(tgtVel, sense:vector)
+    ).
+    set ship:control:translation to dirV:normalized.
+    wait 0.
+  }
+  set ship:control:translation to v(0,0,0).
+  rcs off. sas off.
+}
 
   unlock matchVel.
 
@@ -226,3 +253,4 @@ function dockMatchVelocity {
   unlock steering.
   sas on.
 }
+

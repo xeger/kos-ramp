@@ -7,6 +7,15 @@
 
 declare parameter dt.
 
+set TW to kuniverse:timewarp.
+
+if dt > 0 {
+  set TW:MODE to "RAILS".
+  tw:warpto(time:seconds + dt).
+}
+
+if false { // This section should be obsolete
+
 // Number of seconds to sleep during physics-warp loop
 global warp_tick is 1.
 
@@ -57,3 +66,4 @@ until time:seconds >= warp_t1 {
 
 unlock warp_dt.
 unlock warp_atmo.
+}
