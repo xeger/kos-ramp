@@ -8,6 +8,8 @@ global ui_debug     is true.  // Debug messages on console and screen
 global ui_debugNode is true. // Explain node planning
 global ui_debugAxes is false. // Explain 3-axis navigation e.g. docking
 
+global logconsole   is true. //Save console to log.txt / 0:/<CRAFT NAME>.txt
+
 global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stb", 1, false).
 global ui_DebugUp is vecdraw(v(0,0,0), v(0,0,0), BLUE, "Up", 1, false).
 global ui_DebugFwd is vecdraw(v(0,0,0), v(0,0,0), RED, "Fwd", 1, false).
@@ -19,7 +21,15 @@ function uiConsole {
   parameter prefix.
   parameter msg.
 
-  print "T+" + round(time:seconds) + " " + prefix + ": " + msg.
+  local logtext is "T+" + round(time:seconds) + " " + prefix + ": " + msg.
+  print logtext.
+
+  if logconsole {
+    LOG logtext to "log.txt".
+    IF HOMECONNECTION:ISCONNECTED {
+      COPYPATH("log.txt","0:/logs/"+SHIP:NAME+".txt").
+    }
+  }
 }
 
 function uiBanner {

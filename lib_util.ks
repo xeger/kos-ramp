@@ -178,3 +178,44 @@ FUNCTION utilFaceBurn {
   WRITEJSON(OSS,"oss.json").
   RETURN NEWDIRTOSTEER.
 }
+
+
+FUNCTION utilRCSCancelVelocity {
+  // MUST Be a delegate to a vector
+  // Example:
+  //
+  // LOCK myVec to myNode:DeltaV.
+  // utilRCSCancelVelocity(myVec@).
+  parameter CancelVec. 
+  parameter residualSpeed is 0.01. // Admissible residual speed.
+  parameter MaximumTime is 15. // Maximum time to achieve results.
+
+  local lock tgtVel to -CancelVec().
+
+  //Save ship's systems status
+  local rstatus is rcs. 
+  local sstatus is sas.
+
+  // Prevents ship to rotate
+  sas off.
+  lock steering to ship:facing. 
+  uiDebug("Fine tune with RCS").
+  // Cancel the speed.
+  rcs on.
+  local t0 is time.
+  until tgtVel:mag < residualSpeed or (time - t0):seconds > MaximumTime {
+    local sense is ship:facing.
+    local dirV is V(
+      vdot(tgtVel, sense:starvector),
+      vdot(tgtVel, sense:upvector),
+      vdot(tgtVel, sense:vector)
+    ).
+    set ship:control:translation to dirV:normalized.
+    wait 0.
+  }
+
+  //Return ship controls to previus condition
+  set ship:control:translation to v(0,0,0).
+  set rcs to rstatus.
+  set sas to sstatus.  
+}

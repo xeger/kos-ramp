@@ -4,7 +4,7 @@
 // Execute a maneuver node, warping if necessary to save time.
 /////////////////////////////////////////////////////////////////////////////
 
-run lib_ui.
+run once lib_ui.
 run once lib_util.
 
 // Configuration constants; these are pre-set for automated missions. If you
@@ -12,8 +12,8 @@ run once lib_util.
 // manual corrections.
 global node_bestFacing is 0.995. // ~5  degrees error (10 degree cone)
 global node_okFacing   is 0.94.  // ~20 degrees error (40 degree cone)
-
-//if exists("oss.json") {deletepath("oss.json").} //Clears offset thrust data before maneuver
+ 
+local sstate is sas. // Save SAS State
 
 // quo vadis?
 global nodeNd is nextnode.
@@ -41,6 +41,7 @@ wait until (vdot(facing:forevector, nodeFacing:forevector) >= node_bestFacing) o
 
 // warp to burn time; give 15 seconds slack for final steering adjustments
 global nodeHang is (nodeNd:eta - nodeDob/2) - 15.
+uiDebug("Warping " + round(nodeHang) + " seconds").
 if nodeHang > 0 {
   run warp(nodeHang).
   wait 15.
@@ -94,23 +95,8 @@ set ship:control:pilotmainthrottle to 0.
 unlock steering.
 
 // Make fine adjustments using RCS (for up to 15 seconds)
-if nodeNd:deltav:mag > 0.1 {
-  uiDebug("Fine tune with RCS").
-  rcs on.
-  local t0 is time.
-  until nodeNd:deltav:mag < 0.1 or (time - t0):seconds > 15 {
-    local sense is ship:facing.
-    local dirV is V(
-      vdot(nodeNd:deltav, sense:starvector),
-      vdot(nodeNd:deltav, sense:upvector),
-      vdot(nodeNd:deltav, sense:vector)
-    ).
-
-    set ship:control:translation to dirV:normalized.
-  }
-  set ship:control:translation to v(0,0,0).
-  rcs off.
-}
+lock ndDeltaV to -nodeNd:deltav.
+utilRCSCancelVelocity(ndDeltaV@,0.1,15).
 
 // Fault if remaining dv > 5% of initial AND mag is > 0.1 m/s
 if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > 0.1 {
@@ -121,4 +107,4 @@ if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > 0.1 {
 
 remove nodeNd.
 unlock steering.
-sas on.
+set sas to sstate.

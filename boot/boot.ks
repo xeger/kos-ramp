@@ -1,30 +1,101 @@
 /////////////////////////////////////////////////////////////////////////////
-// Simple ascend-to-orbit boot script.
+// Universal boot script for RAMP system.
 /////////////////////////////////////////////////////////////////////////////
-// Launch and ascend to a fixed altitude.
+// Copy all scripts to local volume; run mission script. This is suitable for
+// single-CPU vessels that will be operating out of comms range.
 //
-// MUST NOT be used for vessels that will operate out of comms range!!
+// To customize the mission, edit <ship name>.ks in 0:/start folder before 
+// launch; it will be persisted onto the craft you launch, suitable for 
+// archive-free operation.
+// 
+// Nevertheless, every time this boots, it will try to copy the files again,
+// if possible.
+// It expects the RAMP scripts files to be saved in 0:/ramp folder.
 /////////////////////////////////////////////////////////////////////////////
 
-switch to archive.
-
-run once lib_ui.
-
-if ship:status = "prelaunch" {
-  uiBanner("Mission", "Launch!").
-  stage.
-  wait 1.
+//Print info
+CLEARSCREEN.
+print "kOS processor version " + core:version + " running on " + core:element:name.
+print core:volume:capacity + " total space".
+print core:volume:freespace + " bytes free".
+Print "Universal RAMP bootloader...".
+//Waits 5 seconds for ship loads and stabilize physics, etc...
+FROM {local i is 10.} UNTIL i = 0 STEP {set i to i-1.} DO { 
+  wait 0.5.
 }
 
-if (ship:status = "flying" or ship:status = "sub_orbital") {
-  if (body:name = "Kerbin") {
-    uiBanner("Mission", "Ascend to orbit.").
-    //     KEO: 2863334.06
-    // parking: body:atm:height + (body:radius / 4)
-    run launch_asc(body:atm:height + (body:radius / 4)).
-  }
-  else {
-    uiBanner("Mission", "Land on " + body:name + ".").
-    run land.
-  }
+//Set up volumes
+SET HD TO CORE:VOLUME.
+SET ARC TO VOLUME(0).
+SET Startup to "startup".
+
+PRINT "Attemping to connect to KSC...".
+IF HOMECONNECTION:ISCONNECTED {
+	PRINT "Connected to KSC, copying updated files...".
+	SWITCH TO ARC.
+	CD ("ramp").	
+	LOCAL copyok is TRUE.
+	LIST FILES IN FLS.
+	FOR F IN FLS {
+		IF NOT COPYPATH(F,HD) { COPYOK OFF. }.
+	}
+	IF copyok {
+		PRINT "Files copied successfully.".
+	}
+	ELSE {
+		PRINT "Error copying files. There is enough space?".
+	}
 }
+ELSE {
+	PRINT "No connection to KSC detected.".
+	IF EXISTS(Startup) {
+		PRINT "Existing RAMP files found, proceeding.".
+	}
+	ELSE {
+		PRINT "No existing RAMP files detected. Trying to raise antennas and rebooting...".
+		FOR P IN SHIP:PARTS {
+			IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
+				LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
+				FOR A IN M:ALLACTIONNAMES() {
+					IF A:CONTAINS("Extend") { M:DOACTION(A,True). }
+				}.
+			}
+		}.
+		REBOOT.
+	}
+}
+
+SWITCH TO HD.
+LOCAL StartupOk is FALSE.
+
+print "Looking for remote startup script...".
+IF HOMECONNECTION:ISCONNECTED {
+	LOCAL StartupScript is PATH("0:/start/"+SHIP:NAME).
+	IF EXISTS(StartupScript) {
+		PRINT "Remote startup script found!".
+		IF COPYPATH(StartupScript,Startup) {
+			StartupOk ON.
+		}
+		ELSE {
+			PRINT "Could not copy the file. There is enough space?".
+		}
+	}
+	ELSE {
+		PRINT "No remote startup script found.".
+		PRINT "You can create a sample one by typing: RUN UTIL_MAKESTARTUP.".
+	}
+}
+ELSE { 
+	IF EXISTS(Startup) {
+		PRINT "Can't connect to KSC, using local copy of startup script".
+		StartupOk ON.
+	}
+	ELSE 
+	{
+		PRINT "I'm sorry, Dave. I'm afraid I can't do that.". //This should never happens!
+	}
+}
+IF StartupOk {
+	RUNPATH(Startup).
+}
+PRINT "Proceed.".

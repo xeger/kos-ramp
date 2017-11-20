@@ -14,7 +14,7 @@ if ship:status = "prelaunch" {
   list files in scripts.
   for file in scripts {
     if file:name:endswith(".ks") {
-      copypath(file,core:volume). // Changed to copypath
+      copypath(file,core:volume). 
     }
   }
 }
