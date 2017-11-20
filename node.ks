@@ -6,7 +6,8 @@
 
 run once lib_ui.
 run once lib_util.
-// Configuration constants; these are pre-set for automated missions; if you
+
+// Configuration constants; these are pre-set for automated missions. If you
 // have a ship that turns poorly, you may need to decrease these and perform
 // manual corrections.
 global node_bestFacing is 0.995. // ~5  degrees error (10 degree cone)
@@ -24,7 +25,7 @@ global nodeStageFuelInit is 0.
 
 // keep ship pointed at node
 sas off.
-lock steering to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). //LFC's mod
+lock steering to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)).
 
 // estimate burn direction & duration
 global nodeAccel is uiAssertAccel("Node").
@@ -33,7 +34,7 @@ global nodeDob is (nodeNd:deltav:mag / nodeAccel).
 
 uiDebug("Orient to burn").
 // If have time, wait to ship almost align with maneuver node.
-// If have little time, wait at least to ship face inside 40? cone from the node.
+// If have little time, wait at least to ship face inside 40º cone from the node.
 // This prevents backwards burns, but still allows steering via engine thrust.
 wait until (vdot(facing:forevector, nodeFacing:forevector) >= node_bestFacing) or
            ((nodeNd:eta <= nodeDob / 2) and (vdot(facing:forevector, nodeFacing:forevector) >= node_okFacing)).
@@ -60,7 +61,7 @@ until nodeDone
         set nodeDvMin to nodeNd:deltav:mag.
     }
 
-        if nodeAccel > 0 {
+    if nodeAccel > 0 {
       if(vdot(facing:forevector, nodeFacing:forevector) >= node_okFacing) {
         //feather the throttle
         set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
@@ -69,6 +70,7 @@ until nodeDone
         // engine will push us back on course
         set ship:control:pilotmainthrottle to 0.1.
       }
+
       // three conditions for being done:
       //   1) overshot (node delta vee is pointing opposite from initial)
       //   2) burn DV increases (off target due to wobbles)
