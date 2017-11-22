@@ -3,6 +3,7 @@ PARAMETER Deorbit_Long_Offset IS 0. // Diference from the default deorbit longit
 SAS OFF.
 BAYS OFF.
 GEAR OFF.
+RCS OFF.
 
 FUNCTION LngToDegrees { 
     //From youtube.com/cheerskevin
@@ -43,8 +44,8 @@ UNTIL ORBITOK AND INCOK {
 
     // Check if orbit is acceptable and correct if needed.
 
-    IF NOT (OBT:INCLINATION < (Deorbit_Inc + 1) AND 
-            OBT:INCLINATION > (Deorbit_Inc - 1)) {
+    IF NOT (OBT:INCLINATION < (Deorbit_Inc + 0.1) AND 
+            OBT:INCLINATION > (Deorbit_Inc - 0.1)) {
                 RUNPATH("node_inc_equ.ks",Deorbit_Inc).
                 RUNPATH("node.ks").
             }

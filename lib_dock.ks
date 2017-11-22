@@ -236,23 +236,24 @@ function dockComplete {
 function dockMatchVelocity {
   parameter residual.
 
-  set residual to max(0.2, residual).
+  set residual to max(0.1, residual). // Minimum residual value allowed.
+  set RCSTheresold to 1. // Below this speed will use RCS
 
   // Don't let unbalanced RCS mess with our velocity
   rcs off.
   sas off.
 
   local matchStation is 0.
-  if target:name:contains("docking") {
+  if target:istype("Part") {
     set matchStation to target:ship.
   } else {
     set matchStation to target.
   }
 
   local matchAccel is uiAssertAccel("Dock").
-  lock matchVel to (ship:velocity:orbit - matchStation:velocity:orbit).
+  local lock matchVel to (ship:velocity:orbit - matchStation:velocity:orbit).
 
-  if matchVel:mag > residual + 1 {
+  if matchVel:mag > residual + RCSTheresold {
     // Point away from relative velocity vector
     local lock steerDir to utilFaceBurn(lookdirup(-matchVel, ship:facing:upvector)).
     lock steering to steerDir.
@@ -260,16 +261,20 @@ function dockMatchVelocity {
 
     // Cancel velocity
     lock throttle to min(matchVel:mag / matchAccel, 1.0).
-    wait until (matchVel:mag <= (residual + 1)) or (residual <= 0 and matchVel:mag <= 1).
+    local v0 is matchVel:mag.
+    // Stops the engines if reach near residual speed or if speed starts increasing. (May happens with some cases where the ship is not perfecly aligned with matchVel and residual is very low)
+    until (matchVel:mag <= (residual + RCSTheresold)) or (matchVel:mag > v0) {
+      set v0 to matchVel:mag.
+      wait 0.
+    }
 
     lock throttle to 0.
     unlock throttle.
-    set ship:control:pilotmainthrottle to 0.
   }
   // Use RCS to cancel remaining dv
+  unlock steering.
   utilRCSCancelVelocity(matchVel@,residual,15).
 
   unlock matchVel.
-  unlock steering.
 }
 

@@ -12,9 +12,23 @@ CLEARSCREEN.
 CLEARVECDRAWS().
 CLEARGUIS().
 
+set OldIPU to Config:IPU.
+if OldIPU < 1000 set Config:IPU to 1000. 
+
 SET CONSOLEINFO TO FALSE.
 
 PRINT "CONSOLE OUTPUT IS " + CONSOLEINFO.
+
+FUNCTION DisableReactionWheels {
+    FOR P IN SHIP:PARTS {
+        IF P:MODULES:CONTAINS("ModuleReactionWheel") {
+            LOCAL M IS P:GETMODULE("ModuleReactionWheel").
+            FOR A IN M:ALLACTIONNAMES() {
+                IF A:CONTAINS("deactivate") { M:DOACTION(A,True). }
+            }.
+        }
+    }.
+}
 
 FUNCTION fbwhud {
     PARAMETER TEXT.
@@ -97,7 +111,7 @@ FUNCTION PitchAngle {
 }
 
 FUNCTION ProgradePitchAngle {
-    RETURN -(VANG(ship:up:vector,vxcl(ship:facing:starvector,ship:velocity:surface) - 90).
+    RETURN -(VANG(ship:up:vector,vxcl(ship:facing:starvector,ship:velocity:surface)) - 90).
 }
 
 FUNCTION MagHeading {
@@ -334,7 +348,7 @@ SET ButtonNAV:ONCLICK   TO {
     SET TGTAltitude TO ROUND(SHIP:ALTITUDE).
     SET TGTHeading TO ROUND(MagHeading()).
  }.
-SET ButtonILS:ONCLICK   TO { SET APMODE TO "ILS". }.
+SET ButtonILS:ONCLICK   TO { SET APMODE TO "ILS". SET GSLocked TO FALSE. }.
 SET ButtonAPOFF:ONCLICK TO { SET APMODE TO "OFF". }.
 
 //Autopilot settings
@@ -519,12 +533,12 @@ SET ElevatorPID:SETPOINT TO 0.
 
 // PID Pitch Angle
 SET PitchAnglePID to PIDLOOP(0.04,0.004,0.010). // Kp, Ki, Kd
-SET PitchAnglePID:MAXOUTPUT TO 20.
-SET PitchAnglePID:MINOUTPUT TO -25.
+SET PitchAnglePID:MAXOUTPUT TO 30.
+SET PitchAnglePID:MINOUTPUT TO -30.
 SET PitchAnglePID:SETPOINT TO 0.
 
 //PID Aileron  
-SET AileronPID to PIDLOOP(0.01,0.003,0.010). // Kp, Ki, Kd
+SET AileronPID to PIDLOOP(0.005,0.001,0.008). // Kp, Ki, Kd
 SET AileronPID:MAXOUTPUT TO 1.
 SET AileronPID:MINOUTPUT TO -1.
 SET AileronPID:SETPOINT TO 0. 
@@ -536,7 +550,7 @@ SET YawDamperPID:MINOUTPUT TO -1.
 SET YawDamperPID:SETPOINT TO 0. 
 
 // PID BankAngle
-SET BankAnglePID to PIDLOOP(0.9,0.001,0.003). // Kp, Ki, Kd
+SET BankAnglePID to PIDLOOP(2,0.1,0.3). // Kp, Ki, Kd
 SET BankAnglePID:MAXOUTPUT TO 33.
 SET BankAnglePID:MINOUTPUT TO -33.
 SET BankAnglePID:SETPOINT TO 0. 
@@ -578,6 +592,7 @@ SET PREVIOUSAT TO "".
 SET PREVIOUSAP TO "".
 SET FLAREALT TO 150.
 SET TGTHeading to 90.
+SET GSLocked to False.
 
 
 
@@ -612,6 +627,8 @@ ELSE IF KindOfCraft = "Plane" {
 // MAIN LOOP
 // *********
 
+DisableReactionWheels().
+
 until SHIP:STATUS = "LANDED" {
     wait 0. // Skip a physics tick 
 
@@ -632,6 +649,7 @@ until SHIP:STATUS = "LANDED" {
                SHIP:AIRSPEED <= 1600 {
                 SET VNAVMODE TO "ALT".
                 SET APMODE TO "ILS".
+                SET GSLocked TO FALSE.
             }
         }
 
@@ -643,44 +661,24 @@ until SHIP:STATUS = "LANDED" {
             SET TargetCoord TO TGTRunway.
             //Checks if below GS
             SET TGTAltitude to Glideslope(TGTRunway,GSAng).
-            IF ship:altitude < TGTAltitude {
+            IF (NOT GSLocked) AND (ship:altitude < TGTAltitude) {
                 SET VNAVMODE TO "PIT".
                 IF KindOfCraft = "SHUTTLE" { SET TGTPitch TO -GSAng/4. }
-                ELSE { SET TGTPitch TO GSAng/4.} 
+                ELSE { SET TGTPitch TO GSAng.} 
             }
             ELSE {
                 SET VNAVMODE TO "ALT".
+                GSLocked ON.
             }
 
             //Checks distance from centerline
+            local GDist to GroundDistance(TargetCoord).
+            local AllowedDeviation is GDist * sin(0.5).
             SET CLDist TO CenterLineDistance(TGTRunway).
-            IF ABS(CLDist) > 3500 {
-                SET LNAVMODE TO "HDG". 
-                IF CLDist < 0 {
-                    SET TGTHeading to 50.
-                }
-                ELSE {
-                    SET TGTHeading TO 130.
-                }
-            }
-            ELSE IF ABS(CLDist) < 2 {
-                SET TGTHeading TO 90.
-                SET LNAVMODE TO "HDG". 
-            }
-            ELSE {
-                If ABS(CLDist/15) > 20 {
-                    IF CLDist < 0 {
-                        SET TGTHeading to 70.
-                    }
-                    ELSE {
-                        SET TGTHeading TO 110.
-                    }
-                }
-                ELSE {
-                    SET TGTHeading TO ABS(90 + CLDist/15).
-                }
-                SET LNAVMODE TO "HDG". 
-            }
+            IF ABS(CLDist) < AllowedDeviation SET TGTHeading TO 90.
+            ELSE IF abs(CLDist) < GDist/3 SET TGTHeading TO ABS(90 + arcsin(CLDist/(GDist/3))).
+            ELSE SET TGTHeading TO 90 + ((CLDist/ABS(CLDist))*90). // 0 or 180 heading, depending if ship is north or south of runway.
+            SET LNAVMODE TO "HDG". 
 
             // Checks for excessive airspeed on final. 
             IF KindOfCraft = "Plane" {
@@ -706,7 +704,7 @@ until SHIP:STATUS = "LANDED" {
         // **********
         ELSE IF APMODE = "FLR" {
             // Configure Flare mode
-            IF VNAVMODE = "ALT" {
+            IF VNAVMODE <> "PIT" {
                 SET VNAVMODE TO "PIT".
                 SET TGTHeading TO 90.
                 PitchAnglePID:RESET.
@@ -718,8 +716,8 @@ until SHIP:STATUS = "LANDED" {
             }           
             // Adjust craft flight
             IF RadarAltimeter() > 20 {
-                SET TGTPitch to PitchAnglePID:UPDATE(TIME:SECONDS,SHIP:VERTICALSPEED + 5).
-                IF SHIP:AIRSPEED > 100 {
+                SET TGTPitch to PitchAnglePID:UPDATE(TIME:SECONDS,SHIP:VERTICALSPEED + 3).
+                IF SHIP:AIRSPEED > 80 {
                     IF NOT BRAKES { BRAKES ON. }
                 }
                 ELSE {
@@ -866,11 +864,11 @@ until SHIP:STATUS = "LANDED" {
         IF ATMODE = "SPD" {
             IF NOT AUTOTHROTTLE { SET AUTOTHROTTLE TO TRUE .}
             SET VALUETHROTTLE TO ThrottlePID:UPDATE(TIME:SECONDS,SHIP:AIRSPEED - TGTSpeed).
-            LOCK THROTTLE TO VALUETHROTTLE.
+            SET SHIP:CONTROL:PILOTMAINTHROTTLE TO VALUETHROTTLE.
         }
         ELSE IF ATMODE = "MCT" {
             IF NOT AUTOTHROTTLE { SET AUTOTHROTTLE TO TRUE .}
-            LOCK THROTTLE TO 1.
+            SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 1.
         }
         ELSE IF ATMODE = "OFF" {
             IF AUTOTHROTTLE {
@@ -919,6 +917,7 @@ until SHIP:STATUS = "LANDED" {
     // USER INTERFACE UPDATE
     // *********************
 
+    wait 0.
     //ILS VECTORS
     IF checkboxVectors:PRESSED  {
         SET RAMPEND TO latlng(TGTRunway:LAT,TGTRunway:LNG-10).
@@ -992,3 +991,4 @@ CLEARGUIS().
 CHUTES ON.
 BRAKES ON.
 SAS ON.
+SET Config:IPU TO OldIPU.

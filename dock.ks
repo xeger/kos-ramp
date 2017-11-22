@@ -35,6 +35,7 @@ if hastarget {
     dockPrepare(dock_myPort, target).
 
     until hastarget = false or target <> dock_hisPort or dockComplete(dock_myPort) {
+      wait 0. 
       local rawD is target:position - dock_myPort:position.
       local sense is ship:facing.
 
@@ -51,8 +52,10 @@ if hastarget {
       ).
       local needAlign is (abs(dockD:x) > abs(dockD:z)/10) or (abs(dockD:y) > abs(dockD:z)/10).
 
-      uiShowPorts(dock_myPort, target, dock_start / 2, not needAlign).
-      uiDebugAxes(dock_myPort:position, sense, v(10,10,10)).
+      if hastarget { // Avoid errors just after docking complete.
+        uiShowPorts(dock_myPort, target, dock_start / 2, not needAlign).
+        uiDebugAxes(dock_myPort:position, sense, v(10,10,10)).
+      }
 
       if dockD:Z < 0 {
         dockBack(dockD, dockV).
