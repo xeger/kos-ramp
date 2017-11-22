@@ -1,4 +1,4 @@
-clearscreen.
+// clearscreen.
 clearvecdraws().
 
 global ui_announce is 0.

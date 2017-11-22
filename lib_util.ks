@@ -47,25 +47,11 @@ function utilCloseApproach {
   return Rbest.
 }
 
-function utilHasNextNode {
-  local bignumber is 999999999.
-  local sentinel is node(time:seconds + bignumber, 0, 0, 0).
-  add sentinel.
-  local nn is nextnode.
-  remove sentinel.
-  if nn = sentinel {
-    return false.
-  } else {
-    return true.
-  }
-}
-
 FUNCTION utilFaceBurn {
 
 // This function is intended to use with shuttles and spaceplanes that have engines not in line with CoM.
 // Usage: LOCK STEERING TO utilFaceBurn(THEDIRECTIONYOUWANTTOSTEER).
 // Example: LOCK STEERING TO utilFaceBurn(PROGRADE).
-// 2017 FellipeC - Released under https://creativecommons.org/licenses/by-nc/4.0/
 
   PARAMETER DIRTOSTEER. // The direction you want the ship to steer to
   LOCAL NEWDIRTOSTEER IS DIRTOSTEER. // Return value. Defaults to original direction.
@@ -88,13 +74,6 @@ FUNCTION utilFaceBurn {
     ELSE { RETURN FALSE. }
   }
 
-  IF HasSensors() { // Checks for sensors
-    LOCK trueacc TO ship:sensors:acc - ship:sensors:grav.
-  }
-  ELSE { // If ship have no sensors, just returns direction without any correction
-    RETURN DIRTOSTEER. 
-  }
-
   FUNCTION InitOSS {
     // Initialize persistent data.
     LOCAL OSS IS LEXICON().
@@ -107,6 +86,7 @@ FUNCTION utilFaceBurn {
     OSS:add("Average_Interval",1).
     OSS:add("Average_Interval_Max",5).
     OSS:add("Ship_Name",SHIP:NAME:TOSTRING).
+    OSS:add("HasSensors",HasSensors()).
     
     RETURN OSS.
   }
@@ -120,6 +100,14 @@ FUNCTION utilFaceBurn {
   ELSE {
     SET OSS TO InitOSS(). 
   }
+
+  IF OSS["HasSensors"] { // Checks for sensors
+    LOCK trueacc TO ship:sensors:acc - ship:sensors:grav.
+  }
+  ELSE { // If ship have no sensors, just returns direction without any correction
+    RETURN DIRTOSTEER. 
+  }
+
 
   // Only account for offset thrust if there is thrust!
   if throttle > 0.1 { 
@@ -174,6 +162,8 @@ FUNCTION utilFaceBurn {
         SET NEWDIRTOSTEER TO ANGLEAXIS(OSS["yaw_angle"],SHIP:FACING:UPVECTOR) * NEWDIRTOSTEER.
       }
   } 
+  // This function is pretty processor intensive, make sure it don't execute too much often.
+  WAIT 0.2.
   // Saves the persistent values to a file.
   WRITEJSON(OSS,"oss.json").
   RETURN NEWDIRTOSTEER.
@@ -216,6 +206,22 @@ FUNCTION utilRCSCancelVelocity {
 
   //Return ship controls to previus condition
   set ship:control:translation to v(0,0,0).
+  set ship:control:neutralize to true.
+  SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+  UNLOCK STEERING.
+  UNLOCK THROTTLE.
   set rcs to rstatus.
   set sas to sstatus.  
+}
+
+// Returns true if:
+// Ship is facing the FaceVec whiting a tolerance of maxDeviationDegrees and
+// with a Angular velocity less than maxAngularVelocity.
+function utilIsShipFacing { 
+  parameter FaceVec.
+  parameter maxDeviationDegrees is 8.
+  parameter maxAngularVelocity is 0.01.
+
+  return vdot(FaceVec, ship:facing:forevector) >= cos(maxDeviationDegrees) and
+         ship:angularvel:mag < maxAngularVelocity. 
 }

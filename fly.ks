@@ -97,7 +97,7 @@ FUNCTION PitchAngle {
 }
 
 FUNCTION ProgradePitchAngle {
-    RETURN -(VANG(ship:up:vector,ship:velocity:surface) - 90).
+    RETURN -(VANG(ship:up:vector,vxcl(ship:facing:starvector,ship:velocity:surface) - 90).
 }
 
 FUNCTION MagHeading {

@@ -183,7 +183,7 @@ until ship:altitude > body:atm:height {
 // Give power and communication to the ship
 fuelcells on.
 panels on.
-ExtendAntennas().
+partsExtendAntennas().
 // Release controls. Turn on RCS to help steer to circularization burn.
 unlock steering.
 rcs on.

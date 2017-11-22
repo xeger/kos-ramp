@@ -1,8 +1,5 @@
 PARAMETER Deorbit_Long_Offset IS 0. // Diference from the default deorbit longitude.
 
-CLEARSCREEN.
-
-
 SAS OFF.
 BAYS OFF.
 GEAR OFF.
