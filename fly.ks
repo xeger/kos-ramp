@@ -707,8 +707,8 @@ until SHIP:STATUS = "LANDED" {
                 SET VNAVMODE TO "PIT".
                 SET TGTHeading TO 90.
                 PitchAnglePID:RESET.
-                SET ElevatorPID:Kp TO ElevatorPID:Kp*3.
-                SET ElevatorPID:Ki to ElevatorPID:Ki/2.
+                SET ElevatorPID:Kp TO ElevatorPID:Kp*2.
+                SET ElevatorPID:Ki to ElevatorPID:Ki/4.
                 SET ElevatorPID:Kd to ElevatorPID:Kd*2.
                 SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
                 SET ATMODE TO "OFF".
