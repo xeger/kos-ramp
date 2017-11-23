@@ -24,8 +24,8 @@ global nodeStageFuelInit is 0.
 
 // keep ship pointed at node
 sas off.
-local steerDir is utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). 
-lock steering to steerDir.
+lock NodeSteerDir to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). 
+lock steering to NodeSteerDir.
 
 // estimate burn direction & duration
 global nodeAccel is uiAssertAccel("Node").
@@ -62,10 +62,7 @@ uiDebug("Begin burn").
 
 until nodeDone
 {
-    wait 0. //Noticed a performance issue with crafts with many parts. This forces the loop to wait one physics tick.
-    // For some reason, specially for plane change burns, ship is not steering as expected. Trying this to fix
-    local steerDir is utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). 
-    lock steering to steerDir.
+    wait 0. //Let a physics tick run each loop.
 
     set nodeAccel to ship:availablethrust / ship:mass.
 
@@ -74,7 +71,7 @@ until nodeDone
     }
 
     if nodeAccel > 0 {
-      if utilIsShipFacing(steerDir:vector,node_okFacing,2) {
+      if utilIsShipFacing(NodeSteerDir:vector,node_okFacing,2) {
         //feather the throttle
         set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
       } else {
@@ -120,6 +117,7 @@ remove nodeNd.
 // Release all controls to be safe.
 unlock steering.
 unlock throttle.
+unlock NodeSteerDir.
 set ship:control:neutralize to true.
 SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 set sas to sstate.

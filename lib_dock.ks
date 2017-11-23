@@ -260,12 +260,13 @@ function dockMatchVelocity {
     wait until utilIsShipFacing(steerDir:vector).
 
     // Cancel velocity
-    lock throttle to min(matchVel:mag / matchAccel, 1.0).
     local v0 is matchVel:mag.
+    lock throttle to min(matchVel:mag / matchAccel, 1.0).
+    wait 0.1. // Let some time pass so the difference in speed is correcly acounted.
     // Stops the engines if reach near residual speed or if speed starts increasing. (May happens with some cases where the ship is not perfecly aligned with matchVel and residual is very low)
     until (matchVel:mag <= (residual + RCSTheresold)) or (matchVel:mag > v0) {
       set v0 to matchVel:mag.
-      wait 0.
+      wait 0.1. //Assure measurements are made some time apart. 
     }
 
     lock throttle to 0.

@@ -8,7 +8,6 @@
 PARAMETER KindOfCraft IS "Plane".
 PARAMETER LandingGear IS "Tricicle".
 
-CLEARSCREEN.
 CLEARVECDRAWS().
 CLEARGUIS().
 
@@ -796,30 +795,31 @@ until SHIP:STATUS = "LANDED" {
 
         }
         // Stall Protection (Stick pusher!)
-        IF AoA > MaxAoA(){
-            IF VNAVMODE <> "SPU" {
-                SET PREVIOUSVNAV TO VNAVMODE.
-                SET PREVIOUSLNAV TO LNAVMODE.
-                SET PREVIOUSAT TO ATMODE.
-                SET PREVIOUSAP TO APMODE.
-                SET APMODE TO "NAV".
-                SET VNAVMODE TO "SPU".
-                SET ATMODE TO "MCT".
-                SET LNAVMODE TO "SPU".
-                PlayAlarm().
+        IF KindOfCraft = "PLANE" {
+            IF AoA > MaxAoA(){
+                IF VNAVMODE <> "SPU" {
+                    SET PREVIOUSVNAV TO VNAVMODE.
+                    SET PREVIOUSLNAV TO LNAVMODE.
+                    SET PREVIOUSAT TO ATMODE.
+                    SET PREVIOUSAP TO APMODE.
+                    SET APMODE TO "NAV".
+                    SET VNAVMODE TO "SPU".
+                    SET ATMODE TO "MCT".
+                    SET LNAVMODE TO "SPU".
+                    PlayAlarm().
+                }
+                fbwhud("Stick pusher!").
             }
-            fbwhud("Stick pusher!").
-        }
-        ELSE {
-            IF VNAVMODE = "SPU" {
-                SET VNAVMODE TO PREVIOUSVNAV.
-                SET LNAVMODE TO PREVIOUSLNAV.
-                SET ATMODE TO PREVIOUSAT.
-                SET APMODE TO PREVIOUSAP.                
+            ELSE {
+                IF VNAVMODE = "SPU" {
+                    SET VNAVMODE TO PREVIOUSVNAV.
+                    SET LNAVMODE TO PREVIOUSLNAV.
+                    SET ATMODE TO PREVIOUSAT.
+                    SET APMODE TO PREVIOUSAP.
+                }
             }
         }
 
-        
         IF KindOfCraft = "SHUTTLE" {
             SET CTRLIMIT TO min(1,ROUND(240/SHIP:AIRSPEED,2)).
             IF SHIP:ALTITUDE > 18000 { RCS ON .}
