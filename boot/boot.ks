@@ -15,14 +15,13 @@
 
 //Print info
 CLEARSCREEN.
-print "kOS processor version " + core:version + " running on " + core:element:name.
+print "kOS processor version " + core:version.
+print "Running on " + core:element:name.
 print core:volume:capacity + " total space".
 print core:volume:freespace + " bytes free".
-Print "Universal RAMP bootloader...".
+Print "Universal RAMP bootloader".
 //Waits 5 seconds for ship loads and stabilize physics, etc...
-FROM {local i is 10.} UNTIL i = 0 STEP {set i to i-1.} DO { 
-  wait 0.5.
-}
+WAIT 5.
 
 //Set up volumes
 SET HD TO CORE:VOLUME.
@@ -82,7 +81,8 @@ IF HOMECONNECTION:ISCONNECTED {
 	}
 	ELSE {
 		PRINT "No remote startup script found.".
-		PRINT "You can create a sample one by typing: RUN UTIL_MAKESTARTUP.".
+		PRINT "You can create a sample one by typing:". 
+		PRINT "RUN UTIL_MAKESTARTUP.".
 	}
 }
 ELSE { 

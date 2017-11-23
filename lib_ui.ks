@@ -1,4 +1,4 @@
-clearscreen.
+// clearscreen.
 clearvecdraws().
 
 global ui_announce is 0.
@@ -38,7 +38,7 @@ function uiBanner {
 
   if (time:seconds - ui_announce > 60) or (ui_announceMsg <> msg) {
     uiConsole(prefix, msg).
-    hudtext(msg, 10, 4, 24, GREEN, false).
+    hudtext(msg, 10, 2, 24, GREEN, false).
     set ui_announce to time:seconds.
     set ui_announceMsg to msg.
   }

@@ -25,3 +25,38 @@ You can use the script `util_makestartup.ks` to create a sample file for your sh
     }
 ```
 Fell free to change that to anything that suits your mission! 
+
+Disk space usage
+----------------
+
+RAMP scripts use about 150kb of memory. That seens low, but default kOS hard disk values are very small. In order to be able to load RAMP into ship's memory, is suggested to use a `ModuleManager` patch, for example:
+```
+@PART[kOSMachine1m]
+{
+	@MODULE[kOSProcessor]
+	{
+		diskSpace = 524288
+	}
+}
+@PART[KAL9000]
+{
+	@MODULE[kOSProcessor]
+	{
+		diskSpace = 262144
+	}
+}
+@PART[KR-2042]
+{
+	@MODULE[kOSProcessor]
+	{
+		diskSpace = 16384
+	}
+}
+@PART[kOSMachineRad]
+{
+	@MODULE[kOSProcessor]
+	{
+		diskSpace = 131072
+	}
+}
+```

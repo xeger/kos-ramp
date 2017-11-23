@@ -9,9 +9,11 @@
 parameter apo is 200000.
 parameter hdglaunch is 90. 
 
-RUNONCEPATH("lib_parts.ks"). 
+runoncepath("lib_parts.ks"). 
+runoncepath("lib_ui.ks").
 
-print "Launching to an orbit of " + round(apo/1000) + "km and heading of " + hdglaunch + "º". 
+
+uiBanner("Launch","Launching to an orbit of " + round(apo/1000) + "km and heading of " + hdglaunch + "º"). 
 
 // Number of seconds to sleep during ascent loop
 global launch_tick is 1.
@@ -78,30 +80,40 @@ function ascentThrottle {
 function ascentStaging {
   local Neng is 0.
   local Nsrb is 0.
-  local Nout is 0.
+  local Nlfo is 0.
+  local ThisStage is stage:Number.
 
   list engines in engs.
   for eng in engs {
     if eng:ignition {
       set Neng to Neng + 1.
-      if not eng:allowshutdown {
+      if not eng:allowshutdown and eng:flameout {
         set Nsrb to Nsrb + 1.
       }
       if eng:flameout {
-        set Nout to Nout + 1.
+        set Nlfo to Nlfo + 1.
       }
     }
   }
 
-  if (Nsrb > 0) and (stage:solidfuel < 50) {
+  if Nsrb > 0 {
     stage.
     set launch_tSrbSep to time:seconds.
     set launch_tStage to launch_tSrbSep.
-  } else if (Nout = Neng) {
+    uiBanner("Launch","Stage " + ThisStage + " separated. " + Nsrb + " SRBs discarded.").
+  } else if (Nlfo > 0) {
     wait until stage:ready.
     stage.
     set launch_tStage to time:seconds.
+    uiBanner("Launch","Stage " + ThisStage + " separated. " + Nlfo + " Engines out.").
+  } else if Neng = 0 {
+    wait until stage:ready.
+    stage.
+    set launch_tStage to time:seconds.
+    uiBanner("Launch","Stage " + ThisStage + " activated").
   }
+  
+
 }
 
 function ascentWarping {
@@ -163,16 +175,16 @@ if stage:resourceslex:haskey("LiquidFuel") {
   if stage:resourceslex["LiquidFuel"]:capacity > 0 { // Checks to avoid NaN error
     if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.1 {
       stage.
-      print "Discard tank".
+      uiBanner("Launch","Discarding tank").
       wait until stage:ready.
     }
-    // Corner case: circularization stage is not bottom most (i.e. there is an
-    // aeroshell ejection in a lower stage).
-    until ship:availablethrust > 0 {
-      stage.
-      print "Discard fairings".
-      wait until stage:ready.
-    }
+  }
+  // Corner case: circularization stage is not bottom most (i.e. there is an
+  // aeroshell ejection in a lower stage).
+  until ship:availablethrust > 0 {
+    stage.
+    uiBanner("Launch","Discard fairings").
+    wait until stage:ready.
   }
 }
 // Warp to end of atmosphere
@@ -183,7 +195,7 @@ until ship:altitude > body:atm:height {
 // Give power and communication to the ship
 fuelcells on.
 panels on.
-ExtendAntennas().
+partsExtendAntennas().
 // Release controls. Turn on RCS to help steer to circularization burn.
 unlock steering.
 rcs on.

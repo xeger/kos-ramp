@@ -30,7 +30,7 @@ if target:position:mag > 25000 and approachX > 25000 {
 
   run node_hoh.
 
-  until utilHasNextNode() {
+  until HASNODE {
     uiBanner("Rendezvous", "Transfer to phasing orbit").
     run circ_alt(target:altitude * 1.666).
     run node_hoh.
@@ -38,6 +38,11 @@ if target:position:mag > 25000 and approachX > 25000 {
 
   uiBanner("Rendezvous", "Transfer injection burn").
   run node.
+
+  uiBanner("Rendezvous", "Matching velocity at closest approach.").
+  run node_vel_tgt.
+  run node.
+
 }
 
 run approach.

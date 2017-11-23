@@ -34,4 +34,4 @@ local dt is dv:mag / accel.
 // Time the burn so that we end thrusting just as we reach the point of closest
 // approach. Assumes the burn program will perform half of its burn before
 // T, half afterward
-add node(T, sr, sn, sp).
+add node(T-(dt/2), sr, sn, sp).

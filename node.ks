@@ -6,12 +6,11 @@
 
 run once lib_ui.
 run once lib_util.
-
-// Configuration constants; these are pre-set for automated missions. If you
+// Configuration constants; these are pre-set for automated missions; if you
 // have a ship that turns poorly, you may need to decrease these and perform
 // manual corrections.
-global node_bestFacing is 0.995. // ~5  degrees error (10 degree cone)
-global node_okFacing   is 0.94.  // ~20 degrees error (40 degree cone)
+global node_bestFacing is 5.   // ~5  degrees error (10 degree cone)
+global node_okFacing   is 20.  // ~20 degrees error (40 degree cone)
  
 local sstate is sas. // Save SAS State
 
@@ -25,7 +24,8 @@ global nodeStageFuelInit is 0.
 
 // keep ship pointed at node
 sas off.
-lock steering to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)).
+lock NodeSteerDir to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). 
+lock steering to NodeSteerDir.
 
 // estimate burn direction & duration
 global nodeAccel is uiAssertAccel("Node").
@@ -34,10 +34,17 @@ global nodeDob is (nodeNd:deltav:mag / nodeAccel).
 
 uiDebug("Orient to burn").
 // If have time, wait to ship almost align with maneuver node.
-// If have little time, wait at least to ship face inside 40º cone from the node.
+// If have little time, wait at least to ship face in general direction of node
 // This prevents backwards burns, but still allows steering via engine thrust.
-wait until (vdot(facing:forevector, nodeFacing:forevector) >= node_bestFacing) or
-           ((nodeNd:eta <= nodeDob / 2) and (vdot(facing:forevector, nodeFacing:forevector) >= node_okFacing)).
+// If ship is not rotating for some reason, will proceed anyway. (Maybe only torque source is engine gimbal?)
+local orientationOk is false.
+until orientationOk {
+  wait 0. //Noticed a performance issue with crafts with many parts. This forces the loop to wait one physics tick.
+  local steerVec is utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)):vector.
+  if  utilIsShipFacing(steerVec,node_bestFacing,0.5) or
+      ((nodeNd:eta <= nodeDob / 2) and utilIsShipFacing(steerVec,node_okFacing,5)) or 
+      ship:angularvel:mag < 0.0001 { set orientationOk to true. }
+}
 
 // warp to burn time; give 15 seconds slack for final steering adjustments
 global nodeHang is (nodeNd:eta - nodeDob/2) - 15.
@@ -55,6 +62,8 @@ uiDebug("Begin burn").
 
 until nodeDone
 {
+    wait 0. //Let a physics tick run each loop.
+
     set nodeAccel to ship:availablethrust / ship:mass.
 
     if(nodeNd:deltav:mag < nodeDvMin) {
@@ -62,7 +71,7 @@ until nodeDone
     }
 
     if nodeAccel > 0 {
-      if(vdot(facing:forevector, nodeFacing:forevector) >= node_okFacing) {
+      if utilIsShipFacing(NodeSteerDir:vector,node_okFacing,2) {
         //feather the throttle
         set ship:control:pilotmainthrottle to min(nodeDvMin/nodeAccel, 1.0).
       } else {
@@ -70,7 +79,6 @@ until nodeDone
         // engine will push us back on course
         set ship:control:pilotmainthrottle to 0.1.
       }
-
       // three conditions for being done:
       //   1) overshot (node delta vee is pointing opposite from initial)
       //   2) burn DV increases (off target due to wobbles)
@@ -106,5 +114,10 @@ if nodeNd:deltav:mag > nodeDv0:mag * 0.05 and nodeNd:deltav:mag > 0.1 {
 }
 
 remove nodeNd.
+// Release all controls to be safe.
 unlock steering.
+unlock throttle.
+unlock NodeSteerDir.
+set ship:control:neutralize to true.
+SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 set sas to sstate.
