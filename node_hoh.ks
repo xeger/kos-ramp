@@ -1,5 +1,5 @@
 // Delta vee math stolen from http://en.wikipedia.org/wiki/Hohmann_transfer_orbit#Calculation
-// Phase angle math stolen from https://docs.google.com/document/d/1IX6ykVb0xifBrB4BRFDpqPO6kjYiLvOcEo3zwmZL0sQ/edit and here https://forum.kerbalspaceprogram.com/index.php?/topic/122685-how-to-calculate-a-rendezvous/
+// Phase angle math stolen from https://docs.google.com/document/d/1IX6ykVb0xifBrB4BRFDpqPO6kjYiLvOcEo3zwmZL0sQ/edit and here https://forum.kerbalspaceprogram.com/index.php?/topic/122685-how-to-calculate-a-rendezvous/ and from here too https://forum.kerbalspaceprogram.com/index.php?/topic/85285-phase-angle-calculation-for-kos/
 
 parameter MaxOrbitsToTransfer is 5.
 parameter MinLeadTime is 30.

@@ -27,8 +27,6 @@ run node.
 until obt:transition <> "ENCOUNTER" {
   run warp(eta:transition+1).
 }
-set warp to 0.
-wait 10.
 // Deal with collisions
 local minperi is (body:atm:height + (body:radius * 0.3)).
 
