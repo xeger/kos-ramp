@@ -29,12 +29,14 @@ local t is time + dt.
 
 local relative_inclination is abs(ship:obt:inclination - target_inclination).
 local v is velocityat(ship, T):orbit.
+local nDv is v:mag * sin(relative_inclination).
+local pDV is v:mag * (cos(relative_inclination) - 1 ).
 local dv is 2 * v:mag * sin(relative_inclination / 2).
 
 if v:y > 0 {
   // burn anti-normal at ascending node
-	add node(T:seconds, 0, -dv, 0).
+	add node(T:seconds, 0, -ndv, pDV).
 } else {
   // burn normal at descending node
-	add node(T:seconds, 0, dv, 0).
+	add node(T:seconds, 0, ndv, pDV).
 }

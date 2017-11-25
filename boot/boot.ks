@@ -25,12 +25,13 @@ WAIT 5.
 
 //Set up volumes
 SET HD TO CORE:VOLUME.
-SET ARC TO VOLUME(0).
+SET ARC TO 0.
 SET Startup to "startup".
 
 PRINT "Attemping to connect to KSC...".
 IF HOMECONNECTION:ISCONNECTED {
 	PRINT "Connected to KSC, copying updated files...".
+	SET ARC TO VOLUME(0).
 	SWITCH TO ARC.
 	CD ("ramp").	
 	LOCAL copyok is TRUE.

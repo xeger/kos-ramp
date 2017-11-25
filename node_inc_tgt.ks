@@ -31,10 +31,12 @@ if angle_to_node_delta < 0 {
 local v is velocityat(ship, t):orbit.
 local vt is velocityat(target, t):orbit.
 local diff is vt - v.
+local nDv is v:mag * sin(relative_inclination).
+local pDV is v:mag * (cos(relative_inclination) - 1 ).
 local dv is 2 * v:mag * sin(relative_inclination / 2).
 
 if (v:y <= 0 and vt:y <= 0)  {
-	add node(t, 0, dv, 0).
+	add node(t, 0, -ndv, pDv).
 } else {
-	add node(t, 0, -dv, 0).
+	add node(t, 0, ndv, pDv).
 }

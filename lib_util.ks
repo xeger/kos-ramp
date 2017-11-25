@@ -225,3 +225,9 @@ function utilIsShipFacing {
   return vdot(FaceVec, ship:facing:forevector) >= cos(maxDeviationDegrees) and
          ship:angularvel:mag < maxAngularVelocity. 
 }
+
+FUNCTION utilTo360 { 
+    //From youtube.com/cheerskevin
+    PARAMETER lng.
+    RETURN MOD(lng + 360, 360).
+}
