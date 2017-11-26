@@ -1,24 +1,8 @@
 TODO.md
 
-- use global var to control physics warp
+- use global var to control physics warp (Maybe a flag in warp.ks?)
 
-- integrate deorbit & landing
-  - don't mess up trajectory; use different approach? e.g. positionat(perigee) vs terrain height?
-
-- troubleshoot landing
-    - braking burn doesn't work right! fails when coming in "hot"
-    - final descent far too early? unnecessary braking?
-
-- troubleshoot rendezvous/approach
-    - rendezvous gets stuck on final approach
-
-- warp during landing
-
-Hohmann: maybe find a new way...
-  obs: encounter is always T / 2 after burn point
-   - if we can determine post-burn T, and positionat reacts to planned changes, I can find closest approach dist!
-   - use this to bisect the time line...
+- warp during landing (living dangerously!)
 
 - troubleshoot Hohmann
-    - not always finding a window
-    - buggy Minmus dv
+    - buggy Minmus dv (problem is the start orbit needs to be very circular. Wasn't because inclination change was not keeping the shape of orbit. Still need to find a better way to do the math when the origin orbit isn't circular)

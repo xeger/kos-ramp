@@ -28,11 +28,14 @@ if target:position:mag > 25000 and approachX > 25000 {
     run node.
   }
 
+  uiDebug("Running Hohmann transfer node calculation").
   run node_hoh.
 
+  local strandedcount is 0.
   until HASNODE {
+    set strandedcount to strandedcount + 1.
     uiBanner("Rendezvous", "Transfer to phasing orbit").
-    run circ_alt(target:altitude * 1.666).
+    run circ_alt(target:altitude * 1.666 * strandedcount).
     run node_hoh.
   }
 

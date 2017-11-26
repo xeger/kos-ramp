@@ -123,12 +123,6 @@ FUNCTION CompassDegrees {
     RETURN mod(360-DEGREES, 360).
 }
 
-FUNCTION MaxAoA {
-    // Fligth Envelope Protection
-    LOCAL AllowedAoA IS 40.
-    Return ((AllowedAoA - AoA()) + PitchAngle()).
-}
-
 FUNCTION RadarAltimeter {
     Return ship:altitude - ship:geoposition:terrainheight.
 }
@@ -592,6 +586,7 @@ SET PREVIOUSAP TO "".
 SET FLAREALT TO 150.
 SET TGTHeading to 90.
 SET GSLocked to False.
+SET MaxAoA to 20.
 
 
 
@@ -601,7 +596,7 @@ SET RWYKSC_SHUTTLE to latlng(-0.04807,-74.82).
 SET RWYOAF to latlng(-1.51795834829155,-71.9661601438879).
 
 IF KindOfCraft = "Shuttle" {
-    SET APMODE TO "SHD".
+    SET APMODE TO "ILS".
     SET TGTAltitude to 6000.
     SET TGTHeading to MagHeading().
     SET GSAng to 20.
@@ -643,9 +638,9 @@ until SHIP:STATUS = "LANDED" {
             SET LNAVMODE TO "BNK".
             SET TGTBank TO 0.
             SET VNAVMODE TO "PIT".
-            SET TGTPitch TO -5.
+            SET TGTPitch TO -GSAng/4.
             IF SHIP:Altitude >= Glideslope(TGTRunway)- 1500 AND 
-               SHIP:AIRSPEED <= 1600 {
+               SHIP:AIRSPEED <= 2000 {
                 SET VNAVMODE TO "ALT".
                 SET APMODE TO "ILS".
                 SET GSLocked TO FALSE.
@@ -660,10 +655,15 @@ until SHIP:STATUS = "LANDED" {
             SET TargetCoord TO TGTRunway.
             //Checks if below GS
             SET TGTAltitude to Glideslope(TGTRunway,GSAng).
-            IF (NOT GSLocked) AND (ship:altitude < TGTAltitude) {
-                SET VNAVMODE TO "PIT".
-                IF KindOfCraft = "SHUTTLE" { SET TGTPitch TO -GSAng/4. }
-                ELSE { SET TGTPitch TO GSAng.} 
+            IF (NOT GSLocked) AND (ship:altitude < TGTAltitude) {                
+                IF KindOfCraft = "SHUTTLE" { 
+                    SET TGTPitch TO -GSAng/4. 
+                    SET VNAVMODE TO "PIT".
+                }
+                ELSE { 
+                    SET TGTAltitude TO (SHIP:Altitude + TGTAltitude) / 2.
+                    SET VNAVMODE TO "ALT".
+                } 
             }
             ELSE {
                 SET VNAVMODE TO "ALT".
@@ -707,8 +707,8 @@ until SHIP:STATUS = "LANDED" {
                 SET VNAVMODE TO "PIT".
                 SET TGTHeading TO 90.
                 PitchAnglePID:RESET.
-                SET ElevatorPID:Kp TO ElevatorPID:Kp*3.
-                SET ElevatorPID:Ki to ElevatorPID:Ki/2.
+                SET ElevatorPID:Kp TO ElevatorPID:Kp*2.
+                SET ElevatorPID:Ki to ElevatorPID:Ki/4.
                 SET ElevatorPID:Kd to ElevatorPID:Kd*2.
                 SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
                 SET ATMODE TO "OFF".
@@ -796,7 +796,7 @@ until SHIP:STATUS = "LANDED" {
         }
         // Stall Protection (Stick pusher!)
         IF KindOfCraft = "PLANE" {
-            IF AoA > MaxAoA(){
+            IF AoA() > MaxAoA {
                 IF VNAVMODE <> "SPU" {
                     SET PREVIOUSVNAV TO VNAVMODE.
                     SET PREVIOUSLNAV TO LNAVMODE.
@@ -846,12 +846,7 @@ until SHIP:STATUS = "LANDED" {
             SET YawDamperPID:MINOUTPUT TO -CTRLIMIT * 0.5.
         }
         SET Rudder TO min(CTRLIMIT,max(-CTRLIMIT,YawDamperPID:UPDATE(TIME:SECONDS, YawError()))).
-        IF PitchAngle() < MaxAoA() {
-            SET SHIP:CONTROL:YAW TO Rudder.
-        }
-        else {
-            SET SHIP:CONTROL:YAW TO 0.
-        }
+        SET SHIP:CONTROL:YAW TO Rudder.
 
         // APPLY CONTROLS
         SET SHIP:CONTROL:ROLL TO min(CTRLIMIT,max(-CTRLIMIT,Aileron)). 
@@ -962,8 +957,7 @@ until SHIP:STATUS = "LANDED" {
         IF APATEnabled {PRINT APMODE + "   " AT (10, 0).} ELSE {PRINT "MANUAL" AT (10,0).}
         PRINT "Pitch angle         " + ROUND(PitchAngle(),2) +          "       "at (0,1).
         PRINT "Target pitch:       " + ROUND(ElevatorPID:SETPOINT,2) +  "       " At (0,2).
-        PRINT "AoA Protection      " + ROUND(MaxAoA(),2) +              "       " At (0,3).
-        PRINT "AoA:                " + ROUND(AoA(),2) +                 "       " At (0,4).
+        PRINT "AoA:                " + ROUND(AoA(),2) +                 "       " At (0,3).
 
         PRINT "Bank angle          " + ROUND(BankAngle(),2)          +  "     " AT (0,6).
         PRINT "Target bank:        " + ROUND(AileronPID:SETPOINT,2)  +  "     " At (0,7).
