@@ -10,7 +10,6 @@ runoncepath("lib_util").
 // Compute prograde delta-vee required to achieve Hohmann transfer; < 0 means
 // retrograde burn.
 function hohmannDv {
-  local r1 is (ship:periapsis + body:radius).
   local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
   local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
 
@@ -20,11 +19,9 @@ function hohmannDv {
 // Compute time of Hohmann transfer window.
 function hohmannDt {
 
-  local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
-  local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
+  local r1 is ship:obt:semimajoraxis.
+  local r2 is target:obt:semimajoraxis.
 
-  // dv is not a vector in cartesian space, but rather in "maneuver space"
-  // (z = prograde/retrograde dv)
   local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
   local ft is pt - floor(pt).
 
@@ -32,6 +29,8 @@ function hohmannDt {
   local theta is 360 * ft.
   // necessary phase angle for vessel burn
   local phi is 180 - theta.
+
+  uiDebug("Phi:" + phi).
 
   // Angles to universal reference direction. (Solar prime)
   set sAng to ship:obt:lan+obt:argumentofperiapsis+obt:trueanomaly. 
@@ -49,13 +48,21 @@ function hohmannDt {
   // Loop conditions variables
   local HasAcceptableTransfer is false.
   local IsStranded is false.
+  local tries is 0.
   until HasAcceptableTransfer or IsStranded {
 
       // Phase angle now.
-      set pAng to utilTo360(tAng - sAng).
+      set pAng to utilReduceTo360(tAng - sAng).
+      uiDebug("pAng: " + pAng).
     
-      local DeltaAng is utilTo360(pAng - phi).
-      set timeToHoH to -(DeltaAng / phaseAngRoC).
+      if r1 < r2 { // Target orbit is higher
+        set DeltaAng to utilReduceTo360(pAng - phi).
+      }
+      else { // Target orbit is lower
+        set DeltaAng to utilReduceTo360(phi - pAng).
+      }
+      set timeToHoH to abs(DeltaAng / phaseAngRoC).
+      uiDebug("TTHoh:" + timeToHoH).
 
       if timeToHoH > ship:obt:period * MaxOrbitsToTransfer set IsStranded to true.
       else if timeToHoH > MinLeadTime set HasAcceptableTransfer to true.
@@ -64,10 +71,9 @@ function hohmannDt {
           set tAng to tAng + MinLeadTime*tAngSpd.
           set sAng to sAng + MinLeadTime*sAngSpd.
       }
-
-      local h is floor(abs(timeToHoH)/3600).
-      local m is floor( (abs(timeToHoH) - (h*3600)) / 60) .
-      local s is mod(abs(timeToHoH),60).
+      set tries to tries + 1.
+      if tries > 1000 set IsStranded to true.
+      if IsStranded break.
   }
   if IsStranded return "Stranded".
   else return timeToHoH + time:seconds.  
@@ -76,10 +82,10 @@ function hohmannDt {
 if body <> target:body {
   uiWarning("Node", "Incompatible orbits").
 }
-if ship:obt:eccentricity > 0.1 {
+if ship:obt:eccentricity > 0.01 {
   uiWarning("Node", "Eccentric ship e=" + round(ship:obt:eccentricity, 1)).
 }
-if target:obt:eccentricity > 0.1 {
+if target:obt:eccentricity > 0.01 {
   uiWarning("Node", "Eccentric target e=" +  + round(target:obt:eccentricity, 1)).
 }
 
@@ -88,7 +94,10 @@ if abs(node_ri) > 0.2 {
   uiWarning("Node", "Bad alignment ri=" + round(node_ri, 1)).
 }
 
+uiDebug("Hohmann delta V").
 global node_dv is hohmannDv().
+
+uiDebug("Hohmann time").
 global node_T is hohmannDt().
 
 if node_T = "Stranded" {

@@ -44,3 +44,13 @@ FUNCTION partsControlFromDockingPort {
     Return success.
 }
 
+FUNCTION partsDeployFairings {
+    FOR P IN SHIP:PARTS {
+        IF P:MODULES:CONTAINS("ModuleProceduralFairing") {
+            LOCAL M IS P:GETMODULE("ModuleProceduralFairing").
+            FOR Event IN M:ALLEVENTNAMES() {
+                IF Event:CONTAINS("deploy") M:DOEVENT(Event). 
+            }.
+        }
+    }.
+}

@@ -226,8 +226,16 @@ function utilIsShipFacing {
          ship:angularvel:mag < maxAngularVelocity. 
 }
 
-FUNCTION utilTo360 { 
+FUNCTION utilLongitudeTo360 { 
+    //Converts longitudes from -180 to +180 into a 0-360 degrees.
     //From youtube.com/cheerskevin
     PARAMETER lng.
     RETURN MOD(lng + 360, 360).
 }
+
+function utilReduceTo360 {
+  //Converts angles that are more tha 360 to 0-360
+  parameter ang.
+  return ang - 360 * floor(ang/360).
+}
+

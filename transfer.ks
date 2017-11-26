@@ -27,10 +27,11 @@ run node.
 until obt:transition <> "ENCOUNTER" {
   run warp(eta:transition+1).
 }
-// Deal with collisions
+
+// Deal with collisions and retrograde orbits (sorry this script can't do free return)
 local minperi is (body:atm:height + (body:radius * 0.3)).
 
-if ship:periapsis < minperi {
+if ship:periapsis < minperi or ship:obt:inclination > 90 {
   sas off.
   LOCK STEERING TO heading(90,0).
   wait 10.

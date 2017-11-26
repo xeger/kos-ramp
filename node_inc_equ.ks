@@ -28,15 +28,11 @@ local dt is frac * ship:obt:period.
 local t is time + dt.
 
 local relative_inclination is abs(ship:obt:inclination - target_inclination).
-local v is velocityat(ship, T):orbit.
-local nDv is v:mag * sin(relative_inclination).
-local pDV is v:mag * (cos(relative_inclination) - 1 ).
-local dv is 2 * v:mag * sin(relative_inclination / 2).
+local vel is velocityat(ship, T):orbit.
+local nDv is vel:mag * sin(relative_inclination).
+local pDV is vel:mag * (cos(relative_inclination) - 1 ).
+local dv is 2 * vel:mag * sin(relative_inclination / 2).
 
-if v:y > 0 {
-  // burn anti-normal at ascending node
-	add node(T:seconds, 0, -ndv, pDV).
-} else {
-  // burn normal at descending node
-	add node(T:seconds, 0, ndv, pDV).
-}
+if vel:y < 0 set nDv to -nDv. // Invert direction for anti-normal burn.
+
+add node(T:seconds, 0, ndv, pDV).

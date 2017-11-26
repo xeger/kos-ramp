@@ -11,7 +11,7 @@ parameter hdglaunch is 90.
 
 runoncepath("lib_parts.ks"). 
 runoncepath("lib_ui.ks").
-
+runoncepath("lib_util").
 
 uiBanner("Launch","Launching to an orbit of " + round(apo/1000) + "km and heading of " + hdglaunch + "º"). 
 
@@ -39,8 +39,6 @@ function ascentSteering {
   // Ideal gravity-turn azimuth (inclination) and facing at present altitude.
   local inclin is min(90, max(0, arccos(min(1,max(0,gtPct))))).
   local gtFacing is heading ( hdglaunch, inclin) * r(0,0,180). //180 for shuttles, doesn't matter for rockets.
-
-  //local prodot is vdot(ship:facing:vector, prograde:vector).
 
   if gtPct <= 0 {
     return heading (hdglaunch,90) + r(0,0,180). //Straight up.
@@ -130,6 +128,13 @@ function ascentWarping {
   }
 }
 
+function ascentFairing {
+  if ship:altitude > ship:body:atm:height {
+    partsDeployFairings().
+    uiBanner("Launch","Discard fairings").
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Perform initial setup; trim ship for ascent.
 /////////////////////////////////////////////////////////////////////////////
@@ -155,6 +160,7 @@ set ship:control:pilotmainthrottle to 0.
 
 until ship:obt:apoapsis >= apo {
   ascentStaging().
+  ascentFairing().
   wait launch_tick.
 }
 
@@ -166,7 +172,8 @@ set ship:control:pilotmainthrottle to 0.
 /////////////////////////////////////////////////////////////////////////////
 
 // Roll with top up.
-lock steering to heading (hdglaunch,0). wait 30.//Horizon, ceiling up.
+lock steering to heading (hdglaunch,0). //Horizon, ceiling up.
+wait until utilIsShipFacing(heading(hdglaunch,0):vector).
 
 // Get rid of ascent stage if less that 10% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
@@ -183,7 +190,7 @@ if stage:resourceslex:haskey("LiquidFuel") {
   // aeroshell ejection in a lower stage).
   until ship:availablethrust > 0 {
     stage.
-    uiBanner("Launch","Discard fairings").
+    uiBanner("Launch","Discard non-propulsive stage").
     wait until stage:ready.
   }
 }
@@ -198,5 +205,6 @@ panels on.
 partsExtendAntennas().
 // Release controls. Turn on RCS to help steer to circularization burn.
 unlock steering.
+unlock throttle.
 rcs on.
 run circ.
