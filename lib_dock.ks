@@ -6,7 +6,7 @@
 
 // Constant docking parameters
 global dock_scale is 25.   // alignment speed scaling factor (m)
-global dock_start is 10.   // ideal start distance (m) & approach speed scaling factor
+global dock_start is 30.   // ideal start distance (m) & approach speed scaling factor
 global dock_final is 1.    // final-approach distance (m)
 global dock_algnV is 2.5.  // max alignment speed (m/s)
 global dock_apchV is 1.    // max approach speed (m/s)
@@ -34,7 +34,7 @@ function dockPrepare {
   partsControlFromDockingPort(myPort).
 
   sas off.
-  lock steering to lookdirup(-hisPort:portfacing:forevector, v(0,1,0)).
+  lock steering to lookdirup(-hisPort:portfacing:forevector, hisPort:portfacing:upvector).
   set t0 to time:seconds.
   wait until vdot(myPort:portfacing:forevector, hisPort:portfacing:forevector) < -0.9 or (time:seconds - t0 > 15).
   rcs on.
