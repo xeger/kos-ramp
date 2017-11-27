@@ -27,6 +27,9 @@ set CruiseControl to False. //Enable/Disable Cruise control
 set StartJump to 0. //Used to track airtime
 set StartLand to 0. //Used to track time after recover from a jump
 set LongJump to False. //Use by jump recovery
+set lastGUIUpdate to 0.
+set GUIUpdateInterval to 0.25.
+
 
 FUNCTION MSTOKMH {
     PARAMETER MS.
@@ -82,7 +85,7 @@ FUNCTION TerrainNormal {
     // Thanks to Ozin
     // Returns a vector normal to the terrain
     parameter radius is 5. //Radius of the terrain sample
-    local p1 to body:geopositionof(facing:vector*radius).
+    local p1 to body:geopositionof(facing:vector * radius).
     local p2 to body:geopositionof(facing:vector * -radius + facing:starvector * radius).
     local p3 to body:geopositionof(facing:vector * -radius + facing:starvector * -radius).
 
@@ -138,6 +141,11 @@ LOCAL gui IS GUI(250).
 SET gui:x TO 30.
 SET gui:y TO 100.
 
+LOCAL labelName IS gui:ADDLABEL("<b><i><size=14>" + SHIP:NAME + "</size></i></b>").
+SET labelName:STYLE:ALIGN TO "CENTER".
+SET labelName:STYLE:HSTRETCH TO True. 
+SET labelName:STYLE:TEXTCOLOR to Yellow.
+
 LOCAL labelMode IS gui:ADDLABEL("").
 SET labelMode:STYLE:ALIGN TO "CENTER".
 SET labelMode:STYLE:HSTRETCH TO True. 
@@ -168,14 +176,16 @@ LOCAL ButtonHDGP TO hdgsettings:ADDBUTTON("▶").
 SET ButtonHDGP:Style:WIDTH TO 40.
 SET ButtonHDGP:Style:HEIGHT TO 25.
 
+local SteeringSteep is 10.
+
 SET ButtonHDGM:ONCLICK  TO { 
-    SET targetheading TO ((ROUND(targetheading/5)*5) -5).
+    SET targetheading TO ((ROUND(targetheading/SteeringSteep)*SteeringSteep) -SteeringSteep).
     IF targetheading < 0 {
         SET targetheading TO targetheading + 360.
     }
 }.
 SET ButtonHDGP:ONCLICK  TO { 
-    SET targetheading TO ((ROUND(targetheading/5)*5) +5).
+    SET targetheading TO ((ROUND(targetheading/SteeringSteep)*SteeringSteep) +SteeringSteep).
     IF targetheading > 360 {
         SET targetheading TO targetheading - 360.
     }
@@ -197,10 +207,10 @@ SET ButtonSPDP:Style:WIDTH TO 40.
 SET ButtonSPDP:Style:HEIGHT TO 25.
 
 SET ButtonSPDM:ONCLICK  TO { 
-    SET targetspeed TO ROUND(targetspeed) -1.
+    SET targetspeed TO ROUND(targetspeed) -3.
 }.
 SET ButtonSPDP:ONCLICK  TO { 
-    SET targetspeed TO ROUND(targetspeed) +1.
+    SET targetspeed TO ROUND(targetspeed) +3.
 }.
 
 //Dashboard
@@ -242,14 +252,15 @@ gui:SHOW().
 
 // Main program
 
-clearscreen.
+// Reset controls
+SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
+SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 sas off.
 rcs off.
 lights on.
-lock throttle to 0.
 set runmode to 0.
 
-
+// Check if rover is in a good state to be controlled.
 if ship:status = "PRELAUNCH" {
     SET labelMode:Text TO "<size=16><color=yellow>Waiting launch...</color></size>".
     wait until ship:status <> "PRELAUNCH".
@@ -261,6 +272,12 @@ else if ship:status = "ORBITING" {
 DisableReactionWheels().
 ExtendAntennas().
 
+SET WThrottlePID to PIDLOOP(0.15,0.005,0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+SET WThrottlePID:SETPOINT TO 0. 
+
+SET WSteeringPID to PIDLOOP(0.005,0.0001,0.001, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+SET WSteeringPID:SETPOINT TO 0. 
+
 until runmode = -1 {
 
     //Update the compass:
@@ -270,43 +287,22 @@ until runmode = -1 {
     // to a latlng set to the north pole
     if northPole:bearing <= 0 {
         set cHeading to ABS(northPole:bearing).
-        }
+    }
     else {
         set cHeading to (180 - northPole:bearing) + 180.
-        }
+    }
 
     if runmode = 0 { //Govern the rover 
     
         //Wheel Throttle:
         set targetspeed to targetspeed + 0.05 * SHIP:CONTROL:PILOTWHEELTHROTTLE.
-        set targetspeed to max(-1, min( speedlimit, targetspeed)).
-        
-        if targetspeed > 0 { //If we should be going forward
-            if ship:groundspeed < 1 {
-                brakes off.
-            }
-            set eWheelThrottle to targetspeed - GROUNDSPEED.
-            set iWheelThrottle to min( 1, max( -1, iWheelThrottle + 
-                                                (looptime * eWheelThrottle))).
-            set wtVAL to eWheelThrottle + iWheelThrottle.//PI controler
-            if GROUNDSPEED < 5 {
-                //Safety adjustment to help reduce roll-back at low speeds
-                set wtVAL to min( 1, max( -0.2, wtVAL)).
-                }
-            }
-        else if targetspeed < 0 { //Else if we're going backwards
-            set wtVAL to SHIP:CONTROL:PILOTWHEELTHROTTLE.
-            set targetspeed to 0. //Manual reverse throttle
-            set iWheelThrottle to 0.
-            }
-        else { // If value is out of range or zero, stop.
-            set wtVAL to 0.
-            brakes on.
-            }
+        set targetspeed to max(-speedlimit/3, min( speedlimit, targetspeed)).
+        set gs to vdot(ship:facing:vector,ship:velocity:surface).
+        set wtVAL to WThrottlePID:UPDATE(time:seconds,gs-targetspeed).
 
         if brakes { //Disable cruise control if the brakes are turned on.
             set targetspeed to 0.
-            }        
+        }
         
         //Steering:
         if CruiseControl { //Activate autopilot 
@@ -317,9 +313,11 @@ until runmode = -1 {
             else if errorSteering < -180 {
                 set errorSteering to errorSteering + 360.
                 }
-            set desiredSteering to -errorSteering / 10.
-            set kturn to min( 1, max( -1, desiredSteering)) * turnlimit.
-            }
+            if gs < 0 set errorSteering to -errorSteering.
+            set WSteeringPID:MaxOutput to  1 * turnlimit.
+            set WSteeringPID:MinOutput to -1 * turnlimit.
+            set kturn to WSteeringPID:UPDATE(time:seconds,errorSteering).
+        }
         else {
             set kturn to turnlimit * SHIP:CONTROL:PILOTWHEELSTEER.
             set targetHeading to cheading.
@@ -348,7 +346,8 @@ until runmode = -1 {
 
         // Use all means available to steer the rover parallel to the surface
         LOCAL N IS TerrainNormal().
-        LOCK STEERING TO LOOKDIRUP(vxcl(N,VELOCITY:SURFACE),SHIP:UP:vector).
+        SET SteerDir to LOOKDIRUP(vxcl(N,VELOCITY:SURFACE),SHIP:UP:vector).
+        IF NOT RCS LOCK STEERING TO SteerDir.
         EnableReactionWheels().
         RCS ON. SAS OFF.
         RetractAntennas(). //Try to don't break the antennas
@@ -409,36 +408,44 @@ until runmode = -1 {
     set SHIP:CONTROL:WHEELSTEER to kTurn.
     
     // Update the GUI
-    if runmode = 0 {
-        if CruiseControl {
-            set labelMode:TEXT to "<b><size=17>Cruise Control</size></b>".
+    if time:seconds > lastGUIUpdate + GUIUpdateInterval {
+        set lastGUIUpdate to time:seconds.
+        if runmode = 0 {
+            if CruiseControl {
+                set labelMode:TEXT to "<b><size=17>Cruise Control</size></b>".
+            }
+            Else{
+                set labelMode:TEXT to "<b><size=17>Assisted Drive</size></b>".
+            }
+            SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
+            SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".
+            }
+        else if runmode = 1 {
+            set labelMode:TEXT to "<b><size=17>Manual Control</size></b>".
+            SET LabelHDG:TEXT to "<b>-º</b>".
+            SET LabelSPD:TEXT to "<b>- m/s | - km/h</b>".
         }
-        Else{
-            set labelMode:TEXT to "<b><size=17>Assisted Drive</size></b>".
+        else if runmode = 2 {
+            set labelMode:TEXT to "<b><size=17>Stability Control</size></b>".
+            SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
+            SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".  
         }
-        SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
-        SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".
-        }
-    else if runmode = 1 {
-        set labelMode:TEXT to "<b><size=17>Manual Control</size></b>".
-        SET LabelHDG:TEXT to "<b>-º</b>".
-        SET LabelSPD:TEXT to "<b>- m/s | - km/h</b>".
+        SET LabelDashSpeed:TEXT to "<b>Speed: </b>" + round( gs, 1) + " m/s | "+ round (MSTOKMH(gs),1) + " km/h".
+
+        local PEC is PercentEC().
+        SET LabelDashEC:TEXT to "<b>Charge: </b>" + ROUND(PEC) + "%".
+        SET LabelDashLFO:TEXT to "<b>Fuel: </b>" + ROUND(PercentLFO()) + "%".
+        // Brake in case of low power
+        If pec < 0.1 brakes on.
+
+        SET SliderSteering:VALUE to kTurn.
+        SET SliderThrottle:VALUE to wtVAL. 
     }
-    else if runmode = 2 {
-        set labelMode:TEXT to "<b><size=17>Stability Control</size></b>".
-        SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
-        SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".  
-    }
-    SET LabelDashSpeed:TEXT to "<b>Speed: </b>" + round( ship:groundspeed, 1) + " m/s | "+ round (MSTOKMH(ship:groundspeed),1) + " km/h".
-    SET LabelDashEC:TEXT to "<b>Charge: </b>" + ROUND(PercentEC()) + "%".
-    SET LabelDashLFO:TEXT to "<b>Fuel: </b>" + ROUND(PercentLFO()) + "%".
-    SET SliderSteering:VALUE to kTurn.
-    SET SliderThrottle:VALUE to wtVAL. 
-    
     set looptime to TIME:SECONDS - loopEndTime.
     set loopEndTime to TIME:SECONDS.
+
     wait 0. // Waits for next physics tick.
-    }
+}
 
 
 //Clear before end
