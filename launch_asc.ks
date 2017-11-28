@@ -29,9 +29,10 @@ global launch_tStage is time:seconds.
 global launch_gt0 is body:atm:height * 0.007. // About 500m in Kerbin
 global launch_gt1 is body:atm:height * 0.6. // About 42000m in Kerbin
 
-// Can't figure out the original formula for Gravity Turn, changed to use ARCCOS. 
-// The original algorithm didn't work with most of my rockets, so changed.
-// TODO: Figure a better formula for Gravity Turn.
+/////////////////////////////////////////////////////////////////////////////
+// Steering function.
+/////////////////////////////////////////////////////////////////////////////
+
 function ascentSteering {
   // How far through our gravity turn are we? (0..1)
   local gtPct is (ship:altitude - launch_gt0) / (launch_gt1 - launch_gt0).
@@ -66,7 +67,11 @@ function ascentThrottle {
     // aerodynamic catastrophe by limiting throttle
     return 1 - (1 * (spd - cutoff) / cutoff).
   } else {
-    return 1.
+    // Ease thottle when near the Apoapsis
+    local ApoPercent is ship:obt:apoapsis/apo.
+    local ApoCompensation is 0.
+    if ApoPercent > 0.9 set ApoCompensation to (ApoPercent - 0.9) * 10.
+    return 1 - min(1,max(0,ApoCompensation)).
   }
 }
 
@@ -114,24 +119,9 @@ function ascentStaging {
 
 }
 
-function ascentWarping {
-  if stage:solidfuel > 10 and ship:status = "flying" {
-    if warp <> 0 {
-      set warp to 0. // Don't allow warp while burning SRBs. Change to force warp.
-    }
-  } else if ship:altitude > body:atm:height {
-    set warp to 1. 
-  } else {
-    if warp <> 0 {
-      set warp to 1. 
-    }
-  }
-}
-
 function ascentFairing {
   if ship:altitude > ship:body:atm:height {
-    partsDeployFairings().
-    uiBanner("Launch","Discard fairings").
+    if partsDeployFairings() uiBanner("Launch","Discard fairings").    
   }
 }
 
@@ -152,7 +142,6 @@ if ship:status <> "PRELAUNCH" and stage:solidfuel = 0 {
 
 lock steering to ascentSteering().
 lock throttle to ascentThrottle().
-set ship:control:pilotmainthrottle to 0.
 
 /////////////////////////////////////////////////////////////////////////////
 // Enter ascent loop.
@@ -165,19 +154,13 @@ until ship:obt:apoapsis >= apo {
 }
 
 unlock throttle.
-set ship:control:pilotmainthrottle to 0.
 
 /////////////////////////////////////////////////////////////////////////////
 // Coast to apoapsis and hand off to circularization program.
 /////////////////////////////////////////////////////////////////////////////
 
-// Roll with top up.
-lock steering to heading (hdglaunch,0). //Horizon, ceiling up.
-wait until utilIsShipFacing(heading(hdglaunch,0):vector).
-
 // Get rid of ascent stage if less that 10% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
-// TODO stop being wasteful; compute burn duration & compare to remaining dv (need fuel flow data, yech!)
 if stage:resourceslex:haskey("LiquidFuel") {
   if stage:resourceslex["LiquidFuel"]:capacity > 0 { // Checks to avoid NaN error
     if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.1 {
@@ -186,23 +169,35 @@ if stage:resourceslex:haskey("LiquidFuel") {
       wait until stage:ready.
     }
   }
-  // Corner case: circularization stage is not bottom most (i.e. there is an
-  // aeroshell ejection in a lower stage).
-  until ship:availablethrust > 0 {
-    stage.
-    uiBanner("Launch","Discard non-propulsive stage").
-    wait until stage:ready.
-  }
 }
+// Corner case: circularization stage is not bottom most (i.e. there is an
+// aeroshell ejection in a lower stage).
+until ship:availablethrust > 0 {
+  stage.
+  uiBanner("Launch","Discard non-propulsive stage").
+  wait until stage:ready.
+}
+
+// Roll with top up.
+lock steering to heading (hdglaunch,0). //Horizon, ceiling up.
+wait until utilIsShipFacing(heading(hdglaunch,0):vector). 
+
 // Warp to end of atmosphere
+local AdjustmentThrottle is 0.
+lock throttle to AdjustmentThrottle.
 until ship:altitude > body:atm:height {
-  ascentWarping().
+  if ship:obt:apoapsis < apo set AdjustmentThrottle to ascentThrottle().
+  else set AdjustmentThrottle to 0.
+  wait launch_tick.
 }
+// Discard fairings, if they aren't yet.
+ascentFairing(). wait launch_tick.
 
 // Give power and communication to the ship
 fuelcells on.
 panels on.
 partsExtendAntennas().
+wait launch_tick.
 // Release controls. Turn on RCS to help steer to circularization burn.
 unlock steering.
 unlock throttle.
