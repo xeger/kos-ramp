@@ -250,203 +250,209 @@ SET ok:ONCLICK TO {
 }.
 gui:SHOW().
 
+
+///////////////
 // Main program
+///////////////
 
-// Reset controls
-SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
-sas off.
-rcs off.
-lights on.
-set runmode to 0.
+if kuniverse:activevessel = ship { 
 
-// Check if rover is in a good state to be controlled.
-if ship:status = "PRELAUNCH" {
-    SET labelMode:Text TO "<size=16><color=yellow>Waiting launch...</color></size>".
-    wait until ship:status <> "PRELAUNCH".
-}
-else if ship:status = "ORBITING" {
-    set runmode to -1.
-}
+    // Reset controls
+    SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
+    SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+    sas off.
+    rcs off.
+    lights on.
+    set runmode to 0.
 
-DisableReactionWheels().
-ExtendAntennas().
-
-SET WThrottlePID to PIDLOOP(0.15,0.005,0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
-SET WThrottlePID:SETPOINT TO 0. 
-
-SET WSteeringPID to PIDLOOP(0.005,0.0001,0.001, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
-SET WSteeringPID:SETPOINT TO 0. 
-
-until runmode = -1 {
-
-    //Update the compass:
-    // I want the heading to match the navball 
-    // and be out of 360' instead of +/-180'
-    // I do this by judging the heading relative
-    // to a latlng set to the north pole
-    if northPole:bearing <= 0 {
-        set cHeading to ABS(northPole:bearing).
+    // Check if rover is in a good state to be controlled.
+    if ship:status = "PRELAUNCH" {
+        SET labelMode:Text TO "<size=16><color=yellow>Waiting launch...</color></size>".
+        wait until ship:status <> "PRELAUNCH".
     }
-    else {
-        set cHeading to (180 - northPole:bearing) + 180.
+    else if ship:status = "ORBITING" {
+        set runmode to -1.
     }
 
-    if runmode = 0 { //Govern the rover 
-    
-        //Wheel Throttle:
-        set targetspeed to targetspeed + 0.05 * SHIP:CONTROL:PILOTWHEELTHROTTLE.
-        set targetspeed to max(-speedlimit/3, min( speedlimit, targetspeed)).
-        set gs to vdot(ship:facing:vector,ship:velocity:surface).
-        set wtVAL to WThrottlePID:UPDATE(time:seconds,gs-targetspeed).
+    DisableReactionWheels().
+    ExtendAntennas().
 
-        if brakes { //Disable cruise control if the brakes are turned on.
-            set targetspeed to 0.
-        }
-        
-        //Steering:
-        if CruiseControl { //Activate autopilot 
-            set errorSteering to (targetheading - cHeading).
-            if errorSteering > 180 { //Make sure the headings make sense
-                set errorSteering to errorSteering - 360.
-                }
-            else if errorSteering < -180 {
-                set errorSteering to errorSteering + 360.
-                }
-            if gs < 0 set errorSteering to -errorSteering.
-            set WSteeringPID:MaxOutput to  1 * turnlimit.
-            set WSteeringPID:MinOutput to -1 * turnlimit.
-            set kturn to WSteeringPID:UPDATE(time:seconds,errorSteering).
+    SET WThrottlePID to PIDLOOP(0.15,0.005,0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+    SET WThrottlePID:SETPOINT TO 0. 
+
+    SET WSteeringPID to PIDLOOP(0.005,0.0001,0.001, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+    SET WSteeringPID:SETPOINT TO 0. 
+
+    until runmode = -1 {
+
+        //Update the compass:
+        // I want the heading to match the navball 
+        // and be out of 360' instead of +/-180'
+        // I do this by judging the heading relative
+        // to a latlng set to the north pole
+        if northPole:bearing <= 0 {
+            set cHeading to ABS(northPole:bearing).
         }
         else {
-            set kturn to turnlimit * SHIP:CONTROL:PILOTWHEELSTEER.
-            set targetHeading to cheading.
-            }
-        //Detect jumps and engage stability control
-        if ship:status <> "LANDED" { set StartJump to time:seconds. set runmode to 2.}.
-        //Detect rollover
-        if abs(vang(vxcl(ship:facing:vector,ship:facing:upvector),TerrainNormal())) > 5 {
-            set turnfactor to max(1,turnfactor * 0.9). //Reduce turnfactor
-            set runmode to 2. //Engage Stability control
+            set cHeading to (180 - northPole:bearing) + 180.
         }
-    }    
-    else if runmode = 1 { //Stock driving mode
-        set wtVAL to SHIP:CONTROL:PILOTWHEELTHROTTLE * 0.5.
-        set kturn to SHIP:CONTROL:PILOTWHEELSTEER.
-        if abs(ship:groundspeed) > speedlimit * 0.3 {
-            set runmode to 0.
-            brakes on.
-        } 
-    }
-    else if runmode = 2 { //Stability control mode
 
-        //We don't want the rover trying to turn or accelerate while trying to stay stable
-        set wtVAL to 0. 
-        set kTurn to 0.
+        if runmode = 0 { //Govern the rover 
+        
+            //Wheel Throttle:
+            set targetspeed to targetspeed + 0.05 * SHIP:CONTROL:PILOTWHEELTHROTTLE.
+            set targetspeed to max(-speedlimit/3, min( speedlimit, targetspeed)).
+            set gs to vdot(ship:facing:vector,ship:velocity:surface).
+            set wtVAL to WThrottlePID:UPDATE(time:seconds,gs-targetspeed).
 
-        // Use all means available to steer the rover parallel to the surface
-        LOCAL N IS TerrainNormal().
-        SET SteerDir to LOOKDIRUP(vxcl(N,VELOCITY:SURFACE),SHIP:UP:vector).
-        IF NOT RCS LOCK STEERING TO SteerDir.
-        EnableReactionWheels().
-        RCS ON. SAS OFF.
-        RetractAntennas(). //Try to don't break the antennas
-
-        if ship:status = "LANDED" { //Deals with rover on ground
-            if StartLand = 0 { // Means it just landed or start to rollover
-                SET StartLand to TIME:SECONDS. 
+            if brakes { //Disable cruise control if the brakes are turned on.
+                set targetspeed to 0.
             }
-            else if time:seconds - StartLand <= 3 { // Stabilze landing
-                if longJump { //Only try to stabilize the landing if was a long jump, to save Monopropellant
+            
+            //Steering:
+            if CruiseControl { //Activate autopilot 
+                set errorSteering to (targetheading - cHeading).
+                if errorSteering > 180 { //Make sure the headings make sense
+                    set errorSteering to errorSteering - 360.
+                    }
+                else if errorSteering < -180 {
+                    set errorSteering to errorSteering + 360.
+                    }
+                if gs < 0 set errorSteering to -errorSteering.
+                set WSteeringPID:MaxOutput to  1 * turnlimit.
+                set WSteeringPID:MinOutput to -1 * turnlimit.
+                set kturn to WSteeringPID:UPDATE(time:seconds,errorSteering).
+            }
+            else {
+                set kturn to turnlimit * SHIP:CONTROL:PILOTWHEELSTEER.
+                set targetHeading to cheading.
+                }
+            //Detect jumps and engage stability control
+            if ship:status <> "LANDED" { set StartJump to time:seconds. set runmode to 2.}.
+            //Detect rollover
+            if abs(vang(vxcl(ship:facing:vector,ship:facing:upvector),TerrainNormal())) > 5 {
+                set turnfactor to max(1,turnfactor * 0.9). //Reduce turnfactor
+                set runmode to 2. //Engage Stability control
+            }
+        }    
+        else if runmode = 1 { //Stock driving mode
+            set wtVAL to SHIP:CONTROL:PILOTWHEELTHROTTLE * 0.5.
+            set kturn to SHIP:CONTROL:PILOTWHEELSTEER.
+            if abs(ship:groundspeed) > speedlimit * 0.3 {
+                set runmode to 0.
+                brakes on.
+            } 
+        }
+        else if runmode = 2 { //Stability control mode
+
+            //We don't want the rover trying to turn or accelerate while trying to stay stable
+            set wtVAL to 0. 
+            set kTurn to 0.
+
+            // Use all means available to steer the rover parallel to the surface
+            LOCAL N IS TerrainNormal().
+            SET SteerDir to LOOKDIRUP(vxcl(N,VELOCITY:SURFACE),SHIP:UP:vector).
+            IF NOT RCS LOCK STEERING TO SteerDir.
+            EnableReactionWheels().
+            RCS ON. SAS OFF.
+            RetractAntennas(). //Try to don't break the antennas
+
+            if ship:status = "LANDED" { //Deals with rover on ground
+                if StartLand = 0 { // Means it just landed or start to rollover
+                    SET StartLand to TIME:SECONDS. 
+                }
+                else if time:seconds - StartLand <= 3 { // Stabilze landing
+                    if longJump { //Only try to stabilize the landing if was a long jump, to save Monopropellant
+                        local sense is ship:facing.
+                        local dirV is V(
+                        vdot(-ship:up:vector, sense:starvector),
+                        vdot(-ship:up:vector, sense:upvector),
+                        vdot(-ship:up:vector, sense:vector)
+                        ).
+                        set ship:control:translation to dirV:normalized.
+                    }
+                }
+                else if time:seconds - StartLand > 3 { // Reset and resume normal drive
+                    SAS OFF.
+                    RCS OFF.
+                    DisableReactionWheels().
+                    UNLOCK STEERING.
+                    SET runmode TO 0.
+                    SET ship:control:translation to v(0,0,0).
+                    SET StartLand to 0.
+                    SET StartJump to 0.
+                    SET LongJump to False.
+                    ExtendAntennas(). //Keep the communication
+                }
+            }
+            ELSE {
+                if ship:verticalspeed < -5 and ALT:RADAR < 20 { // Use RCS to try to soften the landing
                     local sense is ship:facing.
                     local dirV is V(
-                    vdot(-ship:up:vector, sense:starvector),
-                    vdot(-ship:up:vector, sense:upvector),
-                    vdot(-ship:up:vector, sense:vector)
+                        vdot(ship:up:vector, sense:starvector),
+                        vdot(ship:up:vector, sense:upvector),
+                        vdot(ship:up:vector, sense:vector)
                     ).
                     set ship:control:translation to dirV:normalized.
                 }
-            }
-            else if time:seconds - StartLand > 3 { // Reset and resume normal drive
-                SAS OFF.
-                RCS OFF.
-                DisableReactionWheels().
-                UNLOCK STEERING.
-                SET runmode TO 0.
-                SET ship:control:translation to v(0,0,0).
-                SET StartLand to 0.
-                SET StartJump to 0.
-                SET LongJump to False.
-                ExtendAntennas(). //Keep the communication
+                else { // Stop the RCS translation up.
+                    set ship:control:translation to v(0,0,0).
+                }
+                if time:seconds - StartJump > 3 { // Detects long jumps 
+                    set targetspeed to targetspeed * 0.9. //Reduces speed by 10% to prevent more jumps
+                    set StartJump to time:SECONDS.
+                    set longJump to True.
+                }.
             }
         }
-        ELSE {
-            if ship:verticalspeed < -5 and ALT:RADAR < 20 { // Use RCS to try to soften the landing
-                local sense is ship:facing.
-                local dirV is V(
-                    vdot(ship:up:vector, sense:starvector),
-                    vdot(ship:up:vector, sense:upvector),
-                    vdot(ship:up:vector, sense:vector)
-                ).
-                set ship:control:translation to dirV:normalized.
+        
+        //Here it really control the rover.
+        set wtVAL to min(1,(max(-1,wtVAL))).
+        set kTurn to min(1,(max(-1,kTurn))).
+        set SHIP:CONTROL:WHEELTHROTTLE to WTVAL.
+        set SHIP:CONTROL:WHEELSTEER to kTurn.
+        
+        // Update the GUI
+        if time:seconds > lastGUIUpdate + GUIUpdateInterval {
+            set lastGUIUpdate to time:seconds.
+            if runmode = 0 {
+                if CruiseControl {
+                    set labelMode:TEXT to "<b><size=17>Cruise Control</size></b>".
+                }
+                Else{
+                    set labelMode:TEXT to "<b><size=17>Assisted Drive</size></b>".
+                }
+                SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
+                SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".
+                }
+            else if runmode = 1 {
+                set labelMode:TEXT to "<b><size=17>Manual Control</size></b>".
+                SET LabelHDG:TEXT to "<b>-º</b>".
+                SET LabelSPD:TEXT to "<b>- m/s | - km/h</b>".
             }
-            else { // Stop the RCS translation up.
-                set ship:control:translation to v(0,0,0).
+            else if runmode = 2 {
+                set labelMode:TEXT to "<b><size=17>Stability Control</size></b>".
+                SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
+                SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".  
             }
-            if time:seconds - StartJump > 3 { // Detects long jumps 
-                set targetspeed to targetspeed * 0.9. //Reduces speed by 10% to prevent more jumps
-                set StartJump to time:SECONDS.
-                set longJump to True.
-            }.
+            SET LabelDashSpeed:TEXT to "<b>Speed: </b>" + round( gs, 1) + " m/s | "+ round (MSTOKMH(gs),1) + " km/h".
+
+            local PEC is PercentEC().
+            SET LabelDashEC:TEXT to "<b>Charge: </b>" + ROUND(PEC) + "%".
+            SET LabelDashLFO:TEXT to "<b>Fuel: </b>" + ROUND(PercentLFO()) + "%".
+            // Brake in case of low power
+            If pec < 0.1 brakes on.
+
+            SET SliderSteering:VALUE to kTurn.
+            SET SliderThrottle:VALUE to wtVAL. 
         }
+        set looptime to TIME:SECONDS - loopEndTime.
+        set loopEndTime to TIME:SECONDS.
+
+        wait 0. // Waits for next physics tick.
     }
-    
-    //Here it really control the rover.
-    set wtVAL to min(1,(max(-1,wtVAL))).
-    set kTurn to min(1,(max(-1,kTurn))).
-    set SHIP:CONTROL:WHEELTHROTTLE to WTVAL.
-    set SHIP:CONTROL:WHEELSTEER to kTurn.
-    
-    // Update the GUI
-    if time:seconds > lastGUIUpdate + GUIUpdateInterval {
-        set lastGUIUpdate to time:seconds.
-        if runmode = 0 {
-            if CruiseControl {
-                set labelMode:TEXT to "<b><size=17>Cruise Control</size></b>".
-            }
-            Else{
-                set labelMode:TEXT to "<b><size=17>Assisted Drive</size></b>".
-            }
-            SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
-            SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".
-            }
-        else if runmode = 1 {
-            set labelMode:TEXT to "<b><size=17>Manual Control</size></b>".
-            SET LabelHDG:TEXT to "<b>-º</b>".
-            SET LabelSPD:TEXT to "<b>- m/s | - km/h</b>".
-        }
-        else if runmode = 2 {
-            set labelMode:TEXT to "<b><size=17>Stability Control</size></b>".
-            SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
-            SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | "+ round (MSTOKMH(targetspeed),1) + " km/h</b>".  
-        }
-        SET LabelDashSpeed:TEXT to "<b>Speed: </b>" + round( gs, 1) + " m/s | "+ round (MSTOKMH(gs),1) + " km/h".
 
-        local PEC is PercentEC().
-        SET LabelDashEC:TEXT to "<b>Charge: </b>" + ROUND(PEC) + "%".
-        SET LabelDashLFO:TEXT to "<b>Fuel: </b>" + ROUND(PercentLFO()) + "%".
-        // Brake in case of low power
-        If pec < 0.1 brakes on.
-
-        SET SliderSteering:VALUE to kTurn.
-        SET SliderThrottle:VALUE to wtVAL. 
-    }
-    set looptime to TIME:SECONDS - loopEndTime.
-    set loopEndTime to TIME:SECONDS.
-
-    wait 0. // Waits for next physics tick.
 }
-
 
 //Clear before end
 CLEARGUIS().

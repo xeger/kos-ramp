@@ -222,7 +222,7 @@ function utilIsShipFacing {
   parameter maxDeviationDegrees is 8.
   parameter maxAngularVelocity is 0.01.
 
-  return vdot(FaceVec, ship:facing:forevector) >= cos(maxDeviationDegrees) and
+  return vdot(FaceVec:normalized, ship:facing:forevector:normalized) >= cos(maxDeviationDegrees) and
          ship:angularvel:mag < maxAngularVelocity. 
 }
 

@@ -35,12 +35,17 @@ function uiConsole {
 function uiBanner {
   parameter prefix.
   parameter msg.
+  parameter sound is 1. // Sound to play when show the message: 1 = Beep, 2 = Chime, 3 = Alert
 
   if (time:seconds - ui_announce > 60) or (ui_announceMsg <> msg) {
     uiConsole(prefix, msg).
     hudtext(msg, 10, 2, 24, GREEN, false).
     set ui_announce to time:seconds.
     set ui_announceMsg to msg.
+    // Select a sound.
+    if      sound = 1 uiBeep().
+    else if sound = 2 uiChime().
+    else if sound = 3 uiAlarm().
   }
 }
 
@@ -50,6 +55,7 @@ function uiWarning {
 
   uiConsole(prefix, msg).
   hudtext(msg, 10, 4, 36, YELLOW, false).
+  uiAlarm().
 }
 
 function uiError {
@@ -58,6 +64,7 @@ function uiError {
 
   uiConsole(prefix, msg).
   hudtext(msg, 10, 4, 36, RED, false).
+  uiAlarm().
 }
 
 function uiShowPorts {
@@ -162,4 +169,77 @@ function uiDebugAxes {
       set ui_DebugFwd:show to false.
     }
   }
+}
+
+FUNCTION uiAlarm {
+    local vAlarm TO GetVoice(0).
+    set vAlarm:wave to "TRIANGLE".
+      vAlarm:PLAY(
+          LIST(
+              NOTE("A#4", 0.2,  0.25), 
+              NOTE("A4",  0.2,  0.25), 
+              NOTE("A#4", 0.2,  0.25), 
+              NOTE("A4",  0.2,  0.25),
+              NOTE("R",   0.2,  0.25),
+              NOTE("A#4", 0.2,  0.25), 
+              NOTE("A4",  0.2,  0.25), 
+              NOTE("A#4", 0.2,  0.25), 
+              NOTE("A4",  0.2,  0.25)
+          )
+      ).
+}
+
+FUNCTION uiBeep {
+  local vBeep to GetVoice(0).
+  set vBeep:volume to 0.7.
+  set vBeep:wave to "SQUARE".
+  vBeep:PLAY(NOTE("A4",0.1, 0.1)).
+}
+
+FUNCTION uiChime {
+  local vChimes to GetVoice(0).
+  set vChimes:volume to 0.5.
+  set vChimes:wave to "SINE". 
+  vChimes:PLAY(
+      LIST(
+        NOTE("E5",0.8, 1),
+        NOTE("C5",1,1.2)
+        )).
+}
+
+
+function uiTerminalMenu {
+  // Shows a menu in the terminal window and waits for user input.
+  // The parameter is a lexicon of a key to be pressed and a text to be show.
+  // ie.: 
+  // LOCAL MyOptions IS LEXICON("1","Stay","2","Go").
+  // LOCAL myVal is uiTerminalMenu(MyOptions).
+  //
+  // That code will produce a menu with two options, Stay or Go, and will return 1 or 2 depending which key user press.
+
+	parameter Options.
+	local Choice is 0.
+	local Term is Terminal:Input().
+	local ValidSelection is false.
+	Until ValidSelection {
+    uiBanner("Terminal","Please choose an option in Terminal.",2).
+		print " ".
+		print "=================".
+		Print "Choose an option:".
+		Print "=================".
+		print " ".
+		for Opt in Options:keys {
+			print Opt + ") - " + Options[Opt].
+		}
+		print "?>".
+
+		Term:CLEAR().
+		set Choice to Term:GETCHAR().
+		if Options:HASKEY(Choice) {
+			set ValidSelection to true.
+      print "===> " + Options[Choice].
+		}
+		else print "Invalid selection".
+	}
+	return Choice.
 }
