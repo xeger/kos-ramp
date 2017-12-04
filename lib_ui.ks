@@ -8,7 +8,7 @@ global ui_debug     is true.  // Debug messages on console and screen
 global ui_debugNode is true. // Explain node planning
 global ui_debugAxes is false. // Explain 3-axis navigation e.g. docking
 
-global logconsole   is true. //Save console to log.txt / 0:/<CRAFT NAME>.txt
+global logconsole   is false. //Save console to log.txt / 0:/<CRAFT NAME>.txt
 
 global ui_DebugStb is vecdraw(v(0,0,0), v(0,0,0), GREEN, "Stb", 1, false).
 global ui_DebugUp is vecdraw(v(0,0,0), v(0,0,0), BLUE, "Up", 1, false).
@@ -121,7 +121,7 @@ function uiDebug {
 
   if ui_debug {
     uiConsole("Debug", msg).
-    hudtext(msg, 1, 3, 24, WHITE, false).
+    hudtext(msg, 3, 3, 24, WHITE, false).
   }
 }
 
@@ -174,6 +174,7 @@ function uiDebugAxes {
 FUNCTION uiAlarm {
     local vAlarm TO GetVoice(0).
     set vAlarm:wave to "TRIANGLE".
+    set vAlarm:volume to 0.5.
       vAlarm:PLAY(
           LIST(
               NOTE("A#4", 0.2,  0.25), 
@@ -191,14 +192,14 @@ FUNCTION uiAlarm {
 
 FUNCTION uiBeep {
   local vBeep to GetVoice(0).
-  set vBeep:volume to 0.7.
+  set vBeep:volume to 0.35.
   set vBeep:wave to "SQUARE".
   vBeep:PLAY(NOTE("A4",0.1, 0.1)).
 }
 
 FUNCTION uiChime {
   local vChimes to GetVoice(0).
-  set vChimes:volume to 0.5.
+  set vChimes:volume to 0.25.
   set vChimes:wave to "SINE". 
   vChimes:PLAY(
       LIST(
@@ -212,7 +213,7 @@ function uiTerminalMenu {
   // Shows a menu in the terminal window and waits for user input.
   // The parameter is a lexicon of a key to be pressed and a text to be show.
   // ie.: 
-  // LOCAL MyOptions IS LEXICON("1","Stay","2","Go").
+  // LOCAL MyOptions IS LEXICON("Y","Yes","N","No").
   // LOCAL myVal is uiTerminalMenu(MyOptions).
   //
   // That code will produce a menu with two options, Stay or Go, and will return 1 or 2 depending which key user press.
@@ -242,4 +243,55 @@ function uiTerminalMenu {
 		else print "Invalid selection".
 	}
 	return Choice.
+}
+
+function uiTerminalList {
+  // Shows a menu in the terminal window and waits for user input.
+  
+	parameter Options.
+
+	local Choice is 0.
+  local page is 0.
+  local KeyPressed is 0.
+	local Term is Terminal:Input().
+	local ValidSelection is false.
+
+  uiBanner("Terminal","Please make a choice in the Terminal.",2).
+	Until ValidSelection {
+    clearscreen.
+		print " ".
+		print "=================".
+		Print "Choose an option:".
+		Print "=================".
+		print " ".
+		from { local i is 10*page. } until i = min(10+(10*page),Options:length) step { set i to i+1. } do {
+			print (i-(10*page)) + ") - " + Options[i].
+		}
+		print "Showing " + min(Options:Length,10+(10*Page)) + " of " + Options:Length() + " options.".
+    print "Use arrows < and > to change pages".
+
+		Term:CLEAR().
+		set KeyPressed to Term:GETCHAR().
+    if KeyPressed = Term:RightCursorOne {
+      if Options:Length > 10+(10*Page) set Page to Page + 1.
+    }
+    else if KeyPressed = Term:LeftCursorOne {
+      if Page > 0 set Page to Page - 1.
+    }
+    else if "0123456789":Contains(KeyPressed) {
+      set choice to KeyPressed:ToNumber()+(10*Page).
+      if choice < Options:Length {
+        set ValidSelection to true.
+        print "===> " + Options[Choice].
+      }
+    }
+		else print "Invalid selection".
+	}
+	return Choice.
+}
+
+FUNCTION uiMSTOKMH { 
+    // Return m/s in km/h. 
+    PARAMETER MS.
+    RETURN MS * 3.6.
 }

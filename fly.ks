@@ -18,7 +18,9 @@ if OldIPU < 500 set Config:IPU to 500.
 Local CONSOLEINFO is FALSE.
 uiDebug("CONSOLE OUTPUT IS " + CONSOLEINFO).
 
+//////////////////////////////////////////////
 // Functions to use exclusive with this script
+//////////////////////////////////////////////
 
 FUNCTION Mach {
     PARAMETER SpdMS.
@@ -109,9 +111,10 @@ FUNCTION Glideslope{
     //Returns the altitude of the glideslope
     PARAMETER Threshold.
     PARAMETER GSAngle IS 5.
+    PARAMETER Offset is 20.
     LOCAL KerbinAngle is abs(ship:geoposition:lng) - abs(Threshold:lng).
     LOCAL Correction IS SQRT( (KERBIN:RADIUS^2) + (TAN(KerbinAngle)*KERBIN:RADIUS)^2 ) - KERBIN:Radius. // Why this correction? https://imgur.com/a/CPHnD
-    RETURN (tan(GSAngle) * GroundDistance(Threshold)) + Threshold:terrainheight + Correction.
+    RETURN (tan(GSAngle) * GroundDistance(Threshold)) + Threshold:terrainheight + Correction + Offset.
 }
 
 FUNCTION CenterLineDistance {
@@ -130,6 +133,7 @@ FUNCTION TakeOff {
     local LandedAlt is ship:altitude.
     sas off.
     brakes off.
+    lights on.
     stage.
     set ship:control:pilotmainthrottle to 1.
     wait until ship:airspeed > 50.
@@ -138,14 +142,9 @@ FUNCTION TakeOff {
     set ship:control:pitch to 0.
     sas on.
     gear off.
+    lights off.
     wait until ship:altitude > LandedAlt + 600.
     set ship:control:pilotmainthrottle to 0.
-}
-
-
-FUNCTION MSToKMH {
-    PARAMETER MS.
-    RETURN MS * 3.6.
 }
 
 ////////////////////
@@ -498,7 +497,7 @@ local ElevatorTrim is 0.
 //Runways coordinates
 global RWYKSC is latlng(-0.04807,-74.65).
 global RWYKSC_SHUTTLE is latlng(-0.04807,-74.82).
-global RWYOAF is latlng(-1.51795834829155,-71.9661601438879).
+global RWYOAF is latlng(-1.51764918920989,-71.9565681001265).
 
 // Defauts
 local APATEnabled is TRUE.
@@ -543,10 +542,12 @@ IF KindOfCraft = "Shuttle" {
     SET TargetCoord TO TGTRunway.
     SET LabelWaypoint:Text TO "Kerbin Space Center Runway 09".
     SET FLAREALT TO 300.
+    Set PitchAnglePID:MinOutput to -40.
     uiChime().
 }
 ELSE IF KindOfCraft = "Plane" {
-    SET TGTAltitude to SHIP:Altitude.
+    if ship:altitude < 1000 set TGTAltitude to 1000.
+    else SET TGTAltitude to SHIP:Altitude.
     SET TGTHeading to MagHeading().
     SET GSAng TO 4.
     SET TGTRunway TO RWYKSC.
@@ -564,6 +565,7 @@ local ILSVEC is 0.
 // *********
 // MAIN LOOP
 // *********
+
 partsDisarmsChutes(). //We don't want any chute deploing while flying, right?
 local AirSPD is ship:airspeed.
 local TimeNow is Time:seconds.
@@ -572,7 +574,7 @@ local SafeToExit is false.
 
 until SafeToExit {
 
-    // Make sure cooked controls are off before engaging autopilo
+    // Make sure cooked controls are off before engaging autopilot
     SAS OFF. 
     set RCS to ship:altitude > 18000.
     partsDisableReactionWheels().
@@ -630,9 +632,9 @@ until SafeToExit {
                         SET ATMODE to "SPD".
                     }
                     if      AirSPD > TGTSpeed*1.01 
-                            and ship:control:pilotmainthrottle < 0.05 brakes on.
-                    else if AirSPD < TGTSpeed*0.99 
-                            or  ship:control:pilotmainthrottle > 0.5 brakes off. 
+                            and ship:control:pilotmainthrottle < 0.1 brakes on.
+                    else if AirSPD < TGTSpeed 
+                            or  ship:control:pilotmainthrottle > 0.4 brakes off. 
                 }
                 ELSE IF KindOfCraft = "Shuttle" {
                     SET TGTSpeed to max(SQRT(TGTAltitude)*10,100).
@@ -763,8 +765,8 @@ until SafeToExit {
             }
 
             IF KindOfCraft = "SHUTTLE" {
-                SET CTRLIMIT TO min(1,ROUND(240/AirSPD,2)).
-                SET RCS TO BaroAltitude > 18000.
+                SET CTRLIMIT TO min(1,ROUND(300/AirSPD,2)).
+                SET RCS TO BaroAltitude > 15000.
             }
             ELSE {
                 SET CTRLIMIT TO min(1,ROUND(120/AirSPD,2)).
@@ -822,12 +824,12 @@ until SafeToExit {
                 IF NOT GEAR { GEAR ON .}
                 IF NOT LIGHTS { LIGHTS ON. }
                 // CHANGE TO FLARE MODE.
-                IF APMODE = "ILS" AND RA < FLAREALT {
+                IF APMODE = "ILS" AND BaroAltitude-TargetCoord:terrainheight < FLAREALT {
                     SET APMODE TO "FLR".
                 }
             }
             ELSE {
-                IF GEAR { GEAR OFF. }
+                IF GEAR GEAR OFF. 
             }
 
         }
@@ -880,9 +882,9 @@ until SafeToExit {
             SET LabelALT:TEXT  TO "<b>" + ROUND(TGTAltitude,2):TOSTRING + " m</b>".
             SET LabelBNK:TEXT TO  "<b>" + ROUND(AileronPID:SETPOINT,2) + "º</b>".
             SET LabelPIT:TEXT TO  "<b>" + ROUND(ElevatorPID:SETPOINT,2) + "º</b>".
-            SET LabelSPD:TEXT TO  "<b>" + ROUND(TGTSpeed) + " m/s | " + ROUND(MSTOKMH(TGTSpeed),2) + " km/h</b>".
+            SET LabelSPD:TEXT TO  "<b>" + ROUND(TGTSpeed) + " m/s | " + ROUND(uiMSTOKMH(TGTSpeed),2) + " km/h</b>".
         }
-        SET labelAirspeed:text to "<b>Airspeed:</b> " + ROUND(MSTOKMH(AirSPD)) + " km/h" +
+        SET labelAirspeed:text to "<b>Airspeed:</b> " + ROUND(uiMSTOKMH(AirSPD)) + " km/h" +
                                 " | Mach " + Round(Mach(AirSPD),3). 
         SET labelVSpeed:text to "<b>Vertical speed:</b> " + ROUND(SHIP:VERTICALSPEED) + " m/s".
         SET labelLAT:text to "<b>LAT:</b> " + ROUND(SHIP:geoposition:LAT,4) + " º".
@@ -935,6 +937,8 @@ until SafeToExit {
             // We didn't bounce, apply brakes
             brakes on.
             chutes on.
+            if partsReverseThrust() set ship:control:pilotmainthrottle to 1.
+            if ship:groundspeed < 30 set ship:control:pilotmainthrottle to 0.
             // Don't let tail-dragger to nose-over when braking
             if LandingGear = "Taildragger" and PitchAngle() < 0 brakes OFF.
             // Now it's really safe to exit the autopilot.
@@ -954,4 +958,6 @@ CLEARVECDRAWS().
 BRAKES ON.
 SAS ON.
 SET Config:IPU TO OldIPU.
+partsEnableReactionWheels().
+partsForwardThrust().
 uiBanner("Fly","Thanks to flying with RAMP. Remember to take your belongings.",2).

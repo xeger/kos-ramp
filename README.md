@@ -22,7 +22,7 @@ every script explain what it does and which parameters it needs.
 Run the launch program to ascend to a circular orbit a few hundred km above
 your local atmosphere:
 
-    run boot.
+    run launch.
 
 After you reach a stable orbit, select a target. Use the transfer or rendezvous script to reach your target.
 
@@ -45,6 +45,7 @@ Other idempotent scripts include:
     run circ_alt(250000). // circularize to specific altitude of 250km
     run approach.         // get close to target and stop
     run match.            // match velocity at closest approach to target
+    run dock.             // dock with your target
 
 Planning Burns by Hand
 ----------------------
@@ -58,16 +59,16 @@ Automating a Mission
 ====================
 
 If you want to script your entire mission end-to-end, it is highly suggested
-that you choose `boot_mission` as the boot script for your vessel's main CPU.
+that you choose `boot` as the boot script for your vessel's main CPU.
 
 To change the mission profile, just edit the mission script so the ship
-behaves the right way in each mission state.
+behaves the right way in each mission state. You can learn more about it in [this file.](https://github.com/xeger/kos-ramp/blob/master/boot.md) 
 
 Preparing for Launch
 --------------------
 
 If your ship will travel farther than 100km from KSC, you should install
-a secondary CPU on the vessel and run `boot_prep` to copy the mission
+a CPU with enough space on the vessel and run `boot` to copy the mission
 software onto the primary volume. Running archive scripts is fine in low
 orbit, but a space probe needs to be able to think for itself!
 
@@ -133,9 +134,9 @@ Function Libraries
 ------------------
 
 Programs beginning with `lib_` contain reusable functions and are invoked by
-other programs using `RUN ONCE`.
+other programs using `RUN ONCE` or `RUNONCEPATH()`.
 
-Beware that libs cannot run other libs! If two library scripts depend on one anothers' functions, then you must make sure to `RUN ONCE` both scripts from every top-level program that uses either oft hem!
+Beware that libs cannot run other libs! If two library scripts depend on one another's functions, then you must make sure to `RUN ONCE` both scripts from every top-level program that uses either oft hem!
 
 Comments and Documentation
 --------------------------

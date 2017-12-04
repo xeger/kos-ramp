@@ -2,7 +2,7 @@ PARAMETER DeorbitLongOffset IS 0. // Diference from the default deorbit longitud
 
 runoncepath("lib_ui").
 runoncepath("lib_parts").
-compile("fly.ks").
+runoncepath("lib_util").
 SAS OFF.
 
 FUNCTION LngToDegrees { 
@@ -46,8 +46,8 @@ UNTIL ORBITOK AND INCOK {
             OBT:INCLINATION > (Deorbit_Inc - 0.1)) {
                 uiBanner("Deorbit","Changing inclination from " + round(OBT:INCLINATION,2) + 
                 "º to " + round(Deorbit_Inc,2) + "º").
-                RUNPATH("node_inc_equ.ks",Deorbit_Inc).
-                RUNPATH("node.ks").
+                RUNPATH("node_inc_equ",Deorbit_Inc).
+                RUNPATH("node").
             }
     ELSE { SET INCOK TO TRUE.}
 
@@ -55,7 +55,7 @@ UNTIL ORBITOK AND INCOK {
             OBT:APOAPSIS > (Deorbit_Alt - Deorbit_Alt*0.05) AND
             OBT:eccentricity < 0.1 ) {
                 uiBanner("Deorbit","Establishing a new orbit at " + round(Deorbit_Alt/1000) + "km" ).
-                RUNPATH("circ_alt.ks",Deorbit_Alt).
+                RUNPATH("circ_alt",Deorbit_Alt).
     }
     ELSE { SET ORBITOK TO TRUE. }
 
@@ -81,7 +81,7 @@ partsRetractRadiators().
 LOCK THROTTLE TO 0.
 uiBanner("Deorbit","Holding 40º Pitch until 35000m").
 LOCK STEERING TO HEADING(90,40).
-WAIT 10.
+WAIT Until utilIsShipFacing(HEADING(90,40):Vector).
 SET KUNIVERSE:TIMEWARP:MODE TO "RAILS".
 SET KUNIVERSE:TIMEWARP:WARP to 2.
 WAIT UNTIL SHIP:ALTITUDE < 71000.
