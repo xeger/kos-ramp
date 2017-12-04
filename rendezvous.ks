@@ -55,4 +55,8 @@ wait until target:position:mag < 150.
 
 run match.
 
+//Save before dock!
+wait until KUniverse:CanQuickSave().
+KUniverse:QuickSaveTo("RAMP-Before docking").
+
 run dock.

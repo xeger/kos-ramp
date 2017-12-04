@@ -4,6 +4,8 @@
 // Desired orbital inclination
 parameter target_inclination.
 
+if hasnode remove nextnode.
+
 local position is ship:position-ship:body:position.
 local velocity is ship:velocity:orbit.
 local ang_vel is 4 * ship:obt:inclination / ship:obt:period.
@@ -27,12 +29,13 @@ local frac is (angle_to_equator / (4 * ship:obt:inclination)).
 local dt is frac * ship:obt:period.
 local t is time + dt.
 
-local relative_inclination is abs(ship:obt:inclination - target_inclination).
+local relative_inclination is target_inclination - ship:obt:inclination.
 local vel is velocityat(ship, T):orbit.
 local nDv is vel:mag * sin(relative_inclination).
 local pDV is vel:mag * (cos(relative_inclination) - 1 ).
 local dv is 2 * vel:mag * sin(relative_inclination / 2).
 
-if vel:y < 0 set nDv to -nDv. // Invert direction for anti-normal burn.
+
+if vel:y < 0 set ndv to -ndv.
 
 add node(T:seconds, 0, ndv, pDV).

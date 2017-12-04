@@ -68,7 +68,7 @@ function GetCloser {
   wait until utilIsShipFacing(steerDir:vector,1,0.5).
   local t0 is time:seconds.
   lock throttle to 1.
-  wait until target:position:mag / velR:mag < (time:seconds - t0 + 30) or vel:mag > 100 .
+  wait until target:position:mag / velR:mag < (time:seconds - t0 + 60) or vel:mag > 100 .
   lock throttle to 0.
 
   //Cancel any small traverse speed that may had been introduced by previous burn

@@ -7,7 +7,7 @@
 
 parameter alt.
 
-if obt:eccentricity < 0.1 { // For (almost) circular orbits, just change the altitude and recircularize
+if obt:eccentricity < 0.001 { // For (almost) circular orbits, just change the altitude and recircularize
   run node_alt(alt).
   local prograde is nextnode:prograde.
   run node.

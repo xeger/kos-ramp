@@ -1,10 +1,9 @@
 PARAMETER DeorbitLongOffset IS 0. // Diference from the default deorbit longitude.
 
-runoncepath("lib_ui.").
-
+runoncepath("lib_ui").
+runoncepath("lib_parts").
+compile("fly.ks").
 SAS OFF.
-BAYS OFF.
-GEAR OFF.
 
 FUNCTION LngToDegrees { 
     //From youtube.com/cheerskevin
@@ -68,12 +67,17 @@ uiBanner("Deorbit","Doing the deorbit burn").
 LOCAL nd IS NODE(time:seconds + TimeToLong(Deorbit_Long), 0, 0, Deorbit_dV).
 ADD nd. RUN NODE.
 
+// Configure the ship to reenter.
 PANELS OFF.
 BAYS OFF.
 GEAR OFF.
 LADDERS OFF.
 SAS OFF.
 RCS ON.
+partsDisarmsChutes().
+partsRetractAntennas().
+partsRetractRadiators().
+
 LOCK THROTTLE TO 0.
 uiBanner("Deorbit","Holding 40º Pitch until 35000m").
 LOCK STEERING TO HEADING(90,40).
