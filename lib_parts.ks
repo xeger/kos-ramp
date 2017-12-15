@@ -123,3 +123,106 @@ FUNCTION partsDisarmsChutes {
         }
     }.
 }
+
+FUNCTION partsPercentEC { 
+    FOR R IN SHIP:RESOURCES {
+        IF R:NAME = "ELECTRICCHARGE" {
+            RETURN R:AMOUNT / R:CAPACITY * 100.
+        }
+    }
+    RETURN 0.
+}
+
+FUNCTION partsPercentLFO {
+    LOCAL LFCAP IS 0.
+    LOCAL LFAMT IS 0.
+    LOCAL OXCAP IS 0.
+    LOCAL OXAMT IS 0.
+    LOCAL SURPLUS IS 0.
+    FOR R IN SHIP:RESOURCES {
+        IF R:NAME = "LIQUIDFUEL" {
+            SET LFCAP TO R:CAPACITY.
+            SET LFAMT TO R:AMOUNT. 
+        }
+        ELSE IF R:NAME = "OXIDIZER" {
+            SET OXCAP TO R:CAPACITY.
+            SET OXAMT TO R:AMOUNT.
+        }
+    }
+    IF OXCAP = 0 OR LFCAP = 0 {
+        RETURN 0.
+    }
+    ELSE {
+        IF OXCAP * (11/9) < LFCAP { // Surplus fuel
+            RETURN OXAMT/OXCAP*100.
+        }
+        ELSE { // Surplus oxidizer or proportional amonts
+            RETURN LFAMT/LFCAP*100.
+        }
+    }
+}
+
+FUNCTION partsPercentMP {
+    FOR R IN SHIP:RESOURCES {
+        IF R:NAME = "MONOPROPELLANT" {
+            RETURN R:AMOUNT / R:CAPACITY * 100.
+        }
+    }
+    RETURN 0.
+}
+
+FUNCTION partsMMEngineClosedCycle {
+    FOR P IN SHIP:PARTS {
+        IF P:MODULES:CONTAINS("MultiModeEngine") {
+            LOCAL M IS P:GETMODULE("MultiModeEngine").
+			IF M:HasField("mode") and M:GetField("mode"):Contains("Air") {
+				FOR Event IN M:ALLEVENTNAMES() {
+					IF Event:CONTAINS("toggle") M:DoEvent(Event).
+				}.
+			}
+		}
+    }.
+}
+
+FUNCTION partsMMEngineAirBreathing {
+    FOR P IN SHIP:PARTS {
+        IF P:MODULES:CONTAINS("MultiModeEngine") {
+            LOCAL M IS P:GETMODULE("MultiModeEngine").
+			IF M:HasField("mode") and M:GetField("mode"):Contains("Closed") {
+				FOR Event IN M:ALLEVENTNAMES() {
+					IF Event:CONTAINS("toggle") M:DoEvent(Event).
+				}.
+			}
+		}
+    }.
+}
+
+
+FUNCTION partsReverseThrust {
+    local HaveReverser is false.
+    FOR P IN SHIP:PARTS {
+        IF P:MODULES:CONTAINS("ModuleAnimateGeneric") {
+            LOCAL M IS P:GETMODULE("ModuleAnimateGeneric").
+            FOR Event IN M:ALLEVENTNAMES() {
+                IF Event:CONTAINS("reverse") {
+                    M:DoEvent(Event).
+                    set HaveReverser to True.
+                }
+            }.
+		}
+    }.
+    Return HaveReverser.
+}
+
+FUNCTION partsForwardThrust {
+    FOR P IN SHIP:PARTS {
+        IF P:MODULES:CONTAINS("ModuleAnimateGeneric") {
+            LOCAL M IS P:GETMODULE("ModuleAnimateGeneric").
+            FOR Event IN M:ALLEVENTNAMES() {
+                IF Event:CONTAINS("forward") M:DoEvent(Event).
+            }.
+		}
+    }.
+}
+
+

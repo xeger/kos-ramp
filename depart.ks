@@ -1,43 +1,62 @@
+@lazyglobal off.
 /////////////////////////////////////////////////////////////////////////////
-// Depart from dock
+// Depart
 /////////////////////////////////////////////////////////////////////////////
-// Undocks the CPU vessel and casts off with a small amount of velocity.
+// Undocks and departs the ship.
 //
-// WARNING: if your vessel is docked to multiple things, this chooses
-//   one random port to undock; the result is unpredictable and may
-//   not be what you wanted!
-//
-// TODO: be smarter about choosing whom to undock from (always choose most
-//       massive docking peer)
+// Finds a docked port, undock it and use RCS to back away, then return the
+// control to the root/control part.
 /////////////////////////////////////////////////////////////////////////////
 
-clearvecdraws().
-run once lib_ui.
-run once lib_dock.
+Parameter DockPort is 0. 
 
-local myPort is dockChooseDeparturePort().
-local station is ship.
+runoncepath("lib_dock").
+runoncepath("lib_util").
+runoncepath("lib_ui").
 
-if myPort = 0 {
-  uiError("Depart", core:element:name + " does not appear to be docked").
-  reboot.
+local DepartDistance is 90.
+local DepartSpeed is 3.
+local StepWait is 3.
+
+local DPort is dockChooseDeparturePort().
+if DockPort <> 0 and DockPort:isType("DockingPort") set DPort to DockPort.
+
+local TargetUndock is core:vessel.
+
+if DPort <> 0 {
+    wait StepWait. uiBanner("Depart","Releasing the dock port",2).
+    // Undocks and wait a little to physics stabilize.
+    DPort:Undock(). wait StepWait.
+    
+    //Switch control to our vessel and target the one we just undocked.
+    uiBanner("Depart","Controlling from "+ ship:name).
+    set KUniverse:ActiveVessel to core:vessel. wait StepWait.
+    set Target to TargetUndock. wait StepWait.
+    uiBanner("Depart","Departing from "+Target:name).
+
+    // Back up from the target
+    rcs on.
+    lock steering to ship:facing.
+    local lock TargetSpeed to -(target:velocity:orbit - ship:velocity:orbit). 
+    until TargetSpeed:mag >= DepartSpeed or Target:Distance >= DepartDistance {
+        local Thrust is min(1,max(0.1,DepartSpeed-TargetSpeed:mag)).
+        set ship:control:translation to v(0,0,-Thrust).
+        wait 0.
+    }
+    set ship:control:translation to v(0,0,0).
+    wait until Target:Distance >= DepartDistance.
+
+    // Restore control to the default part 
+    // The default part is the root part or the first controllable one it can fine.
+    // To override it, Tag a part as "Control" in VAB/SPH.
+    dockControlFromCore(dockDefaultControlPart()).
+    lock steering to lookdirup(-target:position,ship:up:vector).
+    wait until utilIsShipFacing(-target:position,10,0.1).
+    utilRCSCancelVelocity(TargetSpeed@,0.1).
+    unlock steering.
+    ship:control:neutralize on.
+    sas on.
+    rcs off.
+    uiBanner("Depart","Departed from " + TargetUndock:name,2).
 }
-
-sas off.
-rcs off.
-myPort:undock.
-wait 0.5.
-sas on.
-wait 0.5.
-rcs on.
-
-lock vel to station:velocity:orbit - ship:velocity:orbit.
-
-until vel:mag > 1 {
-  set ship:control:fore to -1.
-}
-set ship:control:fore to 0.
-
-rcs off.
-
-uiBanner("Depart", "Undocked from " + station:name).
+else uiError("Depart","No docking port is docked now").

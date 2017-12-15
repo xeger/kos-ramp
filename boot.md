@@ -29,7 +29,7 @@ Fell free to change that to anything that suits your mission!
 Disk space usage
 ----------------
 
-RAMP scripts use about 150kb of memory. That seens low, but default kOS hard disk values are very small. In order to be able to load RAMP into ship's memory, is suggested to use a `ModuleManager` patch, for example:
+RAMP scripts use about 150kb of memory. That seems low, but default kOS hard disk values are very small. In order to be able to load RAMP into ship's memory, is suggested to use a `ModuleManager` patch, for example:
 ```
 @PART[kOSMachine1m]
 {

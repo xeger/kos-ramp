@@ -228,14 +228,42 @@ function utilIsShipFacing {
 
 FUNCTION utilLongitudeTo360 { 
     //Converts longitudes from -180 to +180 into a 0-360 degrees.
+    //Imagine you start from Greenwitch to East, and instead of stop a 180º, keep until reach Greenwitch again at 360º
+    //i.e.: 10  >  10
+    //      170 > 170
+    //      180 > 180
+    //      -10 > 350 
+    //     -170 > 190
+    //     -180 > 180
     //From youtube.com/cheerskevin
     PARAMETER lng.
     RETURN MOD(lng + 360, 360).
 }
 
 function utilReduceTo360 {
-  //Converts angles that are more tha 360 to 0-360
+  //Converts angles that are more than 360 to 0-360
+  //i.e: 720 > 0
+  //     730 > 10
+  //     400 > 40
   parameter ang.
   return ang - 360 * floor(ang/360).
 }
 
+function utilCompassHeading {
+  // Returns the same HDG number that Kerbal shows in bottom of Nav Ball
+  local northPole is latlng( 90, 0). //Reference heading
+  if northPole:bearing <= 0 {
+        return ABS(northPole:bearing).
+    }
+    else {
+        return (180 - northPole:bearing) + 180.
+    }
+}
+
+function utilHeadingToBearing {
+  // Converts a heading from 0 to 360 into bearings from -180 to +180
+  parameter hdg.
+  if hdg > 180 return hdg-360.
+  else if hdg < -180 return hdg+360.
+  else return hdg.
+}
