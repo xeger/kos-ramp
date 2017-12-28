@@ -53,15 +53,20 @@ ELSE {
 	}
 	ELSE {
 		PRINT "No existing RAMP files detected. Trying to raise antennas and rebooting...".
-		FOR P IN SHIP:PARTS {
-			IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
-				LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
-				FOR A IN M:ALLACTIONNAMES() {
-					IF A:CONTAINS("Extend") { M:DOACTION(A,True). }
-				}.
-			}
-		}.
-		REBOOT.
+		IF Career():CANDOACTIONS {
+			FOR P IN SHIP:PARTS {
+				IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
+					LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
+					FOR A IN M:ALLACTIONNAMES() {
+						IF A:CONTAINS("Extend") { M:DOACTION(A,True). }
+					}.
+				}
+			}.
+			REBOOT.
+		}
+		ELSE {
+			PRINT "Career insufficiently advanced to deploy antennas -- aborting reboot!".
+		}
 	}
 }
 
