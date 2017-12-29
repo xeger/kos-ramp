@@ -4,22 +4,57 @@
 // Copy all scripts to local volume; run mission script. This is suitable for
 // single-CPU vessels that will be operating out of comms range.
 //
-// To customize the mission, edit <ship name>.ks in 0:/start folder before 
-// launch; it will be persisted onto the craft you launch, suitable for 
+// To customize the mission, edit <ship name>.ks in 0:/start folder before
+// launch; it will be persisted onto the craft you launch, suitable for
 // archive-free operation.
-// 
+//
 // Nevertheless, every time this boots, it will try to copy the files again,
 // if possible.
 // It expects the RAMP scripts files to be saved in 0:/ramp folder.
 /////////////////////////////////////////////////////////////////////////////
 
+// Print informational message.
+function bootConsole {
+  parameter msg.
+
+  print "T+" + round(time:seconds) + " boot: " + msg.
+}
+
+// Print error message and shutdown CPU.
+function bootError {
+  parameter msg.
+
+  print "T+" + round(time:seconds) + " boot: " + msg.
+
+  hudtext(msg, 10, 4, 36, RED, false).
+
+  local vAlarm TO GetVoice(0).
+  set vAlarm:wave to "TRIANGLE".
+  set vAlarm:volume to 0.5.
+  vAlarm:PLAY(
+    LIST(
+        NOTE("A#4", 0.2,  0.25),
+        NOTE("A4",  0.2,  0.25),
+        NOTE("A#4", 0.2,  0.25),
+        NOTE("A4",  0.2,  0.25),
+        NOTE("R",   0.2,  0.25),
+        NOTE("A#4", 0.2,  0.25),
+        NOTE("A4",  0.2,  0.25),
+        NOTE("A#4", 0.2,  0.25),
+        NOTE("A4",  0.2,  0.25)
+    )
+  ).
+
+	shutdown.
+}
+
 //Print info
 CLEARSCREEN.
-print "kOS processor version " + core:version.
-print "Running on " + core:element:name.
-print core:volume:capacity + " total space".
-print core:volume:freespace + " bytes free".
-Print "Universal RAMP bootloader".
+bootConsole "kOS processor version " + core:version.
+bootConsole "Running on " + core:element:name.
+bootConsole core:volume:capacity + " total space".
+bootConsole core:volume:freespace + " bytes free".
+bootConsole "Universal RAMP bootloader".
 //Waits 5 seconds for ship loads and stabilize physics, etc...
 WAIT 5.
 
@@ -28,31 +63,31 @@ SET HD TO CORE:VOLUME.
 SET ARC TO 0.
 SET Startup to "startup".
 
-PRINT "Attemping to connect to KSC...".
+bootConsole "Attemping to connect to KSC...".
 IF HOMECONNECTION:ISCONNECTED {
-	PRINT "Connected to KSC, copying updated files...".
+	bootConsole "Connected to KSC, copying updated files...".
 	SET ARC TO VOLUME(0).
 	SWITCH TO ARC.
-	CD ("ramp").	
+	CD ("ramp").
 	LOCAL copyok is TRUE.
 	LIST FILES IN FLS.
 	FOR F IN FLS {
 		IF NOT COPYPATH(F,HD) { COPYOK OFF. }.
 	}
 	IF copyok {
-		PRINT "Files copied successfully.".
+		bootConsole "Files copied successfully.".
 	}
 	ELSE {
-		PRINT "Error copying files. There is enough space?".
+		bootError "Error copying RAMP files. There is enough space?".
 	}
 }
 ELSE {
-	PRINT "No connection to KSC detected.".
+	bootConsole "No connection to KSC detected.".
 	IF EXISTS(Startup) {
-		PRINT "Existing RAMP files found, proceeding.".
+		bootConsole "Existing RAMP files found, proceeding.".
 	}
 	ELSE {
-		PRINT "No existing RAMP files detected. Trying to raise antennas and rebooting...".
+		bootConsole "No existing RAMP files detected. Trying to raise antennas and rebooting...".
 		IF Career():CANDOACTIONS {
 			FOR P IN SHIP:PARTS {
 				IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
@@ -65,7 +100,7 @@ ELSE {
 			REBOOT.
 		}
 		ELSE {
-			PRINT "Career insufficiently advanced to deploy antennas -- aborting reboot!".
+			bootError "Cannot contact KSC. Does your ship have enough fixed antennas?".
 		}
 	}
 }
@@ -73,35 +108,35 @@ ELSE {
 SWITCH TO HD.
 LOCAL StartupOk is FALSE.
 
-print "Looking for remote startup script...".
+bootConsole "Looking for remote startup script...".
 IF HOMECONNECTION:ISCONNECTED {
 	LOCAL StartupScript is PATH("0:/start/"+SHIP:NAME).
 	IF EXISTS(StartupScript) {
-		PRINT "Remote startup script found!".
+		bootConsole "Remote startup script found!".
 		IF COPYPATH(StartupScript,Startup) {
 			StartupOk ON.
 		}
 		ELSE {
-			PRINT "Could not copy the file. There is enough space?".
+			bootConsole "Could not copy the file. There is enough space?".
 		}
 	}
 	ELSE {
-		PRINT "No remote startup script found.".
-		PRINT "You can create a sample one by typing:". 
-		PRINT "RUN UTIL_MAKESTARTUP.".
+		bootConsole "No remote startup script found.".
+		bootConsole "You can create a sample one by typing:".
+		bootConsole "RUN UTIL_MAKESTARTUP.".
 	}
 }
-ELSE { 
+ELSE {
 	IF EXISTS(Startup) {
-		PRINT "Can't connect to KSC, using local copy of startup script".
+		bootConsole "Can't connect to KSC, using local copy of startup script".
 		StartupOk ON.
 	}
-	ELSE 
+	ELSE
 	{
-		PRINT "I'm sorry, Dave. I'm afraid I can't do that.". //This should never happens!
+		bootError "Cannot find RAMP scripts or connect to KSC; please restart mission!"
 	}
 }
 IF StartupOk {
 	RUNPATH(Startup).
 }
-PRINT "Proceed.".
+bootConsole "Proceed.".
