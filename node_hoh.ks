@@ -10,8 +10,8 @@ runoncepath("lib_util").
 // Compute prograde delta-vee required to achieve Hohmann transfer; < 0 means
 // retrograde burn.
 function hohmannDv {
-  local r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
-  local r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
+  parameter r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
+  parameter r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
 
   return sqrt(body:mu / r1) * (sqrt( (2*r2) / (r1+r2) ) - 1).
 }
@@ -94,9 +94,6 @@ if abs(node_ri) > 0.2 {
   uiWarning("Node", "Bad alignment ri=" + round(node_ri, 1)).
 }
 
-uiDebug("Hohmann delta V").
-global node_dv is hohmannDv().
-
 uiDebug("Hohmann time").
 global node_T is hohmannDt().
 
@@ -104,6 +101,19 @@ if node_T = "Stranded" {
   uiError("Node", "STRANDED").
 }
 else {
-  add node(node_T, 0, 0, node_dv).
-  uiDebug("Transfer eta=" + round(node_T - time:seconds, 0) + " dv=" + round(node_dv, 1)).
+  uiDebug("Hohmann delta V").
+  uiDebug("Transfer eta=" + round(node_T - time:seconds, 0)).
+  uiDebug("Transfer dv0=" + round(hohmannDv, 1)).
+
+  local r1 is (positionat(ship,node_T)-body:position):mag.
+  global node_dv is hohmannDv(r1).
+  uiDebug("Transfer dv1=" + round(node_dv, 1) + ", r1=" + round(r1)).
+
+  local nd is node(node_T, 0, 0, node_dv).
+  add nd.
+
+  local r2 is (positionat(target,node_T+nd:orbit:period/2)-body:position):mag.
+  set node_dv to hohmannDv(r1,r2).
+  set nd:prograde to node_dv.
+  uiDebug("Transfer dv2=" + round(node_dv, 1) + ", r2=" + round(r2)).
 }
