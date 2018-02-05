@@ -1,41 +1,21 @@
-// Match inclinations with target by planning a burn at the ascending or
+// Change to desired orbital inclinations by planning a burn at the ascending or
 // descending node, whichever comes first.
 
 // Desired orbital inclination
-parameter target_inclination.
+parameter target_inclination is 0.
+runOncePath("lib_util").
 
 if hasnode remove nextnode.
 
-local position is ship:position-ship:body:position.
-local velocity is ship:velocity:orbit.
-local ang_vel is 4 * ship:obt:inclination / ship:obt:period.
+local ri is target_inclination-ship:orbit:inclination.
+local t0 is time:seconds.
+local dt is utilDtTrue(360-orbit:argumentOfPeriapsis).
+local d2 is utilDtTrue(180-orbit:argumentOfPeriapsis).
+if d2 < dt { set dt to d2. set ri to -ri. }
+local t1 is t0+dt.
 
-local equatorial_position is V(position:x, 0, position:z).
-local angle_to_equator is vang(position,equatorial_position).
+local v is velocityAt(ship, t1):orbit:mag.
+local nv is v * sin(ri).
+local pv is v * (cos(ri) - 1).
 
-if position:y > 0 {
-	if velocity:y > 0 {
-		// above & traveling away from equator; need to rise to inc, then fall back to 0
-		set angle_to_equator to 2 * ship:obt:inclination - abs(angle_to_equator).
-	}
-} else {
-	if velocity:y < 0 {
-		// below & traveling away from the equator; need to fall to inc, then rise back to 0
-		set angle_to_equator to 2 * ship:obt:inclination - abs(angle_to_equator).
-	}
-}
-
-local frac is (angle_to_equator / (4 * ship:obt:inclination)).
-local dt is frac * ship:obt:period.
-local t is time + dt.
-
-local relative_inclination is target_inclination - ship:obt:inclination.
-local vel is velocityat(ship, T):orbit.
-local nDv is vel:mag * sin(relative_inclination).
-local pDV is vel:mag * (cos(relative_inclination) - 1 ).
-local dv is 2 * vel:mag * sin(relative_inclination / 2).
-
-
-if vel:y < 0 set ndv to -ndv.
-
-add node(T:seconds, 0, ndv, pDV).
+add node(t1, 0, nv, pv).
