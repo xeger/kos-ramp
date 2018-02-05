@@ -267,3 +267,51 @@ function utilHeadingToBearing {
   else if hdg < -180 return hdg+360.
   else return hdg.
 }
+
+// convert any angle to range [0, 360)
+function utilAngleTo360 {
+	parameter a.
+	set a to mod(a, 360).
+	if a < 0 set a to a + 360.
+	return a.
+}
+
+// convert from true to eccentric anomaly
+function utilEccentricFromTrue {
+	parameter a.
+	parameter obt is orbit.
+	set e to obt:eccentricity.
+	if e >= 1 return "ERROR: eccentricFromTrue("+round(a,2)+") with e=" + round(e,5).
+	set a to a*.5.
+	return 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
+}
+// convert from eccentric to mean anomaly
+function utilMeanFromEccentric {
+	parameter a.
+	parameter obt is orbit.
+	set e to obt:eccentricity.
+	if e >= 1 return "ERROR: meanFromEccentric("+round(a,2)+") with e=" + round(e,5).
+	return a - e * sin(a) * 180/constant:pi.
+}
+// convert from true to mean anomaly = meanFromEccentric(eccentricFromTrue(a))
+function utilMeanFromTrue {
+	parameter a.
+	parameter obt is orbit.
+	set e to obt:eccentricity.
+	if e >= 1 return "ERROR: eccentricFromTrue("+round(a,2)+") with e=" + round(e,5).
+	set a to a*.5.
+	set a to 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
+	return a - e * sin(a) * 180/constant:pi.
+}
+// eta-now to mean anomaly
+function utilDtMean {
+	parameter a.
+	parameter obt is orbit.
+	return utilAngleTo360(a - utilMeanFromTrue(obt:trueAnomaly)) / 360 * obt:period.
+}
+// eta-now to true anomaly
+function utilDtTrue {
+	parameter a.
+	parameter obt is orbit.
+	return utilAngleTo360(utilMeanFromTrue(a) - utilMeanFromTrue(obt:trueAnomaly)) / 360 * obt:period.
+}
