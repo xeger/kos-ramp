@@ -268,6 +268,13 @@ function utilHeadingToBearing {
   else return hdg.
 }
 
+// remove all nodes and wait one tick if there was any
+function utilRemoveNodes {
+	if not hasNode return.
+	for n in allNodes remove n.
+	wait 0.
+}
+
 // convert any angle to range [0, 360)
 function utilAngleTo360 {
 	parameter a.
@@ -277,6 +284,7 @@ function utilAngleTo360 {
 }
 
 // convert from true to eccentric anomaly
+// https://en.wikipedia.org/wiki/Eccentric_anomaly
 function utilEccentricFromTrue {
 	parameter a.
 	parameter obt is orbit.
@@ -286,6 +294,7 @@ function utilEccentricFromTrue {
 	return 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
 }
 // convert from eccentric to mean anomaly
+// https://en.wikipedia.org/wiki/Mean_anomaly
 function utilMeanFromEccentric {
 	parameter a.
 	parameter obt is orbit.
@@ -298,18 +307,19 @@ function utilMeanFromTrue {
 	parameter a.
 	parameter obt is orbit.
 	set e to obt:eccentricity.
-	if e >= 1 return "ERROR: eccentricFromTrue("+round(a,2)+") with e=" + round(e,5).
+	if e >= 1 return "ERROR: meanFromTrue("+round(a,2)+") with e=" + round(e,5).
 	set a to a*.5.
 	set a to 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
 	return a - e * sin(a) * 180/constant:pi.
 }
-// eta-now to mean anomaly
+// eta to mean anomaly (angle from periapsis converted to mean-motion circle)
 function utilDtMean {
 	parameter a.
 	parameter obt is orbit.
 	return utilAngleTo360(a - utilMeanFromTrue(obt:trueAnomaly)) / 360 * obt:period.
 }
-// eta-now to true anomaly
+// eta to true anomaly (angle from periapsis in the direction of movement)
+// note: this is the ultimate ETA function which is in KSP API known as GetDTforTrueAnomaly
 function utilDtTrue {
 	parameter a.
 	parameter obt is orbit.
