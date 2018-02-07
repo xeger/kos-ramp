@@ -7,13 +7,13 @@
 
 // Final apoapsis (m altitude)
 parameter apo is 200000.
-parameter hdglaunch is 90. 
+parameter hdglaunch is 90.
 
-runoncepath("lib_parts.ks"). 
+runoncepath("lib_parts.ks").
 runoncepath("lib_ui.ks").
 runoncepath("lib_util").
 
-uiBanner("Launch","Launching to an orbit of " + round(apo/1000) + "km and heading of " + hdglaunch + "º"). 
+uiBanner("Launch","Ascend to " + round(apo/1000) + "km; heading " + hdglaunch + "º").
 
 // Number of seconds to sleep during ascent loop
 global launch_tick is 1.
@@ -23,6 +23,9 @@ global launch_tSrbSep is 0.
 
 // Time of last stage
 global launch_tStage is time:seconds.
+
+// Stage number at entry
+global launch_nInitStage is stage:number.
 
 // Starting/ending height of gravity turn
 // TODO adjust for atmospheric pressure; this works for Kerbin
@@ -71,7 +74,7 @@ function ascentThrottle {
     local ApoPercent is ship:obt:apoapsis/apo.
     local ApoCompensation is 0.
     if ApoPercent > 0.9 set ApoCompensation to (ApoPercent - 0.9) * 10.
-    return 1 - min(1,max(0,ApoCompensation)).
+    return 1.05 - min(1,max(0,ApoCompensation)).
   }
 }
 
@@ -100,28 +103,25 @@ function ascentStaging {
   }
 
   if Nsrb > 0 {
+    uiBanner("Launch", "SRB separation").
     stage.
     set launch_tSrbSep to time:seconds.
     set launch_tStage to launch_tSrbSep.
-    uiBanner("Launch","Stage " + ThisStage + " separated. " + Nsrb + " SRBs discarded.").
   } else if (Nlfo > 0) {
     wait until stage:ready.
+    uiBanner("Launch", "Stage " + ThisStage + " separation").
     stage.
     set launch_tStage to time:seconds.
-    uiBanner("Launch","Stage " + ThisStage + " separated. " + Nlfo + " Engines out.").
   } else if Neng = 0 {
     wait until stage:ready.
     stage.
     set launch_tStage to time:seconds.
-    uiBanner("Launch","Stage " + ThisStage + " activated").
   }
-  
-
 }
 
 function ascentFairing {
   if ship:altitude > ship:body:atm:height {
-    if partsDeployFairings() uiBanner("Launch","Discard fairings").    
+    if partsDeployFairings() uiBanner("Launch","Discard fairings").
   }
 }
 
@@ -154,6 +154,7 @@ until ship:obt:apoapsis >= apo {
 }
 
 unlock throttle.
+uiBanner("Launch", "Engine cutoff").
 
 /////////////////////////////////////////////////////////////////////////////
 // Coast to apoapsis and hand off to circularization program.
@@ -180,7 +181,7 @@ until ship:availablethrust > 0 {
 
 // Roll with top up.
 lock steering to heading (hdglaunch,0). //Horizon, ceiling up.
-wait until utilIsShipFacing(heading(hdglaunch,0):vector). 
+wait until utilIsShipFacing(heading(hdglaunch,0):vector).
 
 // Warp to end of atmosphere
 local AdjustmentThrottle is 0.
