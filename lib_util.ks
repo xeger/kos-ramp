@@ -283,33 +283,16 @@ function utilAngleTo360 {
 	return a.
 }
 
-// convert from true to eccentric anomaly
-// https://en.wikipedia.org/wiki/Eccentric_anomaly
-function utilEccentricFromTrue {
-	parameter a.
-	parameter obt is orbit.
-	set e to obt:eccentricity.
-	if e >= 1 return "ERROR: eccentricFromTrue("+round(a,2)+") with e=" + round(e,5).
-	set a to a*.5.
-	return 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
-}
-// convert from eccentric to mean anomaly
-// https://en.wikipedia.org/wiki/Mean_anomaly
-function utilMeanFromEccentric {
-	parameter a.
-	parameter obt is orbit.
-	set e to obt:eccentricity.
-	if e >= 1 return "ERROR: meanFromEccentric("+round(a,2)+") with e=" + round(e,5).
-	return a - e * sin(a) * 180/constant:pi.
-}
-// convert from true to mean anomaly = meanFromEccentric(eccentricFromTrue(a))
+// convert from true to mean anomaly
 function utilMeanFromTrue {
 	parameter a.
 	parameter obt is orbit.
 	set e to obt:eccentricity.
-	if e >= 1 return "ERROR: meanFromTrue("+round(a,2)+") with e=" + round(e,5).
+	if e >= 1 { print "ERROR: meanFromTrue("+round(a,2)+") with e=" + round(e,5). return a. }
 	set a to a*.5.
 	set a to 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
+//	https://en.wikipedia.org/wiki/Eccentric_anomaly
+//	https://en.wikipedia.org/wiki/Mean_anomaly
 	return a - e * sin(a) * 180/constant:pi.
 }
 // eta to mean anomaly (angle from periapsis converted to mean-motion circle)
