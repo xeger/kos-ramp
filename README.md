@@ -34,7 +34,7 @@ After you reach a stable orbit, select a target. Use the transfer or rendezvous 
 
 The boot, rendezvous and transfer scripts are [idempotent](https://en.wikipedia.org/wiki/Idempotence):
 you can safely run them at any time; they either make progress toward your goal, or error out
-with an explanation as to why they can't.
+with an explanation as to why they can't. The [universal boot leader](boot/README.md) is customizable per ship.
 
 Maneuvers
 =========
@@ -62,7 +62,7 @@ If you want to script your entire mission end-to-end, it is highly suggested
 that you choose `boot` as the boot script for your vessel's main CPU.
 
 To change the mission profile, just edit the mission script so the ship
-behaves the right way in each mission state. You can learn more about it in [this file.](https://github.com/xeger/kos-ramp/blob/master/boot.md) 
+behaves the right way in each mission state. You can learn more about it in [this file.](https://github.com/xeger/kos-ramp/blob/master/boot/README.md)
 
 Preparing for Launch
 --------------------
