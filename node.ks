@@ -6,12 +6,13 @@
 
 run once lib_ui.
 run once lib_util.
+
 // Configuration constants; these are pre-set for automated missions; if you
 // have a ship that turns poorly, you may need to decrease these and perform
 // manual corrections.
 global node_bestFacing is 5.   // ~5  degrees error (10 degree cone)
 global node_okFacing   is 20.  // ~20 degrees error (40 degree cone)
- 
+
 local sstate is sas. // Save SAS State
 
 // quo vadis?
@@ -24,7 +25,7 @@ global nodeStageFuelInit is 0.
 
 // keep ship pointed at node
 sas off.
-lock NodeSteerDir to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)). 
+lock NodeSteerDir to utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)).
 lock steering to NodeSteerDir.
 
 // estimate burn direction & duration
@@ -42,7 +43,7 @@ until orientationOk {
   wait 0. //Noticed a performance issue with crafts with many parts. This forces the loop to wait one physics tick.
   local steerVec is utilFaceBurn(lookdirup(nodeNd:deltav, ship:up:vector)):vector.
   if  utilIsShipFacing(steerVec,node_bestFacing,0.5) or
-      ((nodeNd:eta <= nodeDob / 2) and utilIsShipFacing(steerVec,node_okFacing,5)) or 
+      ((nodeNd:eta <= nodeDob / 2) and utilIsShipFacing(steerVec,node_okFacing,5)) or
       ship:angularvel:mag < 0.0001 { set orientationOk to true. }
 }
 

@@ -2,8 +2,8 @@ LOCAL CODE IS LIST().
 CODE:ADD("IF SHIP:STATUS = " + char(34) + "PRELAUNCH" + char(34) + " {").
 CODE:ADD("    RUN launch_asc(120000). // Launches to 120km").
 CODE:ADD("    SET TARGET TO MUN. //We choose go to to the Mun and do the other things!" ).
-CODE:ADD("    RUN transfer.").
 CODE:ADD("    // TODO: Do the other things, not because they are easy, but because they are hard!").
+CODE:ADD("    //RUN transfer.").
 CODE:ADD("}").
 
 

@@ -1,64 +1,74 @@
 FUNCTION partsExtendAntennas { 
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
-            LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
-            FOR A IN M:ALLACTIONNAMES() {
-                IF A:CONTAINS("Extend") { M:DOACTION(A,True). }
-            }.
-        }
-    }.
+    IF Career():CANDOACTIONS {
+        FOR P IN SHIP:PARTS {
+            IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
+                LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
+                FOR A IN M:ALLACTIONNAMES() {
+                    IF A:CONTAINS("Extend") { M:DOACTION(A,True). }
+                }.
+            }
+        }.
+    }
 }
 
 FUNCTION partsRetractAntennas {
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
-            LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
-            FOR A IN M:ALLACTIONNAMES() {
-                IF A:CONTAINS("Retract") { M:DOACTION(A,True). }
-            }.
-        }
-    }.
+    IF Career():CANDOACTIONS {
+        FOR P IN SHIP:PARTS {
+            IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
+                LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
+                FOR A IN M:ALLACTIONNAMES() {
+                    IF A:CONTAINS("Retract") { M:DOACTION(A,True). }
+                }.
+            }
+        }.
+    }
 }
 
 FUNCTION partsDisableReactionWheels {
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleReactionWheel") {
-            LOCAL M IS P:GETMODULE("ModuleReactionWheel").
-            FOR A IN M:ALLACTIONNAMES() {
-                IF A:CONTAINS("deactivate") { M:DOACTION(A,True). }
-            }.
-        }
-    }.
+    IF Career():CANDOACTIONS {
+        FOR P IN SHIP:PARTS {
+            IF P:MODULES:CONTAINS("ModuleReactionWheel") {
+                LOCAL M IS P:GETMODULE("ModuleReactionWheel").
+                FOR A IN M:ALLACTIONNAMES() {
+                    IF A:CONTAINS("deactivate") { M:DOACTION(A,True). }
+                }.
+            }
+        }.
+    }
 }
 
 FUNCTION partsEnableReactionWheels {
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleReactionWheel") {
-            LOCAL M IS P:GETMODULE("ModuleReactionWheel").
-            FOR A IN M:ALLACTIONNAMES() {
-                IF A:CONTAINS("activate") { M:DOACTION(A,True). }
-            }.
-        }
-    }.
+    IF Career():CANDOACTIONS {
+        FOR P IN SHIP:PARTS {
+            IF P:MODULES:CONTAINS("ModuleReactionWheel") {
+                LOCAL M IS P:GETMODULE("ModuleReactionWheel").
+                FOR A IN M:ALLACTIONNAMES() {
+                    IF A:CONTAINS("activate") { M:DOACTION(A,True). }
+                }.
+            }
+        }.
+    }
 }
 
 FUNCTION partsRetractRadiators {
     //If you want to turn on or off all the radiators you can use the built in variable RADIATORS, ie:
-    // RADIATORS ON. 
+    // RADIATORS ON.
     // RADIATORS OFF.
-    // This function only retract deployable radiators. Useful for reentry. 
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleDeployableRadiator") {
-            LOCAL M IS P:GETMODULE("ModuleDeployableRadiator").
-            FOR A IN M:ALLACTIONNAMES() {
-                IF A:CONTAINS("Retract") { M:DOACTION(A,True). }
-            }.
-        }
-    }.
+    // This function only retract deployable radiators. Useful for reentry.
+    IF Career():CANDOACTIONS {
+        FOR P IN SHIP:PARTS {
+            IF P:MODULES:CONTAINS("ModuleDeployableRadiator") {
+                LOCAL M IS P:GETMODULE("ModuleDeployableRadiator").
+                FOR A IN M:ALLACTIONNAMES() {
+                    IF A:CONTAINS("Retract") { M:DOACTION(A,True). }
+                }.
+            }
+        }.
+    }
 }
 
 
-//Try to control from the specified docking port. 
+//Try to control from the specified docking port.
 FUNCTION partsControlFromDockingPort {
     parameter cPart. //The docking port you want to control from.
     local success is false.
@@ -91,14 +101,14 @@ FUNCTION partsDeployFairings {
                 IF Event:CONTAINS("deploy") {
                     M:DOEVENT(Event).
                     set ReturnValue to True.
-                } 
+                }
             }.
         }
     }.
     Return ReturnValue.
 }
 
-FUNCTION partsHasTermometer { 
+FUNCTION partsHasTermometer {
 // Checks if ship have required sensors:
 // - Termometer
 LOCAL HasT IS False.
@@ -106,7 +116,7 @@ LIST SENSORS IN SENSELIST.
 FOR S IN SENSELIST {
     IF S:TYPE = "TEMP" { SET HasT to True. }
 }
-RETURN HasT. 
+RETURN HasT.
 }
 
 
@@ -118,13 +128,13 @@ FUNCTION partsDisarmsChutes {
         IF P:MODULES:CONTAINS("ModuleParachute") {
             LOCAL M IS P:GETMODULE("ModuleParachute").
             FOR Event IN M:ALLEVENTNAMES() {
-                IF Event:CONTAINS("disarm") M:DOEVENT(Event). 
+                IF Event:CONTAINS("disarm") M:DOEVENT(Event).
             }.
         }
     }.
 }
 
-FUNCTION partsPercentEC { 
+FUNCTION partsPercentEC {
     FOR R IN SHIP:RESOURCES {
         IF R:NAME = "ELECTRICCHARGE" {
             RETURN R:AMOUNT / R:CAPACITY * 100.
@@ -142,7 +152,7 @@ FUNCTION partsPercentLFO {
     FOR R IN SHIP:RESOURCES {
         IF R:NAME = "LIQUIDFUEL" {
             SET LFCAP TO R:CAPACITY.
-            SET LFAMT TO R:AMOUNT. 
+            SET LFAMT TO R:AMOUNT.
         }
         ELSE IF R:NAME = "OXIDIZER" {
             SET OXCAP TO R:CAPACITY.
@@ -224,5 +234,3 @@ FUNCTION partsForwardThrust {
 		}
     }.
 }
-
-
