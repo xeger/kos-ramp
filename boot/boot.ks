@@ -66,7 +66,7 @@ WAIT 5.
 //Set up volumes
 SET HD TO CORE:VOLUME.
 SET ARC TO 0.
-SET StartupFile TO "startup.ks".
+SET StartupLocalFile TO "startup.ks".
 SET Failsafe TO false.
 
 bootConsole("Attemping to connect to KSC...").
@@ -109,8 +109,8 @@ IF HOMECONNECTION:ISCONNECTED {
 }
 ELSE {
 	bootConsole("No connection to KSC detected.").
-	IF EXISTS(StartupFile) {
-		bootConsole("Existing RAMP files found, proceeding.").
+	IF EXISTS(StartupLocalFile) {
+		bootConsole("Local RAMP startup, proceeding.").
 	}
 	ELSE {
 		bootConsole("RAMP not detected; extend antennas and reboot...").
@@ -138,7 +138,8 @@ IF HOMECONNECTION:ISCONNECTED {
 	LOCAL StartupScript is PATH("0:/start/"+SHIP:NAME).
 	IF EXISTS(StartupScript) {
 		bootConsole("Copying remote startup script from archive.").
-		IF COPYPATH(StartupScript, Startup) {
+    SWITCH TO HD.
+		IF COPYPATH(StartupScript, StartupLocalFile) {
 			StartupOk ON.
 		}
 		ELSE {
@@ -146,12 +147,13 @@ IF HOMECONNECTION:ISCONNECTED {
 		}
 	}
 	ELSE {
-		bootConsole("No remote startup script found.").
-		bootConsole("You can create a sample one by typing:").
-		bootConsole("RUN UTIL_MAKESTARTUP.").
+		PRINT "No remote startup script found.".
+		PRINT "You can create a sample one by typing:".
+		PRINT "RUN UTIL_MAKESTARTUP.".
 	}
-} ELSE {
-	IF EXISTS(Startup) {
+}
+ELSE {
+	IF EXISTS(StartupLocalFile) {
 		bootConsole("Using local startup script copied from archive.").
 		StartupOk ON.
 	}
@@ -168,5 +170,8 @@ IF NOT Failsafe {
 IF StartupOk {
 	RUNPATH(Startup).
 }
-
-bootConsole("Proceed.").
+ELSE {
+  bootWarning("RAMP: need input").
+  bootWarning("see kOS console").
+  PRINT "RAMP ready for commands:". PRINT "".
+}

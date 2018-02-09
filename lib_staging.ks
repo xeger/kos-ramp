@@ -45,7 +45,7 @@ function stagingCheck {
 		if stagingTanks:empty return false.
 		for t in stagingTanks {
 			local amount is 0.
-			for r in t:resources if fuelList:contains(r:name)
+			for r in t:resources if stagingFuelList:contains(r:name)
 				set amount to amount + r:amount.
 			if amount > 0.01 return false.
 		}
