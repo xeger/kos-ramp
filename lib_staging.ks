@@ -1,4 +1,6 @@
-global stagingFuelList	is list("LiquidFuel", "SolidFuel").
+// Add all fuels you want to check in to this list (e.g. Karbonite if you use the mod),
+// but SolidFuel is intentionaly left out and Oxidizer is unimportant
+global stagingFuelList	is list("LiquidFuel").
 global stagingNumber	is -1.
 global stagingEngines	is list().
 global stagingTanks		is list().
@@ -51,7 +53,7 @@ function stagingCheck {
 		}
 		return true.
 	}
-	if checkEngines() or checkTanks() {
+	if checkEngines() or checkTanks() or availableThrust = 0 {
 		stage.
 	//	this is optional and unnecessary if TWR does not change much,
 	//	but can prevent wierd steering behaviour after staging
