@@ -9,11 +9,12 @@
 parameter apo is 200000.
 parameter hdglaunch is 90.
 
-runoncepath("lib_parts.ks").
-runoncepath("lib_ui.ks").
+runoncepath("lib_parts").
+runoncepath("lib_ui").
 runoncepath("lib_util").
+runoncepath("lib_staging").
 
-uiBanner("Launch","Ascend to " + round(apo/1000) + "km; heading " + hdglaunch + "º").
+uiBanner("ascend","Ascend to " + round(apo/1000) + "km; heading " + hdglaunch + "º").
 
 // Number of seconds to sleep during ascent loop
 global launch_tick is 1.
@@ -33,7 +34,13 @@ global launch_gt0 is body:atm:height * 0.007. // About 500m in Kerbin
 global launch_gt1 is body:atm:height * 0.6. // About 42000m in Kerbin
 
 /////////////////////////////////////////////////////////////////////////////
-// Steering function.
+// Ascent staging (borrowed from lib).
+/////////////////////////////////////////////////////////////////////////////
+
+local ascentStaging is stagingCheck@.
+
+/////////////////////////////////////////////////////////////////////////////
+// Steering function for continuous lock.
 /////////////////////////////////////////////////////////////////////////////
 
 function ascentSteering {
@@ -52,7 +59,7 @@ function ascentSteering {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Throttle function.
+// Throttle function for continuous lock.
 /////////////////////////////////////////////////////////////////////////////
 
 function ascentThrottle {
@@ -79,49 +86,12 @@ function ascentThrottle {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Auto-stage and auto-warp logic -- performs its work as side effects vs.
-// returning a value; must be called in a loop to have any effect!
+// Deploy fairings at proper altitude; call in a loop.
 /////////////////////////////////////////////////////////////////////////////
-
-function ascentStaging {
-  local Neng is 0.
-  local Nsrb is 0.
-  local Nlfo is 0.
-  local ThisStage is stage:Number.
-
-  list engines in engs.
-  for eng in engs {
-    if eng:ignition {
-      set Neng to Neng + 1.
-      if not eng:allowshutdown and eng:flameout {
-        set Nsrb to Nsrb + 1.
-      }
-      if eng:flameout {
-        set Nlfo to Nlfo + 1.
-      }
-    }
-  }
-
-  if Nsrb > 0 {
-    uiBanner("Launch", "SRB separation").
-    stage.
-    set launch_tSrbSep to time:seconds.
-    set launch_tStage to launch_tSrbSep.
-  } else if (Nlfo > 0) {
-    wait until stage:ready.
-    uiBanner("Launch", "Stage " + ThisStage + " separation").
-    stage.
-    set launch_tStage to time:seconds.
-  } else if Neng = 0 {
-    wait until stage:ready.
-    stage.
-    set launch_tStage to time:seconds.
-  }
-}
 
 function ascentFairing {
   if ship:altitude > ship:body:atm:height {
-    if partsDeployFairings() uiBanner("Launch","Discard fairings").
+    if partsDeployFairings() uiBanner("ascend","Discard fairings").
   }
 }
 
@@ -153,21 +123,23 @@ until ship:obt:apoapsis >= apo {
   wait launch_tick.
 }
 
+uiBanner("Launch", "Engine cutoff").
 unlock throttle.
+set ship:control:pilotmainthrottle to 0.
 uiBanner("Launch", "Engine cutoff").
 
 /////////////////////////////////////////////////////////////////////////////
 // Coast to apoapsis and hand off to circularization program.
 /////////////////////////////////////////////////////////////////////////////
 
-// Get rid of ascent stage if less that 10% fuel remains ... bit wasteful, but
+// Get rid of ascent stage if less that 5% fuel remains ... bit wasteful, but
 // keeps our burn calculations from being erroneous due to staging mid-burn.
 if stage:resourceslex:haskey("LiquidFuel") {
   if stage:resourceslex["LiquidFuel"]:capacity > 0 { // Checks to avoid NaN error
-    if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.1 {
+    if stage:resourceslex["LiquidFuel"]:amount / stage:resourceslex["LiquidFuel"]:capacity < 0.05 {
+      uiBanner("ascend","Discarding ascent stage").
       stage.
-      uiBanner("Launch","Discarding tank").
-      wait until stage:ready.
+      stagingPrepare.
     }
   }
 }
@@ -175,11 +147,12 @@ if stage:resourceslex:haskey("LiquidFuel") {
 // aeroshell ejection in a lower stage).
 until ship:availablethrust > 0 {
   stage.
-  uiBanner("Launch","Discard non-propulsive stage").
+  uiBanner("ascend","Discard non-propulsive stage").
   wait until stage:ready.
 }
 
 // Roll with top up.
+uiBanner("ascend","Point prograde").
 lock steering to heading (hdglaunch,0). //Horizon, ceiling up.
 wait until utilIsShipFacing(heading(hdglaunch,0):vector).
 
@@ -199,6 +172,7 @@ fuelcells on.
 panels on.
 partsExtendAntennas().
 wait launch_tick.
+
 // Release controls. Turn on RCS to help steer to circularization burn.
 unlock steering.
 unlock throttle.
