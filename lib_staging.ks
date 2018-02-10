@@ -5,7 +5,20 @@ global stagingNumber	is -1.
 global stagingEngines	is list().
 global stagingTanks		is list().
 
-// to be called whenever current stage changes to prepare data for quicker test
+// to be called whenever current stage changes to prepare data for quicker test.
+//
+// prepares a list of engines that are in current stage but not in next stage.
+// counts fuel in each and decides which to add to the "flameout watch list"
+// that drives the staging behavior.
+//
+// HOW IT WORKS
+// ------------
+// for most parts, :STAGE is the stage number they separate in; for engines,
+// this is the number they activate in.
+// e:parent:stage is different works for any engine that is not attached
+// directly to another engine. boosters are engines and therefore this fails
+// for booster-on-booster arrangements; all will stage at once even if they're
+// not all depleted.
 function stagingPrepare {
 	wait until stage:ready.
 	set stagingNumber	to stage:number.
@@ -13,12 +26,11 @@ function stagingPrepare {
 	set stagingTanks	to list().
 	if stage:number = 0 return.
 
-//	prepare list of engines that are in current stage but not in next stage
 	list engines in engines.
 	for e in engines if e:stage = stage:number and e:parent:stage = stage:number-1
 		stagingEngines:add(e).
 
-//	prepare list of tanks that are in current stage but not in next stage
+	// prepare list of tanks that are in current stage but not in next stage
 	list parts in parts.
 	for t in parts if t:stage = stage:number-1 {
 		local amount is 0.
@@ -35,14 +47,15 @@ function stagingCheck {
 		stagingPrepare().
 	wait until stage:ready.
 
-//	need to stage because all engines are without fuel?
+	// need to stage because all engines are without fuel?
 	local function checkEngines {
 		if stagingEngines:empty return false.
 		for e in stagingEngines if not e:flameout
 			return false.
 		return true.
 	}
-//	need to stage because all tanks are empty?
+
+	// need to stage because all tanks are empty?
 	local function checkTanks {
 		if stagingTanks:empty return false.
 		for t in stagingTanks {
@@ -53,10 +66,11 @@ function stagingCheck {
 		}
 		return true.
 	}
+
 	if checkEngines() or checkTanks() or availableThrust = 0 {
 		stage.
-	//	this is optional and unnecessary if TWR does not change much,
-	//	but can prevent wierd steering behaviour after staging
+		// this is optional and unnecessary if TWR does not change much,
+		// but can prevent weird steering behaviour after staging
 		steeringManager:resetPids().
 		wait until stage:ready.
 	}
