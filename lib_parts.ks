@@ -35,7 +35,7 @@ FUNCTION partsExtendAntennas {
     partsDoIt("ModuleDeployableAntenna", "Extend", TAG).
 }
 
-FUNCTION partsExtendAntennas {
+FUNCTION partsRetractAntennas {
     PARAMETER TAG IS "".
     partsDoIt("ModuleDeployableAntenna", "Retract", TAG).
 }
