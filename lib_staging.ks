@@ -6,21 +6,31 @@
 
 // LOGIC: Stage if either availableThrust = 0 (separator-only, fairing-only stage)
 // or all engines that are to be separated by staging flame out
-// or all tanks to be separated that were not empty are empty now
+// or all tanks (and boosters) to be separated that were not empty are empty now
+
+// TAG NOAUTO: use "noauto" tag on any decoupler to instruct this library to never stage it
+// note: can use multiple tags if separated by whitespace (e.g. "noauto otherTag") or other word-separators ("tag,noauto.anything;more").
 
 // list of all consumed fuels (for deltaV; add e.g. Karbonite and/or MonoPropellant if using such mods)
-global stagingConsumed is list("Oxidizer","SolidFuel", "LiquidFuel").
+global stagingConsumed is list("SolidFuel", "LiquidFuel", "Oxidizer").
+
 // list of fuels for empty-tank identification (for dual-fuel tanks use only one of the fuels)
-global stagingTankFuels is list("LiquidFuel"). //Oxidizer and SolidFuel intentionally not included
+// note: SolidFuel is in list for booster+tank combo, both need to be empty to stage
+global stagingTankFuels is list("SolidFuel", "LiquidFuel"). //Oxidizer intentionally not included (would need extra logic)
+
+// list of modules that identify decoupler
+global stagingDecouplerModules is list("ModuleDecouple", "ModuleAnchoredDecoupler").
 
 // Standard gravity for ISP
 // https://en.wikipedia.org/wiki/Specific_impulse
 // https://en.wikipedia.org/wiki/Standard_gravity
 global isp_g0 is kerbin:mu/kerbin:radius^2. // exactly 9.81 in KSP 1.3.1, 9.80665 for Earth
-// note that constang:G*kerbin:mass/kerbin:radius^2 yields 9.80964723...
+// note that constant:G*kerbin:mass/kerbin:radius^2 yields 9.80964723..., correct value could be 9.82
 
 // work variables for staging logic
 global stagingNumber	is -1.		// stage:number when last calling stagingPrepare()
+global stagingMaxStage	is 0.		// stop staging if stage:number is lower or same as this
+global stagingResetMax	is true.	// reset stagingMaxStage to 0 if we passed it (search for next "noauto")
 global stagingEngines	is list().	// list of engines that all need to flameout to stage
 global stagingTanks		is list().	// list of tanks that all need to be empty to stage
 // info for and from stageDeltaV
@@ -29,13 +39,21 @@ global stageStdIsp		is 0.		// average ISP in N*s/kg (stageAvgIsp*isp_g0)
 global stageDryMass		is 0.		// dry mass just before staging
 global stageBurnTime	is 0.		// updated in stageDeltaV()
 
-// return stage number where the part is decoupled (needed for engines)
+// return stage number where the part is decoupled (probably Part.separationIndex in KSP API)
 function stagingDecoupledIn {
 	parameter part.
-	// for all parts except engines, :STAGE is the stage number where they are decoupled
-	// for engines, this is the number they are activated, so we find first non-engine part in parent list
-	until not part:istype("engine") {
-		if not part:hasParent return -1. // cannot separate root
+
+	local function partIsDecoupler {
+		parameter part.
+		for m in stagingDecouplerModules if part:modules:contains(m) {
+			if part:tag:matchesPattern("\bnoauto\b") and part:stage+1 >= stagingMaxStage
+				set stagingMaxStage to part:stage+1.
+			return true.
+		}
+		return false.
+	}
+	until partIsDecoupler(part) {
+		if not part:hasParent return -1.
 		set part to part:parent.
 	}
 	return part:stage.
@@ -43,32 +61,34 @@ function stagingDecoupledIn {
 
 // to be called whenever current stage changes to prepare data for quicker test and other functions
 function stagingPrepare {
-	wait until stage:ready.
-	set stagingNumber	to stage:number.
-	set stagingEngines	to list().
-	set stagingTanks	to list().
-	if stage:number = 0 return.
 
-	// prepare list of engines that are to be decoupled by staging
-	list engines in engines.
-	for e in engines if e:stage = stage:number and stagingDecoupledIn(e) = stage:number-1
-		stagingEngines:add(e).
+	wait until stage:ready.
+	set stagingNumber to stage:number.
+	if stagingResetMax and stagingMaxStage >= stagingNumber
+		set stagingMaxStage to 0.
+	stagingEngines:clear().
+	stagingTanks:clear().
 
 	// prepare list of tanks that are to be decoupled and have some fuel
 	list parts in parts.
-	for t in parts if t:stage = stage:number-1 {
+	for p in parts {
 		local amount is 0.
-		for r in t:resources if stagingTankFuels:contains(r:name)
+		for r in p:resources if stagingTankFuels:contains(r:name)
 			set amount to amount + r:amount.
-		if amount > 0.01
-			stagingTanks:add(t).
+		if amount > 0.01 and stagingDecoupledIn(p) = stage:number-1
+			stagingTanks:add(p).
 	}
 
-	// prepare average ISP for stageDeltaV()
+	// prepare list of engines that are to be decoupled by staging
+	// and average ISP for stageDeltaV()
+	list engines in engines.
 	local thrust is 0.
     local flow is 0.
-	list engines in engines.
-	for e in engines if e:ignition and e:isp > 0 {
+	for e in engines if e:ignition and e:isp > 0
+	{
+		if stagingDecoupledIn(e) = stage:number-1
+			stagingEngines:add(e).
+
 		local t is e:availableThrust.
 		set thrust to thrust + t.
 		set flow to flow + t / e:isp. // thrust=isp*g0*dm/dt => flow = sum of thrust/isp
@@ -91,6 +111,8 @@ function stagingCheck {
 	wait until stage:ready.
 	if stage:number <> stagingNumber
 		stagingPrepare().
+	if stage:number <= stagingMaxStage
+		return.
 
 	// need to stage because all engines are without fuel?
 	local function checkEngines {

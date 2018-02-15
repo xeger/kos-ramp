@@ -25,9 +25,6 @@ runoncepath("lib_staging").
 
 uiBanner("ascend","Ascend to " + round(apo/1000) + "km; heading " + hdglaunch + "º").
 
-// Number of seconds to sleep during ascent loop
-global launch_tick is 1.
-
 // Starting/ending height of gravity turn
 // TODO adjust for atmospheric pressure; this works for Kerbin
 global launch_gt0 is body:atm:height * 0.007. // About 500m in Kerbin
@@ -102,7 +99,7 @@ lock throttle to ascentThrottle().
 until ship:obt:apoapsis >= apo {
   stagingCheck().
   ascentFairing().
-  wait launch_tick.
+  wait 0.
 }
 
 uiBanner("Launch", "Engine cutoff").
@@ -123,18 +120,23 @@ wait until utilIsShipFacing(heading(hdglaunch,0):vector).
 local AdjustmentThrottle is 0.
 lock throttle to AdjustmentThrottle.
 until ship:altitude > body:atm:height {
-  if ship:obt:apoapsis < apo set AdjustmentThrottle to ascentThrottle().
-  else set AdjustmentThrottle to 0.
-  wait launch_tick.
+  if ship:obt:apoapsis < apo {
+  	set AdjustmentThrottle to ascentThrottle().
+    stagingCheck().
+	wait 0.
+  } else {
+    set AdjustmentThrottle to 0.
+    wait 0.5.
+  }
 }
 // Discard fairings, if they aren't yet.
-ascentFairing(). wait launch_tick.
+ascentFairing(). wait 1.
 
 // Give power and communication to the ship
 fuelcells on.
 panels on.
 partsExtendAntennas().
-wait launch_tick.
+wait 1.
 
 // Release controls. Turn on RCS to help steer to circularization burn.
 unlock steering.
