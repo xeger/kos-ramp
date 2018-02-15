@@ -12,18 +12,22 @@
 // note: can use multiple tags if separated by whitespace (e.g. "noauto otherTag") or other word-separators ("tag,noauto.anything;more").
 
 // list of all consumed fuels (for deltaV; add e.g. Karbonite and/or MonoPropellant if using such mods)
+if not (defined stagingConsumed)
 global stagingConsumed is list("SolidFuel", "LiquidFuel", "Oxidizer").
 
 // list of fuels for empty-tank identification (for dual-fuel tanks use only one of the fuels)
 // note: SolidFuel is in list for booster+tank combo, both need to be empty to stage
+if not (defined stagingTankFuels)
 global stagingTankFuels is list("SolidFuel", "LiquidFuel"). //Oxidizer intentionally not included (would need extra logic)
 
 // list of modules that identify decoupler
+if not (defined stagingDecouplerModules)
 global stagingDecouplerModules is list("ModuleDecouple", "ModuleAnchoredDecoupler").
 
 // Standard gravity for ISP
 // https://en.wikipedia.org/wiki/Specific_impulse
 // https://en.wikipedia.org/wiki/Standard_gravity
+if not (defined isp_g0)
 global isp_g0 is kerbin:mu/kerbin:radius^2. // exactly 9.81 in KSP 1.3.1, 9.80665 for Earth
 // note that constant:G*kerbin:mass/kerbin:radius^2 yields 9.80964723..., correct value could be 9.82
 
@@ -103,8 +107,6 @@ function stagingPrepare {
 		set fuelMass to fuelMass + r:amount*r:density.
 	set stageDryMass to ship:mass-fuelMass.
 }
-// prepare now
-stagingPrepare().
 
 // to be called repeatedly
 function stagingCheck {

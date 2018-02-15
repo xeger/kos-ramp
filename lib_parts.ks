@@ -1,190 +1,219 @@
-FUNCTION partsDoIt {
-    PARAMETER MODULENAME.
-    PARAMETER ACTIONNAME.
-    PARAMETER TAG IS "".
-    
-    LOCAL SUCCESS IS FALSE.
-    IF Career():CANDOACTIONS {
-        FOR P IN SHIP:PARTSTAGGED(TAG) {
-            IF P:MODULES:CONTAINS(MODULENAME) {
-                LOCAL M IS P:GETMODULE(MODULENAME).
-                FOR A IN M:ALLACTIONNAMES() {
-                    IF A:CONTAINS(ACTIONNAME) {
-                        M:DOACTION(A,True).
-                        SET SUCCESS TO TRUE.
-                    }
-                }.
-            }
-        }.
-    }
-    RETURN SUCCESS.
+// events are preferred because there are no restrictions
+function partsDoEvent {
+	parameter module.
+	parameter event.
+	parameter tag is "".
+	
+	set event to "^"+event+"\b". // match first word
+	local success is false.
+	local maxStage is -1.
+	if tag = "" and (defined stagingMaxStage)
+		set maxStage to stagingMaxStage-1. //see lib_staging
+	for p in ship:partsTagged(tag) {
+		if p:stage >= maxStage and p:modules:contains(module) {
+			local m is p:getModule(module).
+			for e in m:allEventNames() {
+				if e:matchesPattern(event) {
+					m:doEvent(e).
+					set success to true.
+				}
+			}
+		}
+	}
+	return success.
+}
+// actions are only accessible if VAB or SPH upgraded enough
+function partsDoAction {
+	parameter module.
+	parameter action.
+	parameter tag is "".
+	
+	local success is false.
+	if Career():canDoActions {
+		set action to "^"+action+"\b". // match first word
+		local maxStage is -1.
+		if tag = "" and (defined stagingMaxStage)
+			set maxStage to stagingMaxStage-1. //see lib_staging
+		for p in ship:partsTagged(tag) {
+			if p:stage >= maxStage and p:modules:contains(module) {
+				local m is p:getModule(module).
+				for a in m:allActionNames() {
+					if a:matchesPattern(action) {
+						m:doAction(a,True).
+						set success to true.
+					}
+				}
+			}
+		}
+	}
+	return success.
 }
 
-FUNCTION partsExtendSolarPanels {
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleDeployableSolarPanel", "Extend", TAG).
+function partsExtendSolarPanels {
+	parameter tag is "".
+	return partsDoEvent("ModuleDeployableSolarPanel", "extend", tag).
 }
 
-FUNCTION partsRetractSolarPanels {
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleDeployableSolarPanel", "Retract", TAG).
+function partsRetractSolarPanels {
+	parameter tag is "".
+	return partsDoEvent("ModuleDeployableSolarPanel", "retract", tag).
 }
 
-FUNCTION partsExtendAntennas {
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleDeployableAntenna", "Extend", TAG).
+function partsExtendAntennas {
+	parameter tag is "".
+	return partsDoEvent("ModuleDeployableAntenna", "extend", tag).
 }
 
-FUNCTION partsRetractAntennas {
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleDeployableAntenna", "Retract", TAG).
+function partsRetractAntennas {
+	parameter tag is "".
+	return partsDoEvent("ModuleDeployableAntenna", "Retract", tag).
 }
 
-FUNCTION partsDisableReactionWheels {
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleReactionWheel", "deactivate", TAG).
+function partsDisableReactionWheels {
+	parameter tag is "".
+	return partsDoAction("ModuleReactionWheel", "deactivate", tag).
 }
 
-FUNCTION partsEnableReactionWheels {
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleReactionWheel", "activate", TAG).
+function partsEnableReactionWheels {
+	parameter tag is "".
+	return partsDoAction("ModuleReactionWheel", "activate", tag).
 }
 
-FUNCTION partsRetractRadiators {
-    //If you want to turn on or off all the radiators you can use the built in variable RADIATORS, ie:
-    // RADIATORS ON.
-    // RADIATORS OFF.
-    // This function only retract deployable radiators. Useful for reentry.
-    PARAMETER TAG IS "".
-    partsDoIt("ModuleDeployableRadiator", "Retract", TAG).
+function partsRetractRadiators {
+	//If you want to turn on or off all the radiators you can use the built in variable RADIATORS, ie:
+	// RADIATORS ON.
+	// RADIATORS OFF.
+	// This function only retract deployable radiators. Useful for reentry.
+	parameter tag is "".
+	return partsDoEvent("ModuleDeployableRadiator", "Retract", tag).
 }
 
 
 //Try to control from the specified docking port.
-FUNCTION partsControlFromDockingPort {
-    parameter cPart. //The docking port you want to control from.
-    local success is false.
+function partsControlFromDockingPort {
+	parameter cPart. //The docking port you want to control from.
+	local success is false.
 
-    // Try to control from the port
-    if cPart:MODULES:CONTAINS("ModuleDockingNode") {
-        LOCAL M IS cPart:GETMODULE("ModuleDockingNode").
-        FOR Event IN M:ALLEVENTNAMES() {
-            IF Event:CONTAINS("Control") { M:DOEVENT(Event). success on. }
-        }.
-    }
+	// Try to control from the port
+	if cPart:modules:contains("ModuleDockingNode") {
+		local m is cPart:getModule("ModuleDockingNode").
+		for Event in m:allEventNames() {
+			if Event:contains("Control") { m:DOEVENT(Event). success on. }
+		}.
+	}
 
-    // Try to open/deploy the port
-    if cPart:MODULES:CONTAINS("ModuleAnimateGeneric") {
-        LOCAL M IS cPart:GETMODULE("ModuleAnimateGeneric").
-        FOR Event IN M:ALLEVENTNAMES() {
-            IF Event:CONTAINS("open") or Event:CONTAINS("deploy") or Event:CONTAINS("extend") { M:DOEVENT(Event). }
-        }.
-    }
+	// Try to open/deploy the port
+	if cPart:modules:contains("ModuleAnimateGeneric") {
+		local m is cPart:getModule("ModuleAnimateGeneric").
+		for Event in m:allEventNames() {
+			if Event:contains("open") or Event:contains("deploy") or Event:contains("extend") { m:DOEVENT(Event). }
+		}.
+	}
 
-    Return success.
+	Return success.
 }
 
-FUNCTION partsDeployFairings {
-    RETURN partsDoIt("ModuleProceduralFairing", "deploy").
+function partsDeployFairings {
+	return partsDoEvent("ModuleProceduralFairing", "deploy").
 }
 
-FUNCTION partsHasTermometer {
+function partsHasTermometer {
 // Checks if ship have required sensors:
 // - Termometer
-LOCAL HasT IS False.
-LIST SENSORS IN SENSELIST.
-FOR S IN SENSELIST {
-    IF S:TYPE = "TEMP" { SET HasT to True. }
-}
-RETURN HasT.
-}
-
-
-FUNCTION partsDisarmsChutes {
-    // Make sure all chutes are disarmed, even if already staged.
-    // Warning: If chutes are staged and disarmed, SPACEBAR will not deploy they!
-    //          Use CHUTES ON. command or right click menu.
-    partsDoIt("ModuleParachute", "disarm").
+	local HasT is False.
+	LIST SENSORS in SENSELIST.
+	for S in SENSELIST {
+		if S:TYPE = "TEMP" { set HasT to True. }
+	}
+	return HasT.
 }
 
-FUNCTION partsPercentEC {
-    FOR R IN SHIP:RESOURCES {
-        IF R:NAME = "ELECTRICCHARGE" {
-            RETURN R:AMOUNT / R:CAPACITY * 100.
-        }
-    }
-    RETURN 0.
+
+function partsDisarmsChutes {
+	// Make sure all chutes are disarmed, even if already staged.
+	// Warning: If chutes are staged and disarmed, SPACEBAR will not deploy they!
+	//			Use CHUTES ON. command or right click menu.
+	return partsDoAction("ModuleParachute", "disarm").
 }
 
-FUNCTION partsPercentLFO {
-    LOCAL LFCAP IS 0.
-    LOCAL LFAMT IS 0.
-    LOCAL OXCAP IS 0.
-    LOCAL OXAMT IS 0.
-    LOCAL SURPLUS IS 0.
-    FOR R IN SHIP:RESOURCES {
-        IF R:NAME = "LIQUIDFUEL" {
-            SET LFCAP TO R:CAPACITY.
-            SET LFAMT TO R:AMOUNT.
-        }
-        ELSE IF R:NAME = "OXIDIZER" {
-            SET OXCAP TO R:CAPACITY.
-            SET OXAMT TO R:AMOUNT.
-        }
-    }
-    IF OXCAP = 0 OR LFCAP = 0 {
-        RETURN 0.
-    }
-    ELSE {
-        IF OXCAP * (11/9) < LFCAP { // Surplus fuel
-            RETURN OXAMT/OXCAP*100.
-        }
-        ELSE { // Surplus oxidizer or proportional amonts
-            RETURN LFAMT/LFCAP*100.
-        }
-    }
+function partsPercentEC {
+	for R in ship:resources {
+		if R:NAME = "ELECTRICCHARGE" {
+			return R:AMOUNT / R:CAPACITY * 100.
+		}
+	}
+	return 0.
 }
 
-FUNCTION partsPercentMP {
-    FOR R IN SHIP:RESOURCES {
-        IF R:NAME = "MONOPROPELLANT" {
-            RETURN R:AMOUNT / R:CAPACITY * 100.
-        }
-    }
-    RETURN 0.
+function partsPercentLFO {
+	local LFCAP is 0.
+	local LFAMT is 0.
+	local OXCAP is 0.
+	local OXAMT is 0.
+	local SURPLUS is 0.
+	for R in ship:resources {
+		if R:NAME = "LIQUIDFUEL" {
+			set LFCAP to R:CAPACITY.
+			set LFAMT to R:AMOUNT.
+		}
+		else if R:NAME = "OXIDIZER" {
+			set OXCAP to R:CAPACITY.
+			set OXAMT to R:AMOUNT.
+		}
+	}
+	if OXCAP = 0 OR LFCAP = 0 {
+		return 0.
+	}
+	else {
+		if OXCAP * (11/9) < LFCAP { // Surplus fuel
+			return OXAMT/OXCAP*100.
+		}
+		else { // Surplus oxidizer or proportional amonts
+			return LFAMT/LFCAP*100.
+		}
+	}
 }
 
-FUNCTION partsMMEngineClosedCycle {
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("MultiModeEngine") {
-            LOCAL M IS P:GETMODULE("MultiModeEngine").
-			IF M:HasField("mode") and M:GetField("mode"):Contains("Air") {
-				FOR Event IN M:ALLEVENTNAMES() {
-					IF Event:CONTAINS("toggle") M:DoEvent(Event).
+function partsPercentMP {
+	for R in ship:resources {
+		if R:NAME = "MONOPROPELLANT" {
+			return R:AMOUNT / R:CAPACITY * 100.
+		}
+	}
+	return 0.
+}
+
+function partsMMEngineClosedCycle {
+	for p in ship:parts {
+		if p:modules:contains("MultiModeEngine") {
+			local m is p:getModule("MultiModeEngine").
+			if m:HasField("mode") and m:GetField("mode"):Contains("Air") {
+				for Event in m:allEventNames() {
+					if Event:contains("toggle") m:DoEvent(Event).
 				}.
 			}
 		}
-    }.
+	}.
 }
 
-FUNCTION partsMMEngineAirBreathing {
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("MultiModeEngine") {
-            LOCAL M IS P:GETMODULE("MultiModeEngine").
-			IF M:HasField("mode") and M:GetField("mode"):Contains("Closed") {
-				FOR Event IN M:ALLEVENTNAMES() {
-					IF Event:CONTAINS("toggle") M:DoEvent(Event).
+function partsMMEngineAirBreathing {
+	for p in ship:parts {
+		if p:modules:contains("MultiModeEngine") {
+			local m is p:getModule("MultiModeEngine").
+			if m:HasField("mode") and m:GetField("mode"):Contains("Closed") {
+				for Event in m:allEventNames() {
+					if Event:contains("toggle") m:DoEvent(Event).
 				}.
 			}
 		}
-    }.
+	}.
 }
 
 
-FUNCTION partsReverseThrust {
-    RETURN partsDoIt("ModuleAnimateGeneric", "reverse").
+function partsReverseThrust {
+	return partsDoAction("ModuleAnimateGeneric", "reverse").
 }
 
-FUNCTION partsForwardThrust {
-    partsDoIt("ModuleAnimateGeneric", "forward").
+function partsForwardThrust {
+	return partsDoAction("ModuleAnimateGeneric", "forward").
 }
