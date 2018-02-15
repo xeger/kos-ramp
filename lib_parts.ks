@@ -1,53 +1,53 @@
-FUNCTION partsExtendAntennas { 
+FUNCTION partsDoIt {
+    PARAMETER MODULENAME.
+    PARAMETER ACTIONNAME.
+    PARAMETER TAG IS "".
+    
+    LOCAL SUCCESS IS FALSE.
     IF Career():CANDOACTIONS {
-        FOR P IN SHIP:PARTS {
-            IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
-                LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
+        FOR P IN SHIP:PARTSTAGGED(TAG) {
+            IF P:MODULES:CONTAINS(MODULENAME) {
+                LOCAL M IS P:GETMODULE(MODULENAME).
                 FOR A IN M:ALLACTIONNAMES() {
-                    IF A:CONTAINS("Extend") { M:DOACTION(A,True). }
+                    IF A:CONTAINS(ACTIONNAME) {
+                        M:DOACTION(A,True).
+                        SET SUCCESS TO TRUE.
+                    }
                 }.
             }
         }.
     }
+    RETURN SUCCESS.
+}
+
+FUNCTION partsExtendSolarPanels {
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleDeployableSolarPanel", "Extend", TAG).
+}
+
+FUNCTION partsRetractSolarPanels {
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleDeployableSolarPanel", "Retract", TAG).
+}
+
+FUNCTION partsExtendAntennas {
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleDeployableAntenna", "Extend", TAG).
 }
 
 FUNCTION partsRetractAntennas {
-    IF Career():CANDOACTIONS {
-        FOR P IN SHIP:PARTS {
-            IF P:MODULES:CONTAINS("ModuleDeployableAntenna") {
-                LOCAL M IS P:GETMODULE("ModuleDeployableAntenna").
-                FOR A IN M:ALLACTIONNAMES() {
-                    IF A:CONTAINS("Retract") { M:DOACTION(A,True). }
-                }.
-            }
-        }.
-    }
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleDeployableAntenna", "Retract", TAG).
 }
 
 FUNCTION partsDisableReactionWheels {
-    IF Career():CANDOACTIONS {
-        FOR P IN SHIP:PARTS {
-            IF P:MODULES:CONTAINS("ModuleReactionWheel") {
-                LOCAL M IS P:GETMODULE("ModuleReactionWheel").
-                FOR A IN M:ALLACTIONNAMES() {
-                    IF A:CONTAINS("deactivate") { M:DOACTION(A,True). }
-                }.
-            }
-        }.
-    }
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleReactionWheel", "deactivate", TAG).
 }
 
 FUNCTION partsEnableReactionWheels {
-    IF Career():CANDOACTIONS {
-        FOR P IN SHIP:PARTS {
-            IF P:MODULES:CONTAINS("ModuleReactionWheel") {
-                LOCAL M IS P:GETMODULE("ModuleReactionWheel").
-                FOR A IN M:ALLACTIONNAMES() {
-                    IF A:CONTAINS("activate") { M:DOACTION(A,True). }
-                }.
-            }
-        }.
-    }
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleReactionWheel", "activate", TAG).
 }
 
 FUNCTION partsRetractRadiators {
@@ -55,16 +55,8 @@ FUNCTION partsRetractRadiators {
     // RADIATORS ON.
     // RADIATORS OFF.
     // This function only retract deployable radiators. Useful for reentry.
-    IF Career():CANDOACTIONS {
-        FOR P IN SHIP:PARTS {
-            IF P:MODULES:CONTAINS("ModuleDeployableRadiator") {
-                LOCAL M IS P:GETMODULE("ModuleDeployableRadiator").
-                FOR A IN M:ALLACTIONNAMES() {
-                    IF A:CONTAINS("Retract") { M:DOACTION(A,True). }
-                }.
-            }
-        }.
-    }
+    PARAMETER TAG IS "".
+    partsDoIt("ModuleDeployableRadiator", "Retract", TAG).
 }
 
 
@@ -93,19 +85,7 @@ FUNCTION partsControlFromDockingPort {
 }
 
 FUNCTION partsDeployFairings {
-    local ReturnValue is false.
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleProceduralFairing") {
-            LOCAL M IS P:GETMODULE("ModuleProceduralFairing").
-            FOR Event IN M:ALLEVENTNAMES() {
-                IF Event:CONTAINS("deploy") {
-                    M:DOEVENT(Event).
-                    set ReturnValue to True.
-                }
-            }.
-        }
-    }.
-    Return ReturnValue.
+    RETURN partsDoIt("ModuleProceduralFairing", "deploy").
 }
 
 FUNCTION partsHasTermometer {
@@ -124,14 +104,7 @@ FUNCTION partsDisarmsChutes {
     // Make sure all chutes are disarmed, even if already staged.
     // Warning: If chutes are staged and disarmed, SPACEBAR will not deploy they!
     //          Use CHUTES ON. command or right click menu.
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleParachute") {
-            LOCAL M IS P:GETMODULE("ModuleParachute").
-            FOR Event IN M:ALLEVENTNAMES() {
-                IF Event:CONTAINS("disarm") M:DOEVENT(Event).
-            }.
-        }
-    }.
+    partsDoIt("ModuleParachute", "disarm").
 }
 
 FUNCTION partsPercentEC {
@@ -209,28 +182,9 @@ FUNCTION partsMMEngineAirBreathing {
 
 
 FUNCTION partsReverseThrust {
-    local HaveReverser is false.
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleAnimateGeneric") {
-            LOCAL M IS P:GETMODULE("ModuleAnimateGeneric").
-            FOR Event IN M:ALLEVENTNAMES() {
-                IF Event:CONTAINS("reverse") {
-                    M:DoEvent(Event).
-                    set HaveReverser to True.
-                }
-            }.
-		}
-    }.
-    Return HaveReverser.
+    RETURN partsDoIt("ModuleAnimateGeneric", "reverse").
 }
 
 FUNCTION partsForwardThrust {
-    FOR P IN SHIP:PARTS {
-        IF P:MODULES:CONTAINS("ModuleAnimateGeneric") {
-            LOCAL M IS P:GETMODULE("ModuleAnimateGeneric").
-            FOR Event IN M:ALLEVENTNAMES() {
-                IF Event:CONTAINS("forward") M:DoEvent(Event).
-            }.
-		}
-    }.
+    partsDoIt("ModuleAnimateGeneric", "forward").
 }
