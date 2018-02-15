@@ -65,7 +65,6 @@ WAIT 5.
 
 //Set up volumes
 SET HD TO CORE:VOLUME.
-SET ARC TO 0.
 SET StartupLocalFile TO "startup.ks".
 SET Failsafe TO false.
 
@@ -75,35 +74,26 @@ IF HOMECONNECTION:ISCONNECTED {
 	SET ARC TO VOLUME(0).
 	SWITCH TO ARC.
 
-  IF EXISTS("ramp") {
-	  CD ("ramp").
-  } ELSE IF EXISTS("kos-ramp") {
-    CD ("kos-ramp").
+  IF EXISTS("kos-ramp") {
+	  CD ("kos-ramp").
+  } ELSE IF EXISTS("ramp") {
+    CD ("ramp").
   }
 
-  LOCAL copyok is TRUE.
-	LIST FILES IN fls.
-  LOCAL fSize is 0.
-  FOR f IN fls {
-    IF f:NAME:ENDSWITH(".ks") {
-      SET fSize to fSize + f:SIZE.
+  RUNONCEPATH("lib_install.ks").
+  LOCAL success IS false.
+
+  IF installIsPossible() {
+    if installFiles() {
+      bootConsole("RAMP initialized").
+    }
+    ELSE {
+      bootWarning("RAMP failsafe (copy failed)").
+      failsafe on.
     }
   }
-  if core:volume:freespace > fSize {
-  	FOR f IN fls {
-      IF f:NAME:ENDSWITH(".ks") {
-        IF NOT COPYPATH(f,HD) { COPYOK OFF. }.
-      }
-  	}
-  	IF copyok {
-  		bootConsole("RAMP initialized").
-  	}
-  	ELSE {
-  		bootWarning("RAMP failsafe: copy failed").
-      failsafe on.
-  	}
-  } else {
-    bootWarning("RAMP failsafe: insufficient space").
+  ELSE {
+    bootWarning("RAMP failsafe (too big)").
     failsafe on.
   }
 }
@@ -133,24 +123,31 @@ ELSE {
 
 LOCAL StartupOk is FALSE.
 
-bootConsole("Looking for remote startup script...").
 IF HOMECONNECTION:ISCONNECTED {
-	LOCAL StartupScript is PATH("0:/start/"+SHIP:NAME).
-	IF EXISTS(StartupScript) {
-		bootConsole("Copying remote startup script from archive.").
+  bootConsole("Looking for remote startup script...").
+	LOCAL shipScript is PATH("0:/start/"+SHIP:NAME).
+  LOCAL coreScript is PATH(shipScript + "-" + CORE:TAG).
+  local toCopy is "".
+  IF EXISTS(coreScript) {
+    set toCopy to coreScript.
+	} ELSE IF EXISTS(shipScript) {
+    set toCopy to shipScript.
+  } else {
+    PRINT "No remote startup script found.".
+    PRINT "You can create a sample one by typing:".
+    PRINT "  RUN UTIL_MAKESTARTUP.".
+  }
+
+  IF toCopy <> "" {
+    bootConsole("Copying remote startup script from archive.").
     SWITCH TO HD.
-		IF COPYPATH(StartupScript, StartupLocalFile) {
-			StartupOk ON.
-		}
-		ELSE {
-			bootConsole("Could not copy the file. Is there enough space?").
-		}
-	}
-	ELSE {
-		PRINT "No remote startup script found.".
-		PRINT "You can create a sample one by typing:".
-		PRINT "RUN UTIL_MAKESTARTUP.".
-	}
+    IF COPYPATH(toCopy, StartupLocalFile) {
+      StartupOk ON.
+    }
+    ELSE {
+      bootConsole("Could not copy the file. Is there enough space?").
+    }
+  }
 }
 ELSE {
 	IF EXISTS(StartupLocalFile) {
@@ -168,7 +165,7 @@ IF NOT Failsafe {
 }
 
 IF StartupOk {
-	RUNPATH(Startup).
+	RUNPATH(StartupLocalFile).
 }
 ELSE {
   bootWarning("RAMP: need input").
