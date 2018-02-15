@@ -2,7 +2,8 @@ Universal RAMP Boot Loader `(/boot/boot.ks)`
 ============================================
 
 This program is intended to manage any kind of craft without needing to access the archive in real-time.
-It can update RAMP code on ship's drive, extend antennas to reach Kerbal Space Center and also look for a ship specific mission file. When no connection to KSC is available, it will work off-line without prejudice.
+
+It can update RAMP code on ship's drive, extend antennas to reach Kerbal Space Center and also look for a ship-specific mission file. When no connection to KSC is available, it will work offline without prejudice.
 
 Folder structure
 ----------------
@@ -14,17 +15,25 @@ Optionally, RAMP can log its console outputs to a file in `/logs` folder. See `l
 Craft start-up script
 ---------------------
 
-You should provide a craft start-up script in `/start` folder. If no such script is found, `boot.ks` will just copy all RAMP scripts to the vessel's drive and stop. 
-You can use the script `util_makestartup.ks` to create a sample file for your ship. You'll find it in the `/start` folder, and the sample code is similar to this:
+You should provide a craft start-up script in `/start` folder that contains
+your vessel's mission logic.
+
+If no script is found for your craft, `boot.ks` will just copy all RAMP scripts
+to the vessel's drive and stop.
+
+You can use the script `initialize.ks` to create a sample mission for your ship. You'll find it in the `/start` folder and will be named after your ship. Although it's a sample, it might get you to Mun if you uncomment the transfer command:
+
 ```
-    IF SHIP:STATUS = "PRELAUNCH" {
-        RUN launch_asc(120000). // Launches to 120km
-        SET TARGET TO MUN. //We choose go to to the Mun and do the other things!
-        RUN transfer.
-        // TODO: Do the other things, not because they are easy, but because they are hard!
-    }
+// We choose go to to the Mun and do the other things!
+set target to mun.
+
+// TODO: Do the other things, not because they are easy, but because they are hard!
+//run transfer.
 ```
-Fell free to change that to anything that suits your mission! 
+
+Feel free to change that to anything that suits your mission, or to copy a
+more robust and complete example from the scripts under the `mission/`
+folder.
 
 Disk space usage
 ----------------
