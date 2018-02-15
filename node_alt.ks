@@ -6,23 +6,23 @@
 /////////////////////////////////////////////////////////////////////////////
 
 parameter alt.
+parameter nodetime is time:seconds + 120.
 
-local mu is constant():G * ship:obt:body:mass.
-local rb is ship:obt:body:radius.
-local burnTime is time:seconds + 120.
+local mu is body:mu.
+local br is body:radius.
 
 // present orbit properties
-local vom is VELOCITYAT(ship,burnTime):orbit:mag.  // actual velocity
-local r is rb + altitude.
-local va is sqrt( vom^2 ). // velocity in periapsis
-local a is (periapsis + 2*rb + apoapsis)/2. // semi major axis present orbit
+local vom is ship:velocity:orbit:mag.  // current velocity
+local r is br + altitude.  // current radius
+local v1 is velocityat(ship, nodetime):orbit:mag. // velocity at burn time
+local sma1 is orbit:semimajoraxis.
 
 // future orbit properties
-local r2 is rb + altitude.
-local a2 is (alt + 2*rb + periapsis)/2. // semi major axis target orbit
-local v2 is sqrt( vom^2 + (mu * (2/r2 - 2/r + 1/a - 1/a2 ) ) ).
+local r2 is br + ship:body:altitudeof(positionat(ship, nodetime)).
+local sma2 is (alt + br + r2)/2.
+local v2 is sqrt( vom^2 + (mu * (2/r2 - 2/r + 1/sma1 - 1/sma2 ) ) ).
 
 // create node
-local deltav is v2 - va.
-local nd is node(burnTime, 0, 0, deltav).
+local deltav is v2 - v1.
+local nd is node(nodetime, 0, 0, deltav).
 add nd.
