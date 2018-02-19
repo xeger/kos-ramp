@@ -218,11 +218,12 @@ FUNCTION utilRCSCancelVelocity {
 // Ship is facing the FaceVec whiting a tolerance of maxDeviationDegrees and
 // with a Angular velocity less than maxAngularVelocity.
 function utilIsShipFacing { 
-  parameter FaceVec.
+  parameter face.
   parameter maxDeviationDegrees is 8.
   parameter maxAngularVelocity is 0.01.
 
-  return vdot(FaceVec:normalized, ship:facing:forevector:normalized) >= cos(maxDeviationDegrees) and
+  if face:istype("direction") set face to face:vector.
+  return vdot(face:normalized, ship:facing:forevector:normalized) >= cos(maxDeviationDegrees) and
          ship:angularvel:mag < maxAngularVelocity. 
 }
 
@@ -288,6 +289,7 @@ function utilMeanFromTrue {
 	parameter a.
 	parameter obt is orbit.
 	set e to obt:eccentricity.
+	if e < 0.001 return a. //circular, no need for conversion
 	if e >= 1 { print "ERROR: meanFromTrue("+round(a,2)+") with e=" + round(e,5). return a. }
 	set a to a*.5.
 	set a to 2*arctan2(sqrt(1-e)*sin(a),sqrt(1+e)*cos(a)).
