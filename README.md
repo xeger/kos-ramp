@@ -61,12 +61,13 @@ Automating a Mission
 If you want to script your entire mission end-to-end, it is highly suggested
 that you choose `boot` as the boot script for your vessel's main CPU. When
 your ship is on the pad, `RUN initialize.` to create a sample Mun mission for
-your craft.
+your craft. Finally, `REBOOT.` to perform the automated sample mission.
 
 To change the mission profile, just edit the startup script that now lives under
-`start/YourCraftName.ks` and launch a fresh craft of that name. The sample script
-is not very robust; under the `mission/` subfolder, RAMP provides several other
-example missions from which you can derive startup files.
+`start/YourCraftName.ks` and launch a fresh craft of the same name. The sample
+mission is not very robust or interesting; under the `mission/` subfolder, RAMP
+provides several other example missions that you can copy into `start/` and
+edit to your liking.
 
 You can learn more about bootstrapping in [this file.](https://github.com/xeger/kos-ramp/blob/master/boot/README.md)
 

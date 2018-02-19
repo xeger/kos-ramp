@@ -12,16 +12,16 @@ Since kOS v1.0.0 there is support for subfolders. A special subfolder called `bo
 When it runs, `boot.ks` will look for a file with the same name of your ship inside `/start` folder, then copy that file to ship's drive and runs it from there. You can update ship's start script at any time, and the next time kOS computer reboots, it will look for the new version, copy and run it. (As long is possible to communicate with KSC, otherwise will proceed with any copy of the script it have saved locally.)
 Optionally, RAMP can log its console outputs to a file in `/logs` folder. See `lib_ui.ks` file for more details.
 
-Craft start-up script
+Craft startup script
 ---------------------
 
-You should provide a craft start-up script in `/start` folder that contains
+You should provide a craft startup script in the `/start` folder that contains
 your vessel's mission logic.
 
 If no script is found for your craft, `boot.ks` will just copy all RAMP scripts
 to the vessel's drive and stop.
 
-You can use the script `initialize.ks` to create a sample mission for your ship. You'll find it in the `/start` folder and will be named after your ship. Although it's a sample, it might get you to Mun if you uncomment the transfer command:
+You can use the script `initialize.ks` to create a sample mission for your ship. You'll find the sample script in the `/start` folder and will be named after your ship. Although it's a sample, it might get you to Mun if you uncomment the transfer command:
 
 ```
 // We choose go to to the Mun and do the other things!
