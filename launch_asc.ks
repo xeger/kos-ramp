@@ -123,10 +123,9 @@ until ship:obt:apoapsis >= apo {
   wait launch_tick.
 }
 
-uiBanner("Launch", "Engine cutoff").
+uiBanner("ascend", "Engine cutoff").
 unlock throttle.
 set ship:control:pilotmainthrottle to 0.
-uiBanner("Launch", "Engine cutoff").
 
 /////////////////////////////////////////////////////////////////////////////
 // Coast to apoapsis and hand off to circularization program.

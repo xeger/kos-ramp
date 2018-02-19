@@ -55,18 +55,17 @@ function bootWarning {
   hudtext(msg, 10, 4, 24, YELLOW, false).
 }
 
-//Print system info
+//Print system info; wait for all parts to load
 CLEARSCREEN.
 bootConsole("RAMP @ " + core:element:name).
 bootConsole("kOS " + core:version).
 bootConsole(round(core:volume:freespace/1024, 1) + "/" + round(core:volume:capacity/1024) + " kB free").
-//Waits 5 seconds for ship loads and stabilize physics, etc...
-WAIT 5.
+WAIT 1.
 
 //Set up volumes
 SET HD TO CORE:VOLUME.
 SET ARC TO 0.
-SET StartupLocalFile TO "startup.ks".
+SET StartupLocalFile TO path(core:volume) + "/startup.ks".
 SET Failsafe TO false.
 
 bootConsole("Attemping to connect to KSC...").
@@ -96,14 +95,14 @@ IF HOMECONNECTION:ISCONNECTED {
       }
   	}
   	IF copyok {
-  		bootConsole("RAMP initialized").
+  		bootConsole("RAMP initialized.").
   	}
   	ELSE {
-  		bootWarning("RAMP failsafe: copy failed").
+  		bootWarning("File copy failed.").
       failsafe on.
   	}
   } else {
-    bootWarning("RAMP failsafe: insufficient space").
+    bootWarning("Core volume too small.").
     failsafe on.
   }
 }
@@ -143,16 +142,19 @@ IF HOMECONNECTION:ISCONNECTED {
 			StartupOk ON.
 		}
 		ELSE {
-			bootConsole("Could not copy the file. Is there enough space?").
+			bootConsole("Startup file copy failed. Is there enough space?").
 		}
 	}
 	ELSE {
+    PRINT "--------------------------------------".
 		PRINT "No remote startup script found.".
 		PRINT "You can create a sample one by typing:".
-		PRINT "RUN UTIL_MAKESTARTUP.".
+		PRINT "  RUN initialize.".
+    PRINT "--------------------------------------".
 	}
 }
 ELSE {
+  SWITCH TO HD.
 	IF EXISTS(StartupLocalFile) {
 		bootConsole("Using local startup script copied from archive.").
 		StartupOk ON.
@@ -163,15 +165,18 @@ ELSE {
 	}
 }
 
-IF NOT Failsafe {
+IF Failsafe {
+  bootWarning("Failsafe mode: run from archive.").
+  SWITCH TO ARCHIVE.
+}
+ELSE {
   SWITCH TO HD.
 }
 
 IF StartupOk {
-	RUNPATH(Startup).
+	RUNPATH(StartupLocalFile).
 }
 ELSE {
-  bootWarning("RAMP: need input").
-  bootWarning("see kOS console").
+  bootWarning("Need user input; see kOS console.").
   PRINT "RAMP ready for commands:". PRINT "".
 }
