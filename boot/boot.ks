@@ -30,7 +30,6 @@ IF EXISTS(StartupScript) {
 	IF EXISTS("initialize") {
 		PRINT "You can create a sample one by typing:".
 		PRINT "  RUN initialize.".
-    PRINT "--------------------------------------".
 	}
 }
 PRINT "Proceed.".
