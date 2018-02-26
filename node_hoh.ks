@@ -1,119 +1,108 @@
 // Delta vee math stolen from http://en.wikipedia.org/wiki/Hohmann_transfer_orbit#Calculation
-// Phase angle math stolen from https://docs.google.com/document/d/1IX6ykVb0xifBrB4BRFDpqPO6kjYiLvOcEo3zwmZL0sQ/edit and here https://forum.kerbalspaceprogram.com/index.php?/topic/122685-how-to-calculate-a-rendezvous/ and from here too https://forum.kerbalspaceprogram.com/index.php?/topic/85285-phase-angle-calculation-for-kos/
-
-parameter MaxOrbitsToTransfer is 5.
-parameter MinLeadTime is 30.
+// Phase angle math stolen from https://docs.google.com/document/d/1IX6ykVb0xifBrB4BRFDpqPO6kjYiLvOcEo3zwmZL0sQ/edit
+// and here https://forum.kerbalspaceprogram.com/index.php?/topic/122685-how-to-calculate-a-rendezvous/
+// and from here too https://forum.kerbalspaceprogram.com/index.php?/topic/85285-phase-angle-calculation-for-kos/
+// Hyperbolic Departure for Interplanetary Transfer is from http://www.braeunig.us/space/interpl.htm
+// Final *arcsin* correction from here: https://ocw.mit.edu/courses/aeronautics-and-astronautics/16-07-dynamics-fall-2009/lecture-notes/MIT16_07F09_Lec17.pdf
 
 runoncepath("lib_ui").
 runoncepath("lib_util").
 
-// Compute prograde delta-vee required to achieve Hohmann transfer; < 0 means
-// retrograde burn.
-function hohmannDv {
-  parameter r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
-  parameter r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
-
-  return sqrt(body:mu / r1) * (sqrt( (2*r2) / (r1+r2) ) - 1).
-}
-
-// Compute time of Hohmann transfer window.
-function hohmannDt {
-
-  local r1 is ship:obt:semimajoraxis.
-  local r2 is target:obt:semimajoraxis.
-
-  local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
-  local ft is pt - floor(pt).
-
-  // angular distance that target will travel during transfer
-  local theta is 360 * ft.
-  // necessary phase angle for vessel burn
-  local phi is 180 - theta.
-
-  uiDebug("Phi:" + phi).
-
-  // Angles to universal reference direction. (Solar prime)
-  set sAng to ship:obt:lan+obt:argumentofperiapsis+obt:trueanomaly. 
-  set tAng to target:obt:lan+target:obt:argumentofperiapsis+target:obt:trueanomaly. 
-
-  local timeToHoH is 0.
-
-  // Target and ship's angular speed.
-  local tAngSpd is 360 / target:obt:period.
-  local sAngSpd is 360 / ship:obt:period.
-
-  // Phase angle rate of change, 
-  local phaseAngRoC is tAngSpd - sAngSpd. 
-
-  // Loop conditions variables
-  local HasAcceptableTransfer is false.
-  local IsStranded is false.
-  local tries is 0.
-  until HasAcceptableTransfer or IsStranded {
-
-      // Phase angle now.
-      set pAng to utilReduceTo360(tAng - sAng).
-      uiDebug("pAng: " + pAng).
-    
-      if r1 < r2 { // Target orbit is higher
-        set DeltaAng to utilReduceTo360(pAng - phi).
-      }
-      else { // Target orbit is lower
-        set DeltaAng to utilReduceTo360(phi - pAng).
-      }
-      set timeToHoH to abs(DeltaAng / phaseAngRoC).
-      uiDebug("TTHoh:" + timeToHoH).
-
-      if timeToHoH > ship:obt:period * MaxOrbitsToTransfer set IsStranded to true.
-      else if timeToHoH > MinLeadTime set HasAcceptableTransfer to true.
-      else {
-          // Predict values in future
-          set tAng to tAng + MinLeadTime*tAngSpd.
-          set sAng to sAng + MinLeadTime*sAngSpd.
-      }
-      set tries to tries + 1.
-      if tries > 1000 set IsStranded to true.
-      if IsStranded break.
-  }
-  if IsStranded return "Stranded".
-  else return timeToHoH + time:seconds.  
-}
-
+local we is ship.
+local it is target.
 if body <> target:body {
-  uiWarning("Node", "Incompatible orbits").
+	if body:hasBody and body:body = target:body {
+	//	e.g. from Kerbin to Duna or from Mun to Minmus, calculate like if transfering Kerbin/Mun itself
+		set we to body.
+	} else if body:hasBody and target:body:hasBody and body:body = target:body:body {
+	//	e.g. Kerbin to Ike, redirect to Duna.
+		set we to body.
+		set it to target:body.
+	} else
+	//	from Mun to Ike or something similarly stupid?
+		uiFatal("Hohmann", "Incompatible orbits").
 }
-if ship:obt:eccentricity > 0.01 {
-  uiWarning("Node", "Eccentric ship e=" + round(ship:obt:eccentricity, 1)).
+local our is we:orbit.
+local its is it:orbit.
+
+// can hit Mun and Minmus with 0.1, since precise burn vector calculation
+// but eta to burn prediction gets bad with higher eccentricity
+if orbit:eccentricity > 0.05
+	uiWarning("Hohmann", "Eccentric ship e=" + round(orbit:eccentricity, 1)).
+
+if we = ship {
+//	again, would need time correction (patch for angle change variation)
+	if its:eccentricity > 0.05
+		uiWarning("Hohmann", "Eccentric target e=" + round(its:eccentricity, 1)).
+} else {
+//	do not even try if we are not in same plane
+	if ship:orbit:inclination > 1
+		uiFatal("Hohmann", "Ship inclination=" + round(ship:orbit:inclination)).
 }
-if target:obt:eccentricity > 0.01 {
-  uiWarning("Node", "Eccentric target e=" +  + round(target:obt:eccentricity, 1)).
+//	should add correcting node half-way (if going to higher orbit, fix it before if going lower)
+local ri is our:inclination - its:inclination.
+if abs(ri) > 0.2 // and we = ship and our:semiMajorAxis > its:semiMajorAxis
+	uiWarning("Hohmann", "Inclination difference ri=" + round(ri, 1)).
+
+utilRemoveNodes().
+
+// Compute prograde delta-vee required to achieve Hohmann transfer between circualr orbits
+// negative means retrograde burn, used as first prediction
+local function hohDv {
+  parameter r1 is our:semimajoraxis.
+  parameter r2 is its:semimajoraxis.
+  return sqrt(our:body:mu/r1) * (sqrt((2*r2)/(r1+r2)) - 1).
 }
 
-global node_ri is obt:inclination - target:obt:inclination.
-if abs(node_ri) > 0.2 {
-  uiWarning("Node", "Bad alignment ri=" + round(node_ri, 1)).
-}
-
-uiDebug("Hohmann time").
-global node_T is hohmannDt().
-
-if node_T = "Stranded" {
-  uiError("Node", "STRANDED").
-}
+local r1 is our:semiMajorAxis.
+local r2 is its:semiMajorAxis.
+local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
+local ft is pt - floor(pt).
+// angular distance that target will travel during transfer (if circular)
+local theta is 360 * ft.
+// angles to universal reference direction
+local sa is our:lan + our:argumentOfPeriapsis + our:trueAnomaly. 
+local ta is its:lan + its:argumentOfPeriapsis + its:trueAnomaly.
+local t0 is time:seconds.
+// match angle (+k*360)
+local ma is utilAngleTo360(ta+theta-sa-180).
+// angle change rate (inaccurate for eccentric orbits but good for a start)
+local ar is 360/our:period - 360/its:period.
+// estimated burn time
+local dv is hohDv().
+local mt is 5+.5*dv*ship:mass/max(0.1,ship:availableThrust).
+// k closest to zero such that (ma + k*360)/ar >= mt
+local k is (mt*ar - ma)/360.
+// closest integer
+if ar < 0 set k to floor(k).
+else set k to ceiling(k).
+// time to node (exact if both orbits are perfectly circular)
+local dt is (ma+k*360)/ar.
+// precise burn vector
+local t1 is t0+dt.
+local v1 is velocityAt(we,t1):orbit.
+local p1 is positionAt(we,t1)-our:body:position.
+local r1 is p1:mag.
+// prograde, normal and radial-out normalized
+local pv is v1:normalized.
+local nv is vcrs(v1,p1):normalized.
+local rv is vcrs(nv,v1):normalized.
+// https://en.wikipedia.org/wiki/Orbital_speed#Precise_orbital_speed
+local v2 is sqrt(our:body:mu*(2/r1-2/(r1+r2))) * vcrs(p1,nv):normalized.
+local dv is v2 - v1.
+if we = ship
+	add node(t1, vdot(dv,rv), vdot(dv,nv), vdot(dv,pv)).
 else {
-  uiDebug("Hohmann delta V").
-  uiDebug("Transfer eta=" + round(node_T - time:seconds, 0)).
-  uiDebug("Transfer dv0=" + round(hohmannDv, 1)).
-
-  local r1 is (positionat(ship,node_T)-body:position):mag.
-  global node_dv is hohmannDv(r1).
-  uiDebug("Transfer dv1=" + round(node_dv, 1) + ", r1=" + round(r1)).
-
-  local nd is node(node_T, 0, 0, node_dv).
-  add nd.
-
-  local r2 is (positionat(target,node_T+nd:orbit:period/2)-body:position):mag.
-  set node_dv to hohmannDv(r1,r2).
-  set nd:prograde to node_dv.
-  uiDebug("Transfer dv2=" + round(node_dv, 1) + ", r2=" + round(r2)).
+//	interplanetary transfer (or moon-to-moon)
+	local pb is sqrt(dv:mag^2+2*body:mu/orbit:semiMajorAxis) - sqrt(body:mu/orbit:semiMajorAxis).
+	local mt is 5+.5*pb*ship:mass/max(0.1,ship:availableThrust).
+	local ca is utilVecAng(positionAt(ship,t1)-body:position, v2, nv)
+		-90-arcsin(1/(1+orbit:semiMajorAxis*dv:mag^2/body:mu)).
+	if r2 < r1 set ca to ca+180.
+	set ca to utilAngleTo360(ca).
+	local dt is ca/360*orbit:period.
+	if ca > 180 and t1 + dt - orbit:period > mt
+		set t1 to t1 + dt - orbit:period.
+	else set t1 to t1 + dt.
+	add node(t1, 0, 0, pb).
 }
