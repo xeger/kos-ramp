@@ -5,8 +5,8 @@
 // (even if not technically flamed out - that is something that KER and MechJeb do not consider).
 
 // LOGIC: Stage if either availableThrust = 0 (separator-only, fairing-only stage)
-// or all engines that are to be separated by staging flame out
-// or all tanks (and boosters) to be separated that were not empty are empty now
+// or all engines (if not boosters only) that are to be separated by staging flame out
+// or all tanks and boosters to be separated that were not empty are empty now
 
 // TAG NOAUTO: use "noauto" tag on any decoupler to instruct this library to never stage it
 // note: can use multiple tags if separated by whitespace (e.g. "noauto otherTag") or other word-separators ("tag,noauto.anything;more").
@@ -33,7 +33,7 @@ global isp_g0 is kerbin:mu/kerbin:radius^2. // exactly 9.81 in KSP 1.3.1, 9.8066
 
 // work variables for staging logic
 global stagingNumber	is -1.		// stage:number when last calling stagingPrepare()
-global stagingMaxStage	is 0.		// stop staging if stage:number is lower or same as this
+global stagingMaxStage	is 0.		// stop staging if stage:number is lower or same as this, also used in lib_parts
 global stagingResetMax	is true.	// reset stagingMaxStage to 0 if we passed it (search for next "noauto")
 global stagingEngines	is list().	// list of engines that all need to flameout to stage
 global stagingTanks		is list().	// list of tanks that all need to be empty to stage
@@ -42,25 +42,37 @@ global stageAvgIsp		is 0.		// average ISP in seconds
 global stageStdIsp		is 0.		// average ISP in N*s/kg (stageAvgIsp*isp_g0)
 global stageDryMass		is 0.		// dry mass just before staging
 global stageBurnTime	is 0.		// updated in stageDeltaV()
+// cache for faster stagingDecoupledIn execution
+global stagingDstgCache is lexicon(). // indexed by uid because exploded parts caused problems
+
+
+local function partIsDecoupler {
+	parameter part.
+	for m in stagingDecouplerModules if part:modules:contains(m) {
+		if part:tag:matchesPattern("\bnoauto\b") and part:stage+1 > stagingMaxStage
+			set stagingMaxStage to part:stage+1.
+		return true.
+	}
+	return false.
+}
 
 // return stage number where the part is decoupled (probably Part.separationIndex in KSP API)
 function stagingDecoupledIn {
 	parameter part.
+	if stagingDstgCache:hasKey(part:uid)
+		return stagingDstgCache[part:uid].
 
-	local function partIsDecoupler {
-		parameter part.
-		for m in stagingDecouplerModules if part:modules:contains(m) {
-			if part:tag:matchesPattern("\bnoauto\b") and part:stage+1 >= stagingMaxStage
-				set stagingMaxStage to part:stage+1.
-			return true.
-		}
-		return false.
-	}
-	until partIsDecoupler(part) {
-		if not part:hasParent return -1.
+	local found is list().
+	local value is -1.
+	until false {
+		found:add(part).
+		if partIsDecoupler(part) { set value to part:stage. break. }
+		if not part:hasParent break.
 		set part to part:parent.
+		if stagingDstgCache:hasKey(part:uid) { set value to stagingDstgCache[part:uid]. break. }
 	}
-	return part:stage.
+	for p in found stagingDstgCache:add(p:uid, value).
+	return value.
 }
 
 // to be called whenever current stage changes to prepare data for quicker test and other functions
@@ -68,35 +80,42 @@ function stagingPrepare {
 
 	wait until stage:ready.
 	set stagingNumber to stage:number.
-	if stagingResetMax and stagingMaxStage >= stagingNumber
+	if stagingResetMax and stagingMaxStage >= stagingNumber {
 		set stagingMaxStage to 0.
+		for p in ship:partsTaggedPattern("\bnoauto\b") partIsDecoupler(p).
+	}
 	stagingEngines:clear().
 	stagingTanks:clear().
+	for k in stagingDstgCache:keys
+		if stagingDstgCache[k] >= stagingNumber
+			stagingDstgCache:remove(k).
 
-	// prepare list of tanks that are to be decoupled and have some fuel
+	// prepare list of engines and tanks that are to be decoupled (and have some fuel if tank)
+	// and average ISP for stageDeltaV(); note that boosters are only treated as tanks
 	list parts in parts.
+	local thrust is 0.
+    local flow is 0.
+	local bcount is 0.
 	for p in parts {
+		local dstg is stagingDecoupledIn(p).
 		local amount is 0.
 		for r in p:resources if stagingTankFuels:contains(r:name)
 			set amount to amount + r:amount.
-		if amount > 0.01 and stagingDecoupledIn(p) = stage:number-1
-			stagingTanks:add(p).
+		if amount > 0.01 {
+			if dstg = stage:number-1 stagingTanks:add(p).
+		}
+		if p:istype("engine") and p:ignition and p:isp > 0 {
+			if dstg = stage:number-1 {
+				if amount > 0.01 set bcount to bcount+1. // booster
+				stagingEngines:add(p).
+			}
+			local t is p:availableThrust.
+			set thrust to thrust + t.
+			set flow to flow + t / p:isp. // thrust=isp*g0*dm/dt => flow = sum of thrust/isp
+		}
 	}
-
-	// prepare list of engines that are to be decoupled by staging
-	// and average ISP for stageDeltaV()
-	list engines in engines.
-	local thrust is 0.
-    local flow is 0.
-	for e in engines if e:ignition and e:isp > 0
-	{
-		if stagingDecoupledIn(e) = stage:number-1
-			stagingEngines:add(e).
-
-		local t is e:availableThrust.
-		set thrust to thrust + t.
-		set flow to flow + t / e:isp. // thrust=isp*g0*dm/dt => flow = sum of thrust/isp
-	}
+	// boosters as tanks if no other engines
+	if stagingEngines:length = bcount stagingEngines:clear().
 	set stageAvgIsp to 0.
     if flow > 0 set stageAvgIsp to thrust/flow.
 	set stageStdIsp to stageAvgIsp * isp_g0.
@@ -106,6 +125,9 @@ function stagingPrepare {
     for r in stage:resources if stagingConsumed:contains(r:name)
 		set fuelMass to fuelMass + r:amount*r:density.
 	set stageDryMass to ship:mass-fuelMass.
+
+	print "Stage "+stage:number+"/"+stagingMaxStage+" DeltaV: "+round(stageDeltaV(),1)+" Burn: "+round(stageBurnTime)+" ISP: "+round(stageAvgIsp,1).
+	print "Mass: "+round(ship:mass)+" Dry: "+round(stageDryMass)+" Tanks: "+stagingTanks:length+" Engines: "+stagingEngines:length+" TWR: "+round(thrustToWeight(),1).
 }
 
 // to be called repeatedly
@@ -113,7 +135,7 @@ function stagingCheck {
 	wait until stage:ready.
 	if stage:number <> stagingNumber
 		stagingPrepare().
-	if stage:number <= stagingMaxStage
+	if stage:number <= max(0,stagingMaxStage)
 		return.
 
 	// need to stage because all engines are without fuel?

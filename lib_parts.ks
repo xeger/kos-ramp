@@ -1,3 +1,16 @@
+// Library for manipulating parts (simulate events/clicks and perform actions)
+// ===========================================================================
+// Most of the functions rely on tags, which can be provided as parameter.
+// Default TAG is empty string which works for all untagged parts
+// and those with same tag as the executing core (core:part:tag).
+//
+// Note that parts can have multiple tags separated by spaces and/or punctuation
+//
+// For NOAUTO tag logic include lib_staging
+// - parts above decoupler/separator with tag "noauto" won't be controlled
+// if no tag / empty tag was provided for the call.
+// Multiple separators in one stage behave like all having NOAUTO if at least one have it.
+
 // events are preferred because there are no restrictions
 function partsDoEvent {
 	parameter module.
@@ -9,8 +22,11 @@ function partsDoEvent {
 	local maxStage is -1.
 	if tag = "" and (defined stagingMaxStage)
 		set maxStage to stagingMaxStage-1. //see lib_staging
-	for p in ship:partsTagged(tag) {
-		if p:stage >= maxStage and p:modules:contains(module) {
+	if tag <> "" set tag to "\b"+tag+"\b".
+	else if core:part:tag = "" set tag to "^$".
+	else set tag to "^$|\b"+core:part:tag+"\b".
+	for p in ship:partsTaggedPattern(tag) {
+		if p:modules:contains(module) and (maxStage < 0 or stagingDecoupledIn(p) >= maxStage) {
 			local m is p:getModule(module).
 			for e in m:allEventNames() {
 				if e:matchesPattern(event) {
@@ -34,8 +50,11 @@ function partsDoAction {
 		local maxStage is -1.
 		if tag = "" and (defined stagingMaxStage)
 			set maxStage to stagingMaxStage-1. //see lib_staging
-		for p in ship:partsTagged(tag) {
-			if p:stage >= maxStage and p:modules:contains(module) {
+		if tag <> "" set tag to "\b"+tag+"\b".
+		else if core:part:tag = "" set tag to "^$".
+		else set tag to "^$|\b"+core:part:tag+"\b".
+		for p in ship:partsTaggedPattern(tag) {
+			if p:modules:contains(module) and (maxStage < 0 or stagingDecoupledIn(p) >= maxStage) {
 				local m is p:getModule(module).
 				for a in m:allActionNames() {
 					if a:matchesPattern(action) {
@@ -110,11 +129,12 @@ function partsControlFromDockingPort {
 		}.
 	}
 
-	Return success.
+	return success.
 }
 
 function partsDeployFairings {
-	return partsDoEvent("ModuleProceduralFairing", "deploy").
+	parameter tag is "".
+	return partsDoEvent("ModuleProceduralFairing", "deploy", tag).
 }
 
 function partsHasTermometer {
@@ -133,7 +153,8 @@ function partsDisarmsChutes {
 	// Make sure all chutes are disarmed, even if already staged.
 	// Warning: If chutes are staged and disarmed, SPACEBAR will not deploy they!
 	//			Use CHUTES ON. command or right click menu.
-	return partsDoAction("ModuleParachute", "disarm").
+	parameter tag is "".
+	return partsDoAction("ModuleParachute", "disarm", tag).
 }
 
 function partsPercentEC {
@@ -211,9 +232,11 @@ function partsMMEngineAirBreathing {
 
 
 function partsReverseThrust {
-	return partsDoAction("ModuleAnimateGeneric", "reverse").
+	parameter tag is "".
+	return partsDoAction("ModuleAnimateGeneric", "reverse", tag).
 }
 
 function partsForwardThrust {
-	return partsDoAction("ModuleAnimateGeneric", "forward").
+	parameter tag is "".
+	return partsDoAction("ModuleAnimateGeneric", "forward", tag).
 }
