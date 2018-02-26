@@ -11,6 +11,8 @@
 // TAG NOAUTO: use "noauto" tag on any decoupler to instruct this library to never stage it
 // note: can use multiple tags if separated by whitespace (e.g. "noauto otherTag") or other word-separators ("tag,noauto.anything;more").
 
+run once lib_ui.
+
 // list of all consumed fuels (for deltaV; add e.g. Karbonite and/or MonoPropellant if using such mods)
 if not (defined stagingConsumed)
 global stagingConsumed is list("SolidFuel", "LiquidFuel", "Oxidizer").
@@ -94,7 +96,7 @@ function stagingPrepare {
 	// and average ISP for stageDeltaV(); note that boosters are only treated as tanks
 	list parts in parts.
 	local thrust is 0.
-    local flow is 0.
+	local flow is 0.
 	local bcount is 0.
 	for p in parts {
 		local dstg is stagingDecoupledIn(p).
@@ -117,17 +119,17 @@ function stagingPrepare {
 	// boosters as tanks if no other engines
 	if stagingEngines:length = bcount stagingEngines:clear().
 	set stageAvgIsp to 0.
-    if flow > 0 set stageAvgIsp to thrust/flow.
+	if flow > 0 set stageAvgIsp to thrust/flow.
 	set stageStdIsp to stageAvgIsp * isp_g0.
 
 	// prepare dry mass for stageDeltaV()
-    local fuelMass is 0.
-    for r in stage:resources if stagingConsumed:contains(r:name)
+	local fuelMass is 0.
+	for r in stage:resources if stagingConsumed:contains(r:name)
 		set fuelMass to fuelMass + r:amount*r:density.
 	set stageDryMass to ship:mass-fuelMass.
 
-	print "Stage "+stage:number+"/"+stagingMaxStage+" DeltaV: "+round(stageDeltaV(),1)+" Burn: "+round(stageBurnTime)+" ISP: "+round(stageAvgIsp,1).
-	print "Mass: "+round(ship:mass)+" Dry: "+round(stageDryMass)+" Tanks: "+stagingTanks:length+" Engines: "+stagingEngines:length+" TWR: "+round(thrustToWeight(),1).
+	uiConsole("Stage", stage:number+" Max: "+stagingMaxStage+" DeltaV: "+round(stageDeltaV(),1)).
+	uiConsole("AvISP", round(stageAvgIsp,1)+" TWR: "+round(thrustToWeight(),1)+" Burn: "+round(stageBurnTime)).
 }
 
 // to be called repeatedly
@@ -178,7 +180,6 @@ function stageDeltaV {
 		set stageBurnTime to 0.
 		return 0.
 	}
-
 	set stageBurnTime to stageStdIsp*(ship:mass-stageDryMass)/availableThrust.
 	return stageStdIsp*ln(ship:mass / stageDryMass).
 }
@@ -186,7 +187,9 @@ function stageDeltaV {
 // calculate burn time for maneuver needing provided deltaV
 function burnTimeForDv {
 	parameter dv.
-	return stageStdIsp*ship:mass*(1-constant:e^(-dv/stageStdIsp))/availableThrust.
+	if stageStdIsp = 0 stagingPrepare(). // make sure we have data
+	if stageStdIsp = 0 or availableThrust = 0 return 120. // just something not to crash
+	return stageStdIsp*ship:mass*(1-constant:e^(-abs(dv)/stageStdIsp))/availableThrust.
 }
 
 // current thrust to weght ratio
