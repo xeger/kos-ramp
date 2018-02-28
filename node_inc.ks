@@ -12,6 +12,9 @@ local di is 0. // inclination difference (target-current)
 local ta is 0. // angle from periapsis to DN (burn in normal direction here)
 local t0 is time:seconds.
 local i0 is orbit:inclination.
+local sp is ship:position-body:position.
+local sv is ship:velocity:orbit.
+local sn is vcrs(sv, sp). // our plane normal vector
 
 if incl <> "" or not hasTarget
 {
@@ -24,29 +27,14 @@ if incl <> "" or not hasTarget
 else
 {
 	local i1 is target:orbit:inclination.
-	local sp is ship:position-body:position.
 	local tp is target:position-body:position.
-	local sv is ship:velocity:orbit.
 	local tv is target:velocity:orbit.
-	local sn is vcrs(sv, sp). // our normal vector
-	local tn is vcrs(tv, tp). // its normal vector
+	local tn is vcrs(tv, tp). // its plane normal vector
 	local ln is vcrs(tn, sn). // from AN to DN
 
-	set di to vang(sn, tn).
-	set ta to vang(sp, ln).
-//	fix sign by comparing cross-product to normal vector (the angle is either 0 or 180)
-	if vang(vcrs(sp,ln),sn) < 90 set ta to -ta.
+	set di to utilVecAng(sn, tn, ln).
+	set ta to utilVecAng(sp, ln, sn).
 	set ta to ta + orbit:trueAnomaly.
-
-//	DEBUG:
-//	clearVecDraws().
-//	vecDraw(ship:position, sn:normalized*orbit:semiMajorAxis, blue,  "sn", 1, true).
-//	vecDraw(ship:position, tn:normalized*orbit:semiMajorAxis, green, "tn", 1, true).
-//	vecDraw(ship:position, ln:normalized*orbit:semiMajorAxis, red,   "ln=tn*sn", 1, true).
-//	vecDraw(ship:position, sp:normalized*orbit:semiMajorAxis, white, "sp", 1, true).
-//	vecDraw(ship:position, vcrs(sp,ln):normalized*orbit:semiMajorAxis*.5, yellow, "sp*ln", 1, true, 0.3).
-//	set vecDraw(body:position, ln:normalized*orbit:semiMajorAxis,
-//	red, "ln", 1, true):startUpdater to { return body:position. }.
 }
 
 set ta to utilAngleTo360(ta).
@@ -54,16 +42,20 @@ if ta < orbit:trueAnomaly { set ta to ta+180. set di to -di. }
 local dt is utilDtTrue(ta).
 local t1 is t0+dt.
 
-local v is velocityAt(ship, t1):orbit:mag.
-local nv is v * sin(di).
-local pv is v *(cos(di)-1).
+local v is velocityAt(ship, t1):orbit.
+local dv is v*angleAxis(-di,positionAt(ship,t1)-body:position)-v.
 
-//FIXME: nv+pv for highly eccentric orbits
+if dt < 5+.5*dv:mag*ship:mass/max(0.1,ship:availableThrust) {
+	set ta to ta+180.
+	set di to -di.
+	set dt to utilDtTrue(ta).
+	set t1 to t0+dt.
+	set v  to velocityAt(ship, t1):orbit.
+	set dv to v*angleAxis(-di,positionAt(ship,t1)-body:position)-v.
+}
+//TODO: use node closer to apoapsis (ta > 90 and < 270) for highly eccentric orbits
 
-//TODO: check burn time and use the other node if we do not have anough time
-//TODO: use node closer to apoapsis (ta > 90 and < 270) for eccentric orbits
-
-add node(t1, 0, nv, pv).
-
-//DEBUG:
-//terminal:input:getchar().
+local pv is vdot(dv,v:normalized).
+local nv is vdot(dv,sn:normalized).
+local rv is vdot(dv,vcrs(sn,v):normalized).
+add node(t1, rv, nv, pv).

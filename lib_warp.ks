@@ -1,7 +1,10 @@
 function resetWarp {
 	kUniverse:timeWarp:cancelWarp().
+	set warp to 0.
+	wait 0.
 	wait until kUniverse:timeWarp:isSettled.
 	set warpMode to "RAILS".
+	wait until kUniverse:timeWarp:isSettled.
 }
 function railsWarp {
 	parameter w.
@@ -24,17 +27,24 @@ function warpSeconds {
 	local t1 is time:seconds+seconds.
 	until time:seconds >= t1-1 {
 		resetWarp().
-		wait 0.
-		local dt is time:seconds - t1.
-		if dt > 10 {
+		if t1 - time:seconds > 10 {
 			warpTo(t1).
+			wait 1.
 			wait until warp = 0 and kUniverse:timeWarp:isSettled.
 		} else
 		{// warpTo will not warp 10 seconds and less
-			physWarp(4).
-			wait until time:seconds >= t1-3.
-			physWarp(3).
-			wait until time:seconds >= t1-1.
+			if time:seconds >= t1-3 {
+				physWarp(4).
+				wait until time:seconds >= t1-3.
+			}
+			if time:seconds >= t1-2 {
+				physWarp(3).
+				wait until time:seconds >= t1-2.
+			}
+			if time:seconds >= t1-1 {
+				physWarp(2).
+				wait until time:seconds >= t1-1.
+			}
 			resetWarp().
 			break.
 		}

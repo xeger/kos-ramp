@@ -218,7 +218,7 @@ FUNCTION utilRCSCancelVelocity {
 // Ship is facing the FaceVec whiting a tolerance of maxDeviationDegrees and
 // with a Angular velocity less than maxAngularVelocity.
 function utilIsShipFacing { 
-  parameter face.
+  parameter face is steering.
   parameter maxDeviationDegrees is 8.
   parameter maxAngularVelocity is 0.01.
 
@@ -310,3 +310,13 @@ function utilDtTrue {
 	parameter obt is orbit.
 	return utilAngleTo360(utilMeanFromTrue(a) - utilMeanFromTrue(obt:trueAnomaly)) / 360 * obt:period.
 }
+// angle from first vector to second given plane normal vector
+function utilVecAng {
+	parameter u.
+	parameter v.
+	parameter n.
+//	note: KSP uses left-handed coordinate system, so vcrs is kinda opposite ;)
+	if vang(vcrs(v,u),n) < 90 return vang(u,v).
+	return -vang(u,v).
+}
+
