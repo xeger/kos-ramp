@@ -27,21 +27,21 @@ function warpSeconds {
 	local t1 is time:seconds+seconds.
 	until time:seconds >= t1-1 {
 		resetWarp().
-		if t1 - time:seconds > 10 {
+		if time:seconds < t1-10 {
 			warpTo(t1).
 			wait 1.
-			wait until warp = 0 and kUniverse:timeWarp:isSettled.
+			wait until time:seconds >= t1-1 or (warp = 0 and and kUniverse:timeWarp:isSettled).
 		} else
 		{// warpTo will not warp 10 seconds and less
-			if time:seconds >= t1-3 {
+			if time:seconds < t1-3 {
 				physWarp(4).
 				wait until time:seconds >= t1-3.
 			}
-			if time:seconds >= t1-2 {
+			if time:seconds < t1-2 {
 				physWarp(3).
 				wait until time:seconds >= t1-2.
 			}
-			if time:seconds >= t1-1 {
+			if time:seconds < t1-1 {
 				physWarp(2).
 				wait until time:seconds >= t1-1.
 			}
@@ -49,6 +49,7 @@ function warpSeconds {
 			break.
 		}
 	}
+	resetWarp().
 	wait until time:seconds >= t1.
 	return seconds.
 }
