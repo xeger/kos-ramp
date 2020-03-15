@@ -13,7 +13,7 @@ function hohmannDv {
 	parameter r1 is (ship:obt:semimajoraxis + ship:obt:semiminoraxis) / 2.
 	parameter r2 is (target:obt:semimajoraxis + target:obt:semiminoraxis) / 2.
 
-	return sqrt(body:mu / r1) * (sqrt( (2*r2) / (r1+r2) ) - 1).
+	return sqrt(body:mu / r1) * (sqrt( (2 * r2) / (r1 + r2) ) - 1).
 }
 
 // Compute time of Hohmann transfer window.
@@ -22,7 +22,7 @@ function hohmannDt {
 	local r1 is ship:obt:semimajoraxis.
 	local r2 is target:obt:semimajoraxis.
 
-	local pt is 0.5 * ((r1+r2) / (2*r2))^1.5.
+	local pt is 0.5 * ((r1 + r2) / (2 * r2)) ^ 1.5.
 	local ft is pt - floor(pt).
 
 	// angular distance that target will travel during transfer
@@ -33,8 +33,8 @@ function hohmannDt {
 	uiDebug("Phi:" + phi).
 
 	// Angles to universal reference direction. (Solar prime)
-	set sAng to ship:obt:lan+obt:argumentofperiapsis+obt:trueanomaly.
-	set tAng to target:obt:lan+target:obt:argumentofperiapsis+target:obt:trueanomaly.
+	set sAng to ship:obt:lan + obt:argumentofperiapsis + obt:trueanomaly.
+	set tAng to target:obt:lan + target:obt:argumentofperiapsis + target:obt:trueanomaly.
 
 	local timeToHoH is 0.
 
@@ -57,8 +57,7 @@ function hohmannDt {
 
 		if r1 < r2 { // Target orbit is higher
 			set DeltaAng to utilReduceTo360(pAng - phi).
-		}
-		else { // Target orbit is lower
+		} else { // Target orbit is lower
 			set DeltaAng to utilReduceTo360(phi - pAng).
 		}
 		set timeToHoH to abs(DeltaAng / phaseAngRoC).
@@ -68,8 +67,8 @@ function hohmannDt {
 		else if timeToHoH > MinLeadTime set HasAcceptableTransfer to true.
 		else {
 			// Predict values in future
-			set tAng to tAng + MinLeadTime*tAngSpd.
-			set sAng to sAng + MinLeadTime*sAngSpd.
+			set tAng to tAng + MinLeadTime * tAngSpd.
+			set sAng to sAng + MinLeadTime * sAngSpd.
 		}
 		set tries to tries + 1.
 		if tries > 1000 set IsStranded to true.
@@ -86,7 +85,7 @@ if ship:obt:eccentricity > 0.01 {
 	uiWarning("Node", "Eccentric ship e=" + round(ship:obt:eccentricity, 1)).
 }
 if target:obt:eccentricity > 0.01 {
-	uiWarning("Node", "Eccentric target e=" +  + round(target:obt:eccentricity, 1)).
+	uiWarning("Node", "Eccentric target e=" + round(target:obt:eccentricity, 1)).
 }
 
 global node_ri is obt:inclination - target:obt:inclination.
@@ -99,21 +98,20 @@ global node_T is hohmannDt().
 
 if node_T = "Stranded" {
 	uiError("Node", "STRANDED").
-}
-else {
+} else {
 	uiDebug("Hohmann delta V").
 	uiDebug("Transfer eta=" + round(node_T - time:seconds, 0)).
 	uiDebug("Transfer dv0=" + round(hohmannDv, 1)).
 
-	local r1 is (positionat(ship,node_T)-body:position):mag.
+	local r1 is (positionat(ship, node_T) - body:position):mag.
 	global node_dv is hohmannDv(r1).
 	uiDebug("Transfer dv1=" + round(node_dv, 1) + ", r1=" + round(r1)).
 
 	local nd is node(node_T, 0, 0, node_dv).
 	add nd.
 
-	local r2 is (positionat(target,node_T+nd:orbit:period/2)-body:position):mag.
-	set node_dv to hohmannDv(r1,r2).
+	local r2 is (positionat(target, node_T + nd:orbit:period / 2) - body:position):mag.
+	set node_dv to hohmannDv(r1, r2).
 	set nd:prograde to node_dv.
 	uiDebug("Transfer dv2=" + round(node_dv, 1) + ", r2=" + round(r2)).
 }

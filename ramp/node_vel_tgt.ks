@@ -18,7 +18,7 @@ local Pship is positionat(ship, T) - body:position.
 local dv is Vtgt - Vship.
 
 // project dv onto the radial/normal/prograde direction vectors to convert it
-// from (X,Y,Z) into burn parameters. Estimate orbital directions by looking
+// from (X, Y, Z) into burn parameters. Estimate orbital directions by looking
 // at position and velocity of ship at T.
 local r is Pship:normalized.
 local p is Vship:normalized.
@@ -34,4 +34,4 @@ local dt is dv:mag / accel.
 // Time the burn so that we end thrusting just as we reach the point of closest
 // approach. Assumes the burn program will perform half of its burn before
 // T, half afterward
-add node(T-(dt/2), sr, sn, sp).
+add node(T - (dt / 2), sr, sn, sp).

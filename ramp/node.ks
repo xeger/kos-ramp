@@ -25,8 +25,8 @@ stagingPrepare().
 // Configuration constants; these are pre-set for automated missions; if you
 // have a ship that turns poorly, you may need to decrease these and perform
 // manual corrections.
-if not (defined node_bestFacing) global node_bestFacing is 5. // ~5  degrees error (10 degree cone)
-if not (defined node_okFacing) global node_okFacing   is 20. // ~20 degrees error (40 degree cone)
+if not (defined node_bestFacing) global node_bestFacing is 5. // ~5 degrees error (10 degree cone)
+if not (defined node_okFacing) global node_okFacing is 20. // ~20 degrees error (40 degree cone)
 
 local sstate is sas. // save SAS state
 local rstate is rcs. // save RCS state
@@ -40,13 +40,13 @@ local nn is nextnode.
 
 // keep ship pointed at node
 sas off.
-lock steerDir to lookdirup(nn:deltav, positionAt(ship,time:seconds+nn:eta)-body:position).
+lock steerDir to lookdirup(nn:deltav, positionAt(ship, time:seconds + nn:eta) - body:position).
 lock steering to steerDir.
 
 // estimate burn direction & duration
 local resetBurnTime is burnTime = 0.
 if resetBurnTime set burnTime to burnTimeForDv(nn:deltav:mag).
-local dt is burnTime/2.
+local dt is burnTime / 2.
 
 local warpLoop is 2.
 until false {
@@ -56,8 +56,8 @@ until false {
 	// If ship is not rotating for some reason, will proceed anyway. (Maybe only torque source is engine gimbal?)
 	wait 0.
 	local warped to false.
-	until utilIsShipFacing(steerDir,node_bestFacing,0.5) or
-		nn:eta <= dt and utilIsShipFacing(steerDir,node_okFacing,5) or
+	until utilIsShipFacing(steerDir, node_bestFacing, 0.5) or
+		nn:eta <= dt and utilIsShipFacing(steerDir, node_okFacing, 5) or
 		ship:angularvel:mag < 0.0001 and rcs = true
 	{
 		if ship:angularvel:mag < 0.01 rcs on.
@@ -69,7 +69,7 @@ until false {
 	if warpLoop = 0 break.
 	if warpLoop > 1 {
 		if (warpSeconds(nn:eta - dt - 60) > 600 and nodeCreator:istype("delegate")) {
-			//	recreate node if warped more than 10 minutes and we have node creator delegate
+			// recreate node if warped more than 10 minutes and we have node creator delegate
 			unlock steering. // release references before deleting nodes
 			unlock steerDir.
 			set nn to false.
@@ -78,9 +78,9 @@ until false {
 			wait 0.
 			set nn to nextnode.
 			if resetBurnTime set burnTime to burnTimeForDv(nn:deltav:mag).
-			set dt to burnTime/2.
+			set dt to burnTime / 2.
 			sas off.
-			lock steerDir to lookdirup(nn:deltav, positionAt(ship,time:seconds+nn:eta)-body:position).
+			lock steerDir to lookdirup(nn:deltav, positionAt(ship, time:seconds + nn:eta) - body:position).
 			lock steering to steerDir.
 		}
 		set warpLoop to 1.
@@ -94,28 +94,28 @@ local dv0 is nn:deltav.
 local dvMin is dv0:mag.
 local minThrottle is 0.
 local maxThrottle is 0.
-lock throttle to min(maxThrottle,max(minThrottle,min(dvMin,nn:deltav:mag)*ship:mass/max(1,availableThrust))).
-lock steerDir to lookdirup(nn:deltav,ship:position-body:position).
+lock throttle to min(maxThrottle, max(minThrottle, min(dvMin, nn:deltav:mag) * ship:mass / max(1, availableThrust))).
+lock steerDir to lookdirup(nn:deltav, ship:position - body:position).
 
 local almostThere to 0.
 local choked to 0.
 local warned to false.
 
-if nn:eta-dt > 5 {
+if nn:eta - dt > 5 {
 	physWarp(1).
-	wait until nn:eta-dt <= 2.
+	wait until nn:eta - dt <= 2.
 	resetWarp().
 }
-wait until nn:eta-dt <= 1.
+wait until nn:eta - dt <= 1.
 until dvMin < 0.05 {
 	if stagingCheck() uiWarning("Node", "Stage " + stage:number + " separation during burn").
-	wait 0. //Let a physics tick run each loop.
+	wait 0. // Let a physics tick run each loop.
 
 	local dv is nn:deltav:mag.
 	if dv < dvMin set dvMin to dv.
 
 	if ship:availablethrust > 0 {
-		if utilIsShipFacing(steerDir,node_okFacing,2) {
+		if utilIsShipFacing(steerDir, node_okFacing, 2) {
 			set minThrottle to 0.01.
 			set maxThrottle to 1.
 		} else {
@@ -125,21 +125,21 @@ until dvMin < 0.05 {
 			set maxThrottle to 0.1.
 			rcs on.
 		}
-		if vdot(dv0, nn:deltaV) < 0 break.  // overshot (node delta vee is pointing opposite from initial)
-		if dv > dvMin + 0.1 break.      // burn DV increases (off target due to wobbles)
-		if dv <= 0.2 {            // burn DV gets too small for main engines to cope with
+		if vdot(dv0, nn:deltaV) < 0 break. // overshot (node delta vee is pointing opposite from initial)
+		if dv > dvMin + 0.1 break. // burn DV increases (off target due to wobbles)
+		if dv <= 0.2 { // burn DV gets too small for main engines to cope with
 			if almostThere = 0 set almostThere to time:seconds.
-			if time:seconds-almostThere > 5 break.
+			if time:seconds - almostThere > 5 break.
 			if dv <= 0.05 break.
 		}
 		set choked to 0.
 	} else {
 		if choked = 0 set choked to time:seconds.
-		if not warned and time:seconds-choked > 3 {
+		if not warned and time:seconds - choked > 3 {
 			set warned to true.
 			uiWarn("Node", "No acceleration").
 		}
-		if time:seconds-choked > 30
+		if time:seconds - choked > 30
 			uiFatal("Node", "No acceleration").
 	}
 }
@@ -148,7 +148,7 @@ set ship:control:pilotMainThrottle to 0.
 unlock throttle.
 
 // Make fine adjustments using RCS (for up to 15 seconds)
-if nn:deltaV:mag > 0.1 utilRCSCancelVelocity({return nn:deltaV.},0.1,15).
+if nn:deltaV:mag > 0.1 utilRCSCancelVelocity({return nn:deltaV.}, 0.1, 15).
 else wait 1.
 
 // Fault if remaining dv > 5% of initial AND mag is > 0.1 m/s

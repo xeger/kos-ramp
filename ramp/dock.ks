@@ -48,15 +48,15 @@ until DockingDone {
 					vdot(rawV, sense:upvector),
 					vdot(rawV, sense:vector)
 				).
-				local needAlign is (abs(dockD:x) > abs(dockD:z)/10) or (abs(dockD:y) > abs(dockD:z)/10).
+				local needAlign is (abs(dockD:x) > abs(dockD:z) / 10) or (abs(dockD:y) > abs(dockD:z) / 10).
 
 				// Avoid errors just after docking complete; hastarget is unreliable
 				// (maybe due to preemptible VM) and so we also put in a distance-based safeguard.
 				if hastarget and dockD:mag > 1 {
 					uiShowPorts(dock_myPort, target, dock_start / 2, not needAlign).
 					uiShowPorts(dock_myPort, target, dock_start / 2, not needAlign).
-					uiDebugAxes(dock_myPort:position, sense, v(10,10,10)).
-					uiDebugAxes(dock_myPort:position, sense, v(10,10,10)).
+					uiDebugAxes(dock_myPort:position, sense, v(10, 10, 10)).
+					uiDebugAxes(dock_myPort:position, sense, v(10, 10, 10)).
 				}
 
 				if dockD:Z < 0 {
@@ -64,7 +64,7 @@ until DockingDone {
 				} else if needAlign or dockD:Z > dock_start {
 					dockAlign(dockD, dockV).
 				} else {
-					dockApproach(dockD, dockV,dock_myPort).
+					dockApproach(dockD, dockV, dock_myPort).
 				}
 				wait 0.
 			}
@@ -75,18 +75,15 @@ until DockingDone {
 			uiError("Dock", "No suitable docking port; try moving closer?").
 		}
 		DockingDone on.
-	}
-	else if hastarget and TargetVessel:Distance >= KUNIVERSE:DEFAULTLOADDISTANCE:ORBIT:UNPACK
+	} else if hastarget and TargetVessel:Distance >= KUNIVERSE:DEFAULTLOADDISTANCE:ORBIT:UNPACK
 		and Target:Distance < MaxDistanceToApproach {
-		uiWarning("Dock","Target too far, approaching.").
+		uiWarning("Dock", "Target too far, approaching.").
 		run approach.
-	}
-	else if hastarget and TargetVessel:Distance >= MaxDistanceToApproach {
-		uiError("Dock","Target too far, RUN RENDEZVOUS instead.").
+	} else if hastarget and TargetVessel:Distance >= MaxDistanceToApproach {
+		uiError("Dock", "Target too far, RUN RENDEZVOUS instead.").
 		DockingDone on.
-	}
-	else {
-		uiError("Dock","No target selected").
+	} else {
+		uiError("Dock", "No target selected").
 		DockingDone on.
 	}
 }

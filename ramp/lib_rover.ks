@@ -2,9 +2,9 @@
 
 function roverStabilzeJump {
 	parameter N is TerrainNormalVector().
-	//Needs lib_terrain and lib_parts to run in the main program!
+	// Needs lib_terrain and lib_parts to run in the main program!
 
-	//Declarations
+	// Declarations
 	local StartLand is 0.
 	local StartJump is time:seconds.
 	local LongJump is false.
@@ -12,12 +12,12 @@ function roverStabilzeJump {
 	local ShortJumpST is 1. // Settle time for Short Jumps or roll overs
 	local Stabilized is false.
 
-	//Ease wheels controls
+	// Ease wheels controls
 	set SHIP:CONTROL:WHEELTHROTTLE to 0.
 	set SHIP:CONTROL:WHEELSTEER to 0.
 
 	// Try to steer the rover straight with terrain
-	LOCK STEERING TO LOOKDIRUP(vxcl(N,VELOCITY:SURFACE),SHIP:UP:vector).
+	LOCK STEERING TO LOOKDIRUP(vxcl(N, VELOCITY:SURFACE), SHIP:UP:vector).
 	RCS on. SAS off.
 	partsEnableReactionWheels().
 
@@ -34,16 +34,14 @@ function roverStabilzeJump {
 				set ship:control:translation to dirV:normalized.
 			}
 			// Stop the RCS translation up.
-			else set ship:control:translation to v(0,0,0).
+			else set ship:control:translation to v(0, 0, 0).
 			// Detects long jumps
 			if time:seconds - StartJump > 3 set longJump to True.
 			set StartLand to 0.
-		}
-		else { //Deals with rover on ground
+		} else { // Deals with rover on ground
 			if StartLand = 0 { // Means it just landed or started a rollover
 				SET StartLand to TIME:SECONDS.
-			}
-			else if longJump and time:seconds - StartLand <= LongJumpST { // Stabilze landing
+			} else if longJump and time:seconds - StartLand <= LongJumpST { // Stabilze landing
 				local sense is ship:facing.
 				local dirV is V(
 					vdot(-ship:up:vector, sense:starvector),
@@ -51,14 +49,15 @@ function roverStabilzeJump {
 					vdot(-ship:up:vector, sense:vector)
 				).
 				set ship:control:translation to dirV:normalized.
+			} else if time:seconds - StartLand > ShortJumpST {
+				SET Stabilized to True.
 			}
-			else if time:seconds - StartLand > ShortJumpST SET Stabilized to True.
 		}
 		wait 0.
 	}
 	// Reset ship controls
 	SAS OFF. RCS OFF. UNLOCK STEERING.
-	SET ship:control:translation to v(0,0,0).
+	SET ship:control:translation to v(0, 0, 0).
 	partsDisableReactionWheels().
 	return LongJump.
 }
@@ -66,5 +65,5 @@ function roverStabilzeJump {
 function roverIsRollingOver {
 	parameter N is TerrainNormalVector().
 	parameter Limit is 20.
-	return vang(vxcl(ship:facing:vector,ship:facing:upvector),vxcl(ship:facing:vector,N)) > Limit.
+	return vang(vxcl(ship:facing:vector, ship:facing:upvector), vxcl(ship:facing:vector, N)) > Limit.
 }

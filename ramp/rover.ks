@@ -11,6 +11,6 @@ local RoverOptions is lexicon(
 ).
 
 local choice is uiTerminalMenu(RoverOptions).
-if      choice = "D" run roverdrive.
+if choice = "D" run roverdrive.
 else if choice = "F" run roverroute.
 else if choice = "C" run roverconvoy.

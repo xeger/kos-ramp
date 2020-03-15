@@ -14,7 +14,7 @@ global dock_apchV is 1.    // max approach speed (m/s)
 global dock_dockV is 0.1.  // final approach speed (m/s)
 global dock_predV is 0.01. // pre dock speed (m/s)
 
-//global dock_Z is pidloop(1.4, 0, 0.4, -1, 1).
+// global dock_Z is pidloop(1.4, 0, 0.4, -1, 1).
 
 // Velocity controllers (during alignment)
 global dock_X1 is pidloop(1.4, 0, 0.4, -1, 1).
@@ -48,7 +48,7 @@ function dockFinish {
 	rcs off.
 	sas on.
 	uiShowPorts(0, 0, 0, false).
-	uiDebugAxes(0,0, v(0,0,0)).
+	uiDebugAxes(0, 0, v(0, 0, 0)).
 	clearvecdraws().
 }
 
@@ -56,13 +56,12 @@ function dockFinish {
 function dockBack {
 	parameter backPos, backVel.
 
-	//Move away from the station when backing more than start distance
+	// Move away from the station when backing more than start distance
 	if backPos:z < -dock_start {
 		if abs(backPos:x) < 50 {
 			local vWantX is (backPos:X / abs(backPos:X)) * max(dock_dockV, 0.5).
 			set dock_X1:setpoint to vWantX.
-		}
-		else set dock_X1:setpoint to 0.
+		} else set dock_X1:setpoint to 0.
 		set ship:control:starboard to -1 * dock_X1:update(time:seconds, backVel:X).
 	}
 
@@ -87,7 +86,7 @@ function dockAlign {
 	if alignPos:Z >= dock_start {
 		// Move forward at a distance-dependent speed between
 		// approach and final-approach
-		set vWantZ to -max(dock_dockV, dock_apchV*vScaleZ).
+		set vWantZ to -max(dock_dockV, dock_apchV * vScaleZ).
 	} else {
 		// Halt at approach-start distance
 		set vWantZ to 0.
@@ -116,14 +115,13 @@ function dockApproach {
 			if not dockPending(dockPort) {
 				// Final approach: barely inch forward!
 				set vWantZ to -dock_dockV.
-			}
-			else {
+			} else {
 				set vWantZ to -dock_predV.
 			}
 		} else {
 			// Move forward at a distance-dependent speed between
 			// approach and final-approach
-			set vWantZ to -max(dock_dockV, dock_apchV*vScaleZ).
+			set vWantZ to -max(dock_dockV, dock_apchV * vScaleZ).
 		}
 
 		set dock_Z:setpoint to vWantZ.
@@ -183,8 +181,7 @@ function dockChoosePorts {
 				}
 			}
 		}
-	}
-	else{ // Target port was pre-selected. Just find a suitable port in my ship
+	} else{ // Target port was pre-selected. Just find a suitable port in my ship
 		for myP in myPorts {
 			if myPort = 0 and hisPort:NODETYPE = myP:NODETYPE {
 				set myPort to myP.
@@ -254,7 +251,7 @@ function dockMatchVelocity {
 		// Stops the engines if reach near residual speed or if speed starts increasing. (May happens with some cases where the ship is not perfecly aligned with matchVel and residual is very low)
 		until (matchVel:mag <= (residual + RCSTheresold)) or (matchVel:mag > v0) {
 			set v0 to matchVel:mag.
-			wait 0.1. //Assure measurements are made some time apart.
+			wait 0.1. // Assure measurements are made some time apart.
 		}
 
 		lock throttle to 0.
@@ -262,7 +259,7 @@ function dockMatchVelocity {
 	}
 	// Use RCS to cancel remaining dv
 	unlock steering.
-	utilRCSCancelVelocity(matchVel@,residual,15).
+	utilRCSCancelVelocity(matchVel@, residual, 15).
 
 	unlock matchVel.
 }

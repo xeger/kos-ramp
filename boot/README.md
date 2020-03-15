@@ -28,7 +28,7 @@ You can use the script `initialize.ks` to create a sample mission for your ship.
 set target to mun.
 
 // TODO: Do the other things, not because they are easy, but because they are hard!
-//run transfer.
+// run transfer.
 ```
 
 Feel free to change that to anything that suits your mission, or to copy a

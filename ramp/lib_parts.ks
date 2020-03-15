@@ -4,11 +4,11 @@ function partsDoEvent {
 	parameter event.
 	parameter tag is "".
 
-	set event to "^"+event+"\b". // match first word
+	set event to "^" + event + "\b". // match first word
 	local success is false.
 	local maxStage is -1.
 	if tag = "" and (defined stagingMaxStage)
-		set maxStage to stagingMaxStage-1. //see lib_staging
+		set maxStage to stagingMaxStage - 1. // see lib_staging
 	for p in ship:partsTagged(tag) {
 		if p:stage >= maxStage and p:modules:contains(module) {
 			local m is p:getModule(module).
@@ -30,16 +30,16 @@ function partsDoAction {
 
 	local success is false.
 	if Career():canDoActions {
-		set action to "^"+action+"\b". // match first word
+		set action to "^" + action + "\b". // match first word
 		local maxStage is -1.
 		if tag = "" and (defined stagingMaxStage)
-			set maxStage to stagingMaxStage-1. //see lib_staging
+			set maxStage to stagingMaxStage - 1. // see lib_staging
 		for p in ship:partsTagged(tag) {
 			if p:stage >= maxStage and p:modules:contains(module) {
 				local m is p:getModule(module).
 				for a in m:allActionNames() {
 					if a:matchesPattern(action) {
-						m:doAction(a,True).
+						m:doAction(a, True).
 						set success to true.
 					}
 				}
@@ -89,9 +89,9 @@ function partsRetractRadiators {
 }
 
 
-//Try to control from the specified docking port.
+// Try to control from the specified docking port.
 function partsControlFromDockingPort {
-	parameter cPart. //The docking port you want to control from.
+	parameter cPart. // The docking port you want to control from.
 	local success is false.
 
 	// Try to control from the port
@@ -132,7 +132,7 @@ function partsHasTermometer {
 function partsDisarmsChutes {
 	// Make sure all chutes are disarmed, even if already staged.
 	// Warning: If chutes are staged and disarmed, SPACEBAR will not deploy they!
-	//			Use CHUTES ON. command or right click menu.
+	//   Use 'chutes on.' command or right click menu.
 	return partsDoAction("ModuleParachute", "disarm").
 }
 
@@ -155,21 +155,18 @@ function partsPercentLFO {
 		if R:NAME = "LIQUIDFUEL" {
 			set LFCAP to R:CAPACITY.
 			set LFAMT to R:AMOUNT.
-		}
-		else if R:NAME = "OXIDIZER" {
+		} else if R:NAME = "OXIDIZER" {
 			set OXCAP to R:CAPACITY.
 			set OXAMT to R:AMOUNT.
 		}
 	}
 	if OXCAP = 0 OR LFCAP = 0 {
 		return 0.
-	}
-	else {
-		if OXCAP * (11/9) < LFCAP { // Surplus fuel
-			return OXAMT/OXCAP*100.
-		}
-		else { // Surplus oxidizer or proportional amonts
-			return LFAMT/LFCAP*100.
+	} else {
+		if OXCAP * (11 / 9) < LFCAP { // Surplus fuel
+			return OXAMT / OXCAP * 100.
+		} else { // Surplus oxidizer or proportional amonts
+			return LFAMT / LFCAP * 100.
 		}
 	}
 }

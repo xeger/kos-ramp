@@ -6,7 +6,7 @@ runoncepath("lib_util").
 SAS OFF.
 
 FUNCTION LngToDegrees {
-	//From youtube.com/cheerskevin
+	// From youtube.com/cheerskevin
 	PARAMETER lng.
 	RETURN MOD(lng + 360, 360).
 }
@@ -15,16 +15,15 @@ FUNCTION TimeToLong {
 	PARAMETER lng.
 
 	LOCAL SDAY IS BODY("KERBIN"):ROTATIONPERIOD. // Duration of Kerbin day in seconds
-	LOCAL KAngS IS 360/SDAY. // Rotation angular speed.
+	LOCAL KAngS IS 360 / SDAY. // Rotation angular speed.
 	LOCAL P IS SHIP:ORBIT:PERIOD.
-	LOCAL SAngS IS (360/P) - KAngS. // Ship angular speed acounted for Kerbin rotation.
+	LOCAL SAngS IS (360 / P) - KAngS. // Ship angular speed acounted for Kerbin rotation.
 	LOCAL TgtLong IS LngToDegrees(lng).
 	LOCAL ShipLong is LngToDegrees(SHIP:LONGITUDE).
 	LOCAL DLong IS TgtLong - ShipLong.
 	IF DLong < 0 {
 		RETURN (DLong + 360) / SAngS.
-	}
-	ELSE {
+	} ELSE {
 		RETURN DLong / SAngS.
 	}
 }
@@ -43,26 +42,24 @@ UNTIL ORBITOK AND INCOK {
 
 	IF NOT (OBT:INCLINATION < (Deorbit_Inc + 0.1) AND
 					OBT:INCLINATION > (Deorbit_Inc - 0.1)) {
-		uiBanner("Deorbit","Changing inclination from " + round(OBT:INCLINATION,2) +
-						"º to " + round(Deorbit_Inc,2) + "º").
-		RUNPATH("node_inc_equ",Deorbit_Inc).
+		uiBanner("Deorbit", "Changing inclination from " + round(OBT:INCLINATION, 2) +
+						"º to " + round(Deorbit_Inc, 2) + "º").
+		RUNPATH("node_inc_equ", Deorbit_Inc).
 		RUNPATH("node").
-	}
-	ELSE { SET INCOK TO TRUE.}
+	} ELSE { SET INCOK TO TRUE.}
 
-	IF NOT (OBT:APOAPSIS < (Deorbit_Alt + Deorbit_Alt*0.05) AND
-					OBT:APOAPSIS > (Deorbit_Alt - Deorbit_Alt*0.05) AND
+	IF NOT (OBT:APOAPSIS < (Deorbit_Alt + Deorbit_Alt * 0.05) AND
+					OBT:APOAPSIS > (Deorbit_Alt - Deorbit_Alt * 0.05) AND
 					OBT:eccentricity < 0.1 ) {
-		uiBanner("Deorbit","Establishing a new orbit at " + round(Deorbit_Alt/1000) + "km" ).
-		RUNPATH("circ_alt",Deorbit_Alt).
-	}
-	ELSE { SET ORBITOK TO TRUE. }
+		uiBanner("Deorbit", "Establishing a new orbit at " + round(Deorbit_Alt / 1000) + "km" ).
+		RUNPATH("circ_alt", Deorbit_Alt).
+	} ELSE { SET ORBITOK TO TRUE. }
 
 }
 UNLOCK STEERING. UNLOCK THROTTLE. WAIT 5.
 
 // Add Deorbit maneuver node.
-uiBanner("Deorbit","Doing the deorbit burn").
+uiBanner("Deorbit", "Doing the deorbit burn").
 LOCAL nd IS NODE(time:seconds + TimeToLong(Deorbit_Long), 0, 0, Deorbit_dV).
 ADD nd. RUN NODE.
 
@@ -78,18 +75,18 @@ partsRetractAntennas().
 partsRetractRadiators().
 
 LOCK THROTTLE TO 0.
-uiBanner("Deorbit","Holding 40º Pitch until 35000m").
-LOCK STEERING TO HEADING(90,40).
-WAIT Until utilIsShipFacing(HEADING(90,40):Vector).
+uiBanner("Deorbit", "Holding 40º Pitch until 35000m").
+LOCK STEERING TO HEADING(90, 40).
+WAIT Until utilIsShipFacing(HEADING(90, 40):Vector).
 SET KUNIVERSE:TIMEWARP:MODE TO "RAILS".
 SET KUNIVERSE:TIMEWARP:WARP to 2.
 WAIT UNTIL SHIP:ALTITUDE < 71000.
 KUNIVERSE:TIMEWARP:CANCELWARP().
 WAIT UNTIL SHIP:ALTITUDE < 35000.
-uiBanner("Deorbit","Holding -3º Pitch until 30000m").
+uiBanner("Deorbit", "Holding -3º Pitch until 30000m").
 LOCK STEERING TO HEADING(90,-3).
 WAIT UNTIL SHIP:ALTITUDE < 30000.
-uiBanner("Deorbit","Preparing atmospheric autopilot...").
+uiBanner("Deorbit", "Preparing atmospheric autopilot...").
 UNLOCK THROTTLE.
 UNLOCK STEERING.
 SAS ON.

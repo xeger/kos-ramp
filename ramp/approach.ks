@@ -8,7 +8,7 @@ runoncepath("lib_util").
 runoncepath("lib_dock").
 runoncepath("lib_ui").
 
-//Those functions are for use by this program ONLY!
+// Those functions are for use by this program ONLY!
 function CancelVelT {
 	uiBanner("Maneuver", "Match transverse velocity").
 	if velT:mag > 1 {
@@ -16,8 +16,8 @@ function CancelVelT {
 		lock steering to steerDir.
 		wait until utilIsShipFacing(steerDir:vector).
 
-		//Preditcs time to complete the burn with 50% plus error
-		local tP is ( (velT:mag / accel)*1.5 ) + time:seconds.
+		// Preditcs time to complete the burn with 50% plus error
+		local tP is ( (velT:mag / accel) * 1.5 ) + time:seconds.
 
 		lock throttle to min(velT:mag / accel, 1.0).
 		wait until (velT:mag < 0.5) or (time:seconds > tP).
@@ -36,8 +36,8 @@ function CancelVel {
 		lock steering to steerDir.
 		wait until utilIsShipFacing(steerDir:vector).
 
-		//Preditcs time to complete the burn with 50% plus error
-		local tP is ( (vel:mag / accel)*1.5 ) + time:seconds.
+		// Preditcs time to complete the burn with 50% plus error
+		local tP is ( (vel:mag / accel) * 1.5 ) + time:seconds.
 
 		lock throttle to min(vel:mag / accel, 1.0).
 		wait until (vel:mag < 0.5) or (time:seconds > tP).
@@ -56,40 +56,39 @@ function GetCloser {
 	until dot >= 0 {
 		local lock steerDir to utilFaceBurn(lookdirup(target:position, ship:facing:upvector)).
 		lock steering to steerDir.
-		wait until utilIsShipFacing(steerDir:vector,1,1).
+		wait until utilIsShipFacing(steerDir:vector, 1, 1).
 		lock throttle to 1.
 		set dot to vdot(target:position, velR).
 	}
 	lock throttle to 0.
 
-	//Accelerate towards target
+	// Accelerate towards target
 	local lock steerDir to utilFaceBurn(lookdirup(target:position, ship:facing:upvector)).
 	lock steering to steerDir.
-	wait until utilIsShipFacing(steerDir:vector,1,0.5).
+	wait until utilIsShipFacing(steerDir:vector, 1, 0.5).
 	local t0 is time:seconds.
 	lock throttle to 1.
 	wait until target:position:mag / velR:mag < (time:seconds - t0 + 60) or vel:mag > 100 .
 	lock throttle to 0.
 
-	//Cancel any small traverse speed that may had been introduced by previous burn
-	utilRCSCancelVelocity(velT@,0.01,5).
+	// Cancel any small traverse speed that may had been introduced by previous burn
+	utilRCSCancelVelocity(velT@, 0.01, 5).
 	unlock throttle.
 	unlock steering.
 }
 
 function BrakeForEncounter {
-	//Turn back to brake
+	// Turn back to brake
 	local lock steerDir to utilFaceBurn(lookdirup(-vel:normalized, ship:facing:upvector)).
 	lock steering to steerDir.
 	wait until utilIsShipFacing(steerDir:vector) .
-	local stopDistance is 0.5 * accel * (vel:mag / accel)^2.
+	local stopDistance is 0.5 * accel * (vel:mag / accel) ^ 2.
 	local dt is ((target:position:mag - stopDistance) / vel:mag) - 5.
 	if dt > 0 {
 		if dt > 60 {
 			uiBanner("Maneuver", "Warping to brake").
-			runpath("warp",dt).
-		}
-		else {
+			runpath("warp", dt).
+		} else {
 			uiBanner("Maneuver", "Waiting " + round(dt) + " seconds to brake").
 			wait dt.
 		}
@@ -109,7 +108,7 @@ function BrakeForEncounter {
 local accel is uiAssertAccel("Maneuver").
 lock vel to (ship:velocity:orbit - target:velocity:orbit).
 lock velR to vdot(vel, target:position:normalized) * target:position:normalized.
-lock velT to vxcl(target:position:normalized,vel).
+lock velT to vxcl(target:position:normalized, vel).
 
 
 
@@ -119,19 +118,19 @@ sas off.
 
 
 // Main logic checks
-local lock GoingTowardsTarget to vang(target:position,vel) < 10. //Ship travelling towards target
+local lock GoingTowardsTarget to vang(target:position, vel) < 10. // Ship travelling towards target
 
-local lock IsNearTarget to (target:position:mag < 150) OR //Ship is VERY close to target.
-	(target:position:mag < 850 and //Target is near
-	(vel:mag > 1 and vel:mag < 10) and //Target relative speed is reasonable
-	GoingTowardsTarget). //The ship moves towards target
+local lock IsNearTarget to (target:position:mag < 150) OR // Ship is VERY close to target.
+	(target:position:mag < 850 and // Target is near
+	(vel:mag > 1 and vel:mag < 10) and // Target relative speed is reasonable
+	GoingTowardsTarget). // The ship moves towards target
 
 until IsNearTarget {
 
 	until GoingTowardsTarget() {
 
 		// If ship is in nearby vicinty of target, or going away from it, cancel relative speed.
-		if target:position:mag / vel:mag < 30 or vang(target:position,vel) > 90 {
+		if target:position:mag / vel:mag < 30 or vang(target:position, vel) > 90 {
 			CancelVel().
 		}
 

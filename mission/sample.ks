@@ -18,7 +18,7 @@ if ship:status = "FLYING" or ship:status = "SUB_ORBITAL" {
 set target to mun.
 
 // TODO: Do the other things, not because they are easy, but because they are hard!
-//run transfer.
+// run transfer.
 
 // TODO: nuke these after uncommenting transfer command.
 uiBanner("Mission", "Need input; see kOS console").

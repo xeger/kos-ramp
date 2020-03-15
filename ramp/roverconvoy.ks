@@ -15,4 +15,4 @@ for Tgt in AllTargets {
 }
 
 local SelectedIndex is uiTerminalList(Names).
-run rover_autosteer(ValidTargets[SelectedIndex],30).
+run rover_autosteer(ValidTargets[SelectedIndex], 30).

@@ -23,10 +23,11 @@ if HomeConnection:IsConnected {
 	local Route is list().
 	local RawPoints is readjson(Routes[SelectedIndex]).
 	for p in RawPoints {
-		Route:Add(latlng(p["lat"],p["lng"])).
+		Route:Add(latlng(p["lat"], p["lng"])).
 	}
 	switch to LocalPath:Volume.
 	cd(LocalPath:Parent).
-	run rover_autosteer(Route,WaypointTolerance,MaxSpeed).
+	run rover_autosteer(Route, WaypointTolerance, MaxSpeed).
+} else {
+	uiError("Route", "There is no connection to KSC servers. Raise antennas and try again.").
 }
-else uiError("Route","There is no connection to KSC servers. Raise antennas and try again.").
