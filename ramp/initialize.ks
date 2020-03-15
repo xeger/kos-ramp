@@ -1,16 +1,16 @@
-IF HOMECONNECTION:ISCONNECTED {
-	LOCAL ARC IS VOLUME(0).
-	SWITCH TO ARC.
-	LOCAL SCRIPTNAME IS "/start/" + SHIP:NAME + ".ks".
-	LOCAL SCRIPTPATH IS PATH(SCRIPTNAME).
-	IF NOT EXISTS(SCRIPTPATH) {
-		COPYPATH("0:/mission/sample.ks", SCRIPTNAME).
-		PRINT "Created " + SCRIPTNAME.
-		PRINT "To run mission immediately:".
-		PRINT "  REBOOT.".
-	} ELSE {
-		REBOOT.
+if homeconnection:isconnected {
+	local ARC is volume(0).
+	switch to ARC.
+	local scriptname is "/start/" + ship:name + ".ks".
+	local scriptpath is path(scriptname).
+	if not exists(scriptpath) {
+		copypath("0:/mission/sample.ks", scriptname).
+		print "Created " + scriptname.
+		print "To run mission immediately:".
+		print "  reboot.".
+	} else {
+		reboot.
 	}
-} ELSE {
-	PRINT "Can't open the archive. Extend antennas or get closer to Kerbin.".
+} else {
+	print "Can't open the archive. Extend antennas or get closer to Kerbin.".
 }

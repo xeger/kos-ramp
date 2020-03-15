@@ -43,16 +43,16 @@ if TargetToFollow:istype("vessel") {
 	lock CoordToFollow to TargetToFollow.
 } else if TargetToFollow:istype("List") {
 	// Following a list of waypoints
-	for Item in TargetToFollow {
-		if Item:istype("GeoCoordinates") Waypoints:Push(Item).
+	for item in TargetToFollow {
+		if item:istype("GeoCoordinates") waypoints:push(Item).
 	}
 	set NextWaypoint to ship:geoposition.
 	Lock CoordToFollow to NextWaypoint.
 }
 
 // Reset controls
-SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+set ship:control:neutralize to true.
+set ship:control:pilotmainthrottle to 0.
 brakes off.
 sas off.
 rcs off.
@@ -70,15 +70,15 @@ if ship:status = "PRELAUNCH" {
 	set runmode to -1.
 }
 
-local WThrottlePID is PIDLOOP(0.15, 0.005, 0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
-set WThrottlePID:SETPOINT TO 0.
+local WThrottlePID is pidloop(0.15, 0.005, 0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+set WThrottlePID:setpoint to 0.
 
-local SpeedPID is PIDLOOP(0.3, 0.001, 0.010,-speedlimit, speedlimit).
-set SpeedPID:SETPOINT to 0.
+local SpeedPID is pidloop(0.3, 0.001, 0.010,-speedlimit, speedlimit).
+set SpeedPID:setpoint to 0.
 
 local WSteeringkP is 0.010.
-local WSteeringPID is PIDLOOP(WSteeringkP, 0.0001, 0.002, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
-set WSteeringPID:SETPOINT TO 0.
+local WSteeringPID is pidloop(WSteeringkP, 0.0001, 0.002, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+set WSteeringPID:setpoint to 0.
 
 
 until runmode = -1 {
@@ -92,15 +92,15 @@ until runmode = -1 {
 
 	if runmode = 0 { // Govern the rover
 		// Wheel Throttle and brakes:
-		if FollowingVessel or Waypoints:EMPTY() {
+		if FollowingVessel or waypoints:empty() {
 			// If following a vessel or have just one waypoint, use the distance from they to compute speed and braking.
-			set targetspeed to SpeedPID:UPDATE(time:seconds, DistanceToFollow - TargetDistance).
+			set targetspeed to SpeedPID:update(time:seconds, DistanceToFollow - TargetDistance).
 			if RelSpeed > 2 set brakes to TargetDistance / RelSpeed <= BreakTime.
 			else brakes off.
 		} else {
 			// When have a list of waypoints, use the distance to next waypoint plus cosine error to the next one to compute speed and braking.
-			local SpeedFactor is Waypoints:Peek():distance * max(0, cos(abs(Waypoints:Peek():bearing))).
-			set targetspeed to SpeedPID:UPDATE(time:seconds, DistanceToFollow - (TargetDistance + SpeedFactor)).
+			local SpeedFactor is waypoints:peek():distance * max(0, cos(abs(waypoints:peek():bearing))).
+			set targetspeed to SpeedPID:update(time:seconds, DistanceToFollow - (TargetDistance + SpeedFactor)).
 			if RelSpeed > 2 set brakes to (TargetDistance + SpeedFactor) / RelSpeed <= BreakTime.
 			else brakes off.
 		}
@@ -109,7 +109,7 @@ until runmode = -1 {
 		} else{
 			set RelSpeed to gs.
 		}
-		set wtVAL to WThrottlePID:UPDATE(time:seconds, RelSpeed - targetspeed).
+		set wtVAL to WThrottlePID:update(time:seconds, RelSpeed - targetspeed).
 
 
 		// Steering:
@@ -117,7 +117,7 @@ until runmode = -1 {
 		set WSteeringPID:MaxOutput to 1 * turnlimit.
 		set WSteeringPID:MinOutput to -1 * turnlimit.
 		set WSteeringPID:kP to WSteeringkP * turnlimit * 2.
-		set kturn to WSteeringPID:UPDATE(time:seconds, targetBearing).
+		set kturn to WSteeringPID:update(time:seconds, targetBearing).
 
 		// Detect jumps and engage stability control
 		if ship:status <> "LANDED" {
@@ -134,15 +134,15 @@ until runmode = -1 {
 	// Here it really control the rover.
 	set wtVAL to min(1, (max(-1, wtVAL))).
 	set kTurn to min(1, (max(-1, kTurn))).
-	set SHIP:CONTROL:WHEELTHROTTLE to WTVAL.
-	set SHIP:CONTROL:WHEELSTEER to kTurn.
+	set ship:control:wheelthrottle to wtval.
+	set ship:control:wheelsteer to kTurn.
 
 	if not FollowingVessel {
 		if abs(DistanceToFollow - TargetDistance) <= DistanceToFollow {
-			if Waypoints:EMPTY() set runmode to -1.
+			if waypoints:empty() set runmode to -1.
 			else {
-				set NextWaypoint to Waypoints:POP().
-				uiBanner("Rover", "Next waypoint in " + round(NextWaypoint:distance) + "m" ).
+				set nextWaypoint to waypoints:pop().
+				uiBanner("Rover", "Next waypoint in " + round(nextWaypoint:distance) + "m" ).
 			}
 		}
 	}
@@ -152,10 +152,10 @@ until runmode = -1 {
 uiBanner("Rover", "Destination reached.", 2).
 
 // Clear before end
-UNLOCK Throttle.
-UNLOCK Steering.
+unlock Throttle.
+unlock Steering.
 partsEnableReactionWheels().
-SET ship:control:translation to v(0, 0, 0).
-SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
-BRAKES ON.
+set ship:control:translation to v(0, 0, 0).
+set ship:control:neutralize to true.
+set ship:control:pilotmainthrottle to 0.
+BRAKES on.

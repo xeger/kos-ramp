@@ -33,14 +33,14 @@ local minperi is (body:atm:height + (body:radius * 0.3)).
 
 if ship:periapsis < minperi or ship:obt:inclination > 90 {
 	sas off.
-	LOCK STEERING TO heading(90, 0).
+	lock steering to heading(90, 0).
 	wait 10.
-	LOCK deltaPct TO (ship:periapsis - minperi) / minperi.
-	LOCK throttle TO max(1, min(0.1, deltaPct)).
+	lock deltaPct to (ship:periapsis - minperi) / minperi.
+	lock throttle to max(1, min(0.1, deltaPct)).
 	Wait Until ship:periapsis > minperi.
-	LOCK throttle to 0.
-	UNLOCK throttle.
-	UNLOCK STEERING.
+	lock throttle to 0.
+	unlock throttle.
+	unlock steering.
 	sas on.
 }
 

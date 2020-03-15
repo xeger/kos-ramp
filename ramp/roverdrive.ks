@@ -23,7 +23,7 @@ local wtVAL is 0. // Wheel Throttle Value
 local kTurn is 0. // Wheel turn value.
 local targetspeed is 0. // Cruise control starting speed
 local targetHeading is 90. // Used for autopilot steering
-local CruiseControl is False. // Enable/Disable Cruise control
+local CruiseControl is false. // Enable/Disable Cruise control
 local lastGUIUpdate is 0.
 local GUIUpdateInterval is 0.25.
 local runmode is 0.
@@ -41,16 +41,16 @@ Function AddWaypoint {
 }
 
 Function RmvWaypoint {
-	if route:empty() uiBanner("Route", "There are no more waypoints").
+	if Route:empty() uiBanner("Route", "There are no more waypoints").
 	else {
-		route:remove(Route:length - 1).
+		Route:remove(Route:length - 1).
 		uiBanner("Route", "Last waypoint removed.").
 	}
 }
 
 Function SaveRoute {
 	if HomeConnection:IsConnected {
-		WriteJSON(Route, "0:/routes/" + TextFieldRouteName:Text()+ ".json").
+		WriteJSON(Route, "0:/routes/" + TextFieldRouteName:text()+ ".json").
 		uiBanner("Route", "Route saved!", 2).
 	} else uiError("Route", "There is no connection to KSC servers. Raise antennas and try again.").
 }
@@ -59,104 +59,104 @@ Function SaveRoute {
 
 
 // Create a GUI window
-LOCAL gui IS GUI(250).
-SET gui:x TO 30.
-SET gui:y TO 100.
+local gui is GUI(250).
+set gui:x to 30.
+set gui:y to 100.
 
-LOCAL labelName IS gui:ADDLABEL("<b><i><size=14>" + SHIP:NAME + "</size></i></b>").
-SET labelName:STYLE:ALIGN TO "CENTER".
-SET labelName:STYLE:HSTRETCH TO True.
-SET labelName:STYLE:TEXTCOLOR to Yellow.
+local labelName is gui:addlabel("<b><i><size=14>" + ship:name + "</size></i></b>").
+set labelName:style:align to "CENTER".
+set labelName:style:hstretch to true.
+set labelName:style:textcolor to Yellow.
 
-LOCAL labelMode IS gui:ADDLABEL("").
-SET labelMode:STYLE:ALIGN TO "CENTER".
-SET labelMode:STYLE:HSTRETCH TO True.
+local labelMode is gui:addlabel("").
+set labelMode:style:align to "CENTER".
+set labelMode:style:hstretch to true.
 
-LOCAL apbuttons TO gui:ADDHBOX().
-LOCAL ButtonCC TO apbuttons:addbutton("Cruise").
-LOCAL ButtonMD TO apbuttons:addbutton("Assist").
-LOCAL ButtonMC TO apbuttons:addbutton("Manual").
+local apbuttons to gui:addhbox().
+local ButtonCC to apbuttons:addbutton("Cruise").
+local ButtonMD to apbuttons:addbutton("Assist").
+local ButtonMC to apbuttons:addbutton("Manual").
 
-SET ButtonCC:ONCLICK TO { SET CruiseControl TO True. }.
-SET ButtonMD:ONCLICK TO { SET CruiseControl TO False. }.
-SET ButtonMC:ONCLICK TO { SET runmode TO 1. }.
+set ButtonCC:onclick to { set CruiseControl to true. }.
+set ButtonMD:onclick to { set CruiseControl to false. }.
+set ButtonMC:onclick to { set runmode to 1. }.
 
 
-LOCAL apsettings to gui:ADDVLAYOUT().
+local apsettings to gui:addvlayout().
 // HDG Settings
-LOCAL labelHDGTitle IS apsettings:ADDLABEL("<b><size=15>Desired Heading</size></b>").
-SET labelHDGTitle:STYLE:ALIGN TO "CENTER".
-SET labelHDGTitle:STYLE:HSTRETCH TO True.
-LOCAL hdgsettings to apsettings:ADDHBOX().
-LOCAL ButtonHDGM TO hdgsettings:ADDBUTTON("◀").
-SET ButtonHDGM:Style:WIDTH TO 40.
-SET ButtonHDGM:Style:HEIGHT TO 25.
-LOCAL LabelHDG TO hdgsettings:ADDLABEL("").
-SET LabelHDG:Style:HEIGHT TO 25.
-SET LabelHDG:STYLE:ALIGN TO "CENTER".
-LOCAL ButtonHDGP TO hdgsettings:ADDBUTTON("▶").
-SET ButtonHDGP:Style:WIDTH TO 40.
-SET ButtonHDGP:Style:HEIGHT TO 25.
+local labelHDGTitle is apsettings:addlabel("<b><size=15>Desired Heading</size></b>").
+set labelHDGTitle:style:align to "CENTER".
+set labelHDGTitle:style:hstretch to true.
+local hdgsettings to apsettings:addhbox().
+local ButtonHDGM to hdgsettings:addbutton("◀").
+set ButtonHDGM:style:width to 40.
+set ButtonHDGM:style:height to 25.
+local LabelHDG to hdgsettings:addlabel("").
+set LabelHDG:style:height to 25.
+set LabelHDG:style:align to "CENTER".
+local ButtonHDGP to hdgsettings:addbutton("▶").
+set ButtonHDGP:style:width to 40.
+set ButtonHDGP:style:height to 25.
 
 local SteeringSteep is 5.
 
-SET ButtonHDGM:ONCLICK TO {
-	SET targetheading TO ((ROUND(targetheading / SteeringSteep) * SteeringSteep) -SteeringSteep).
-	IF targetheading < 0 {
-		SET targetheading TO targetheading + 360.
+set ButtonHDGM:onclick to {
+	set targetheading to ((round(targetheading / SteeringSteep) * SteeringSteep) -SteeringSteep).
+	if targetheading < 0 {
+		set targetheading to targetheading + 360.
 	}
 }.
-SET ButtonHDGP:ONCLICK TO {
-	SET targetheading TO ((ROUND(targetheading / SteeringSteep) * SteeringSteep) +SteeringSteep).
-	IF targetheading > 360 {
-		SET targetheading TO targetheading - 360.
+set ButtonHDGP:onclick to {
+	set targetheading to ((round(targetheading / SteeringSteep) * SteeringSteep) +SteeringSteep).
+	if targetheading > 360 {
+		set targetheading to targetheading - 360.
 	}
 }.
 
 // SPEED Settings
-LOCAL labelSPDTitle IS apsettings:ADDLABEL("<b><size=15>Desired Speed</size></b>").
-SET labelSPDTitle:STYLE:ALIGN TO "CENTER".
-SET labelSPDTitle:STYLE:HSTRETCH TO True.
-LOCAL SPDsettings to apsettings:ADDHBOX().
-LOCAL ButtonSPDM TO SPDsettings:ADDBUTTON("▼").
-SET ButtonSPDM:Style:WIDTH TO 40.
-SET ButtonSPDM:Style:HEIGHT TO 25.
-LOCAL LabelSPD TO SPDsettings:ADDLABEL("").
-SET LabelSPD:Style:HEIGHT TO 25.
-SET LabelSPD:STYLE:ALIGN TO "CENTER".
-LOCAL ButtonSPDP TO SPDsettings:ADDBUTTON("▲").
-SET ButtonSPDP:Style:WIDTH TO 40.
-SET ButtonSPDP:Style:HEIGHT TO 25.
+local labelSPDTitle is apsettings:addlabel("<b><size=15>Desired Speed</size></b>").
+set labelSPDTitle:style:align to "CENTER".
+set labelSPDTitle:style:hstretch to true.
+local SPDsettings to apsettings:addhbox().
+local ButtonSPDM to SPDsettings:addbutton("▼").
+set ButtonSPDM:style:width to 40.
+set ButtonSPDM:style:height to 25.
+local LabelSPD to SPDsettings:addlabel("").
+set LabelSPD:style:height to 25.
+set LabelSPD:style:align to "CENTER".
+local ButtonSPDP to SPDsettings:addbutton("▲").
+set ButtonSPDP:style:width to 40.
+set ButtonSPDP:style:height to 25.
 
-SET ButtonSPDM:ONCLICK TO {
-	SET targetspeed TO ROUND(targetspeed) -3.
+set ButtonSPDM:onclick to {
+	set targetspeed to round(targetspeed) -3.
 }.
-SET ButtonSPDP:ONCLICK TO {
-	SET targetspeed TO ROUND(targetspeed) +3.
+set ButtonSPDP:onclick to {
+	set targetspeed to round(targetspeed) +3.
 }.
 
 // Dashboard
-LOCAL dashboard to gui:ADDHBOX().
-LOCAL DashLeft to dashboard:ADDVLAYOUT().
-LOCAL LabelDashSpeed to DashLeft:ADDLABEL("").
-SET LabelDashSpeed:STYLE:ALIGN TO "LEFT".
-SET LabelDashSpeed:STYLE:HSTRETCH TO True.
-SET LabelDashSpeed:STYLE:TEXTCOLOR TO Yellow.
-LOCAL LabelDashEC to DashLeft:ADDLABEL("").
-SET LabelDashEC:STYLE:ALIGN TO "LEFT".
-SET LabelDashEC:STYLE:HSTRETCH TO True.
-SET LabelDashEC:STYLE:TEXTCOLOR TO Yellow.
-LOCAL LabelDashLFO to DashLeft:ADDLABEL("").
-SET LabelDashLFO:STYLE:ALIGN TO "LEFT".
-SET LabelDashLFO:STYLE:HSTRETCH TO True.
-SET LabelDashLFO:STYLE:TEXTCOLOR TO Yellow.
+local dashboard to gui:addhbox().
+local DashLeft to dashboard:addvlayout().
+local LabelDashSpeed to DashLeft:addlabel("").
+set LabelDashSpeed:style:align to "LEFT".
+set LabelDashSpeed:style:hstretch to true.
+set LabelDashSpeed:style:textcolor to Yellow.
+local LabelDashEC to DashLeft:addlabel("").
+set LabelDashEC:style:align to "LEFT".
+set LabelDashEC:style:hstretch to true.
+set LabelDashEC:style:textcolor to Yellow.
+local LabelDashLFO to DashLeft:addlabel("").
+set LabelDashLFO:style:align to "LEFT".
+set LabelDashLFO:style:hstretch to true.
+set LabelDashLFO:style:textcolor to Yellow.
 
 
-LOCAL SliderSteering to DashLeft:ADDHSLIDER(0, 1,-1).
-LOCAL LabelControls to DashLeft:ADDLABEL("<color=#aaaaaa88>▲ Steering | Throttle ▶</color>").
-SET LabelControls:STYLE:ALIGN TO "RIGHT".
-SET LabelControls:STYLE:HSTRETCH TO True.
-LOCAL SliderThrottle to Dashboard:ADDVSLIDER(0, 1,-1).
+local SliderSteering to DashLeft:addhslider(0, 1,-1).
+local LabelControls to DashLeft:addlabel("<color=#aaaaaa88>▲ Steering | Throttle ▶</color>").
+set LabelControls:style:align to "RIGHT".
+set LabelControls:style:hstretch to true.
+local SliderThrottle to dashboard:addvslider(0, 1,-1).
 
 local RouteMaker is gui:AddVBox().
 local rmButtons is RouteMaker:AddHLayout().
@@ -165,23 +165,23 @@ local ButtonRmvWPT is rmButtons:AddButton("- Waypoint").
 local ButtonSaveRoute is rmButtons:AddButton("Save Route").
 local TextFieldRouteName is RouteMaker:AddTextField("Route name").
 
-Set ButtonAddWPT:ONCLICK to AddWaypoint@.
-Set ButtonRmvWPT:ONCLICK to RmvWaypoint@.
-Set ButtonSaveRoute:ONCLICK To SaveRoute@.
+Set ButtonAddWPT:onclick to AddWaypoint@.
+Set ButtonRmvWPT:onclick to RmvWaypoint@.
+Set ButtonSaveRoute:onclick To SaveRoute@.
 
-ON AG1 { AddWaypoint(). Preserve. }
+on AG1 { AddWaypoint(). Preserve. }
 
-LOCAL ButtonStop TO gui:ADDBUTTON("Stop script").
-SET ButtonStop:ONCLICK TO { set runmode to -1 . WAIT 0.}.
+local ButtonStop to gui:addbutton("Stop script").
+set ButtonStop:onclick to { set runmode to -1 . wait 0.}.
 
-LOCAL ok TO gui:ADDBUTTON("Reboot kOS").
-SET ok:ONCLICK TO {
-	gui:HIDE().
-	SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+local ok to gui:addbutton("Reboot kOS").
+set ok:onclick to {
+	gui:hide().
+	set ship:control:neutralize to true.
+	set ship:control:pilotmainthrottle to 0.
 	reboot.
 }.
-gui:SHOW().
+gui:show().
 
 
 ///////////////
@@ -191,8 +191,8 @@ gui:SHOW().
 wait until kuniverse:activevessel = ship.
 
 // Reset controls
-SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+set ship:control:neutralize to true.
+set ship:control:pilotmainthrottle to 0.
 sas off.
 rcs off.
 lights on.
@@ -202,17 +202,17 @@ partsExtendAntennas().
 
 // Check if rover is in a good state to be controlled.
 if ship:status = "PRELAUNCH" {
-	SET labelMode:Text TO "<size=16><color=yellow>Waiting launch...</color></size>".
+	set labelMode:text to "<size=16><color=yellow>Waiting launch...</color></size>".
 	wait until ship:status <> "PRELAUNCH".
 } else if ship:status <> "LANDED" {
 	set runmode to -1.
 }
 
-local WThrottlePID to PIDLOOP(0.15, 0.005, 0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
-set WThrottlePID:SETPOINT TO 0.
+local WThrottlePID to pidloop(0.15, 0.005, 0.020, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+set WThrottlePID:setpoint to 0.
 
-local WSteeringPID to PIDLOOP(0.005, 0.0001, 0.001, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
-set WSteeringPID:SETPOINT TO 0.
+local WSteeringPID to pidloop(0.005, 0.0001, 0.001, -1, 1). // Kp, Ki, Kd, MinOutput, MaxOutput
+set WSteeringPID:setpoint to 0.
 
 until runmode = -1 {
 	// Update the compass:
@@ -221,16 +221,16 @@ until runmode = -1 {
 	// I do this by judging the heading relative
 	// to a latlng set to the north pole
 	set cHeading to utilCompassHeading().
-	LOCAL N IS TerrainNormalVector().
+	local N is TerrainNormalVector().
 	set turnlimit to min(1, turnfactor / abs(gs)). // Scale the turning radius based on current speed
 
 	if runmode = 0 { // Govern the rover
 
 		// Wheel Throttle:
-		set targetspeed to targetspeed + 0.1 * SHIP:CONTROL:PILOTWHEELTHROTTLE.
+		set targetspeed to targetspeed + 0.1 * ship:control:pilotwheelthrottle.
 		set targetspeed to max(-speedlimit / 3, min( speedlimit, targetspeed)).
 		set gs to vdot(ship:facing:vector, ship:velocity:surface).
-		set wtVAL to WThrottlePID:UPDATE(time:seconds, gs - targetspeed).
+		set wtVAL to WThrottlePID:update(time:seconds, gs - targetspeed).
 
 		if brakes { // Disable cruise control if the brakes are turned on.
 			set targetspeed to 0.
@@ -242,9 +242,9 @@ until runmode = -1 {
 			if gs < 0 set errorSteering to -errorSteering.
 			set WSteeringPID:MaxOutput to 1 * turnlimit.
 			set WSteeringPID:MinOutput to -1 * turnlimit.
-			set kturn to WSteeringPID:UPDATE(time:seconds, errorSteering).
+			set kturn to WSteeringPID:update(time:seconds, errorSteering).
 		} else {
-			set kturn to turnlimit * SHIP:CONTROL:PILOTWHEELSTEER.
+			set kturn to turnlimit * ship:control:pilotwheelsteer.
 			set targetHeading to cheading.
 		}
 		// Detect jumps and engage stability control
@@ -260,8 +260,8 @@ until runmode = -1 {
 			roverStabilzeJump(N). // Engage Stability control
 		}
 	} else if runmode = 1 { // Stock driving mode
-		set wtVAL to SHIP:CONTROL:PILOTWHEELTHROTTLE * 0.5.
-		set kturn to SHIP:CONTROL:PILOTWHEELSTEER.
+		set wtVAL to ship:control:pilotwheelthrottle * 0.5.
+		set kturn to ship:control:pilotwheelsteer.
 		if abs(ship:groundspeed) > speedlimit * 0.3 {
 			set runmode to 0.
 			brakes on.
@@ -271,44 +271,44 @@ until runmode = -1 {
 	// Here it really control the rover.
 	set wtVAL to min(1, (max(-1, wtVAL))).
 	set kTurn to min(1, (max(-1, kTurn))).
-	set SHIP:CONTROL:WHEELTHROTTLE to WTVAL.
-	set SHIP:CONTROL:WHEELSTEER to kTurn.
+	set ship:control:wheelthrottle to wtval.
+	set ship:control:wheelsteer to kTurn.
 
 	// Update the GUI
 	if time:seconds > lastGUIUpdate + GUIUpdateInterval {
 		set lastGUIUpdate to time:seconds.
 		if runmode = 0 {
 			if CruiseControl {
-				set labelMode:TEXT to "<b><size=17>Cruise Control</size></b>".
-			} Else {
-				set labelMode:TEXT to "<b><size=17>Assisted Drive</size></b>".
+				set labelMode:text to "<b><size=17>Cruise Control</size></b>".
+			} else {
+				set labelMode:text to "<b><size=17>Assisted Drive</size></b>".
 			}
-			SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
-			SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | " + round (uiMSTOKMH(targetspeed), 1) + " km/h</b>".
+			set LabelHDG:text to "<b>" + round( targetheading, 2) + "º</b>".
+			set LabelSPD:text to "<b>" + round( targetspeed, 1) + " m/s | " + round (uiMSTOKMH(targetspeed), 1) + " km/h</b>".
 		} else if runmode = 1 {
-			set labelMode:TEXT to "<b><size=17>Manual Control</size></b>".
-			SET LabelHDG:TEXT to "<b>-º</b>".
-			SET LabelSPD:TEXT to "<b>- m/s | - km/h</b>".
+			set labelMode:text to "<b><size=17>Manual Control</size></b>".
+			set LabelHDG:text to "<b>-º</b>".
+			set LabelSPD:text to "<b>- m/s | - km/h</b>".
 		} else if runmode = 2 {
-			set labelMode:TEXT to "<b><size=17>Stability Control</size></b>".
-			SET LabelHDG:TEXT to "<b>" + round( targetheading, 2) + "º</b>".
-			SET LabelSPD:TEXT to "<b>" + round( targetspeed, 1) + " m/s | " + round (uiMSTOKMH(targetspeed), 1) + " km/h</b>".
+			set labelMode:text to "<b><size=17>Stability Control</size></b>".
+			set LabelHDG:text to "<b>" + round( targetheading, 2) + "º</b>".
+			set LabelSPD:text to "<b>" + round( targetspeed, 1) + " m/s | " + round (uiMSTOKMH(targetspeed), 1) + " km/h</b>".
 		}
-		SET LabelDashSpeed:TEXT to "<b>Speed: </b>" + round( gs, 1) + " m/s | " + round (uiMSTOKMH(gs), 1) + " km/h".
+		set LabelDashSpeed:text to "<b>Speed: </b>" + round( gs, 1) + " m/s | " + round (uiMSTOKMH(gs), 1) + " km/h".
 
 		local PEC is partsPercentEC().
-		SET LabelDashEC:TEXT to "<b>Charge: </b>" + ROUND(PEC) + "%".
-		SET LabelDashLFO:TEXT to "<b>Fuel: </b>" + ROUND(partsPercentLFO()) + "%".
+		set LabelDashEC:text to "<b>Charge: </b>" + round(PEC) + "%".
+		set LabelDashLFO:text to "<b>Fuel: </b>" + round(partsPercentLFO()) + "%".
 		// Brake in case of low power
 		If pec < 0.1 brakes on.
 
-		SET SliderSteering:VALUE to kTurn.
-		SET SliderThrottle:VALUE to wtVAL.
+		set SliderSteering:value to kTurn.
+		set SliderThrottle:value to wtVAL.
 	}
 	wait 0. // Waits for next physics tick.
 }
 
 // Clear before end
-CLEARGUIS().
+clearguis().
 partsEnableReactionWheels().
-SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
+set ship:control:neutralize to true.

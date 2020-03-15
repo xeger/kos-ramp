@@ -1,93 +1,93 @@
-PARAMETER DeorbitLongOffset IS 0. // Diference from the default deorbit longitude.
+parameter DeorbitLongOffset is 0. // Diference from the default deorbit longitude.
 
 runoncepath("lib_ui").
 runoncepath("lib_parts").
 runoncepath("lib_util").
-SAS OFF.
+SAS off.
 
-FUNCTION LngToDegrees {
+function LngToDegrees {
 	// From youtube.com/cheerskevin
-	PARAMETER lng.
-	RETURN MOD(lng + 360, 360).
+	parameter lng.
+	return mod(lng + 360, 360).
 }
 
-FUNCTION TimeToLong {
-	PARAMETER lng.
+function TimeToLong {
+	parameter lng.
 
-	LOCAL SDAY IS BODY("KERBIN"):ROTATIONPERIOD. // Duration of Kerbin day in seconds
-	LOCAL KAngS IS 360 / SDAY. // Rotation angular speed.
-	LOCAL P IS SHIP:ORBIT:PERIOD.
-	LOCAL SAngS IS (360 / P) - KAngS. // Ship angular speed acounted for Kerbin rotation.
-	LOCAL TgtLong IS LngToDegrees(lng).
-	LOCAL ShipLong is LngToDegrees(SHIP:LONGITUDE).
-	LOCAL DLong IS TgtLong - ShipLong.
-	IF DLong < 0 {
-		RETURN (DLong + 360) / SAngS.
-	} ELSE {
-		RETURN DLong / SAngS.
+	local sday is body("KERBIN"):rotationperiod. // Duration of Kerbin day in seconds
+	local KAngS is 360 / sday. // Rotation angular speed.
+	local P is ship:orbit:period.
+	local SAngS is (360 / P) - KAngS. // Ship angular speed acounted for Kerbin rotation.
+	local TgtLong is LngToDegrees(lng).
+	local ShipLong is LngToDegrees(ship:longitude).
+	local DLong is TgtLong - ShipLong.
+	if DLong < 0 {
+		return (DLong + 360) / SAngS.
+	} else {
+		return DLong / SAngS.
 	}
 }
 
-SET Deorbit_Long TO -149.8 + DeorbitLongOffset.
-SET Deorbit_dV TO -110.
-SET Deorbit_Inc to 0.
-SET Deorbit_Alt to 80000.
+set Deorbit_Long to -149.8 + DeorbitLongOffset.
+set Deorbit_dV to -110.
+set Deorbit_Inc to 0.
+set Deorbit_Alt to 80000.
 
-SAS OFF.
-SET ORBITOK TO FALSE.
-SET INCOK TO FALSE.
+SAS off.
+set orbitok to false.
+set incok to false.
 
-UNTIL ORBITOK AND INCOK {
+until orbitok and incok {
 	// Check if orbit is acceptable and correct if needed.
 
-	IF NOT (OBT:INCLINATION < (Deorbit_Inc + 0.1) AND
-					OBT:INCLINATION > (Deorbit_Inc - 0.1)) {
-		uiBanner("Deorbit", "Changing inclination from " + round(OBT:INCLINATION, 2) +
+	if not (obt:inclination < (Deorbit_Inc + 0.1) and
+					obt:inclination > (Deorbit_Inc - 0.1)) {
+		uiBanner("Deorbit", "Changing inclination from " + round(obt:inclination, 2) +
 						"º to " + round(Deorbit_Inc, 2) + "º").
-		RUNPATH("node_inc_equ", Deorbit_Inc).
-		RUNPATH("node").
-	} ELSE { SET INCOK TO TRUE.}
+		runpath("node_inc_equ", Deorbit_Inc).
+		runpath("node").
+	} else { set incok to true.}
 
-	IF NOT (OBT:APOAPSIS < (Deorbit_Alt + Deorbit_Alt * 0.05) AND
-					OBT:APOAPSIS > (Deorbit_Alt - Deorbit_Alt * 0.05) AND
-					OBT:eccentricity < 0.1 ) {
+	if not (obt:apoapsis < (Deorbit_Alt + Deorbit_Alt * 0.05) and
+					obt:apoapsis > (Deorbit_Alt - Deorbit_Alt * 0.05) and
+					obt:eccentricity < 0.1 ) {
 		uiBanner("Deorbit", "Establishing a new orbit at " + round(Deorbit_Alt / 1000) + "km" ).
-		RUNPATH("circ_alt", Deorbit_Alt).
-	} ELSE { SET ORBITOK TO TRUE. }
+		runpath("circ_alt", Deorbit_Alt).
+	} else { set orbitok to true. }
 
 }
-UNLOCK STEERING. UNLOCK THROTTLE. WAIT 5.
+unlock steering. unlock throttle. wait 5.
 
 // Add Deorbit maneuver node.
 uiBanner("Deorbit", "Doing the deorbit burn").
-LOCAL nd IS NODE(time:seconds + TimeToLong(Deorbit_Long), 0, 0, Deorbit_dV).
-ADD nd. RUN NODE.
+local nd is node(time:seconds + TimeToLong(Deorbit_Long), 0, 0, Deorbit_dV).
+add nd. run node.
 
 // Configure the ship to reenter.
-PANELS OFF.
-BAYS OFF.
-GEAR OFF.
-LADDERS OFF.
-SAS OFF.
-RCS ON.
+PANELS off.
+BAYS off.
+GEAR off.
+LADDERS off.
+SAS off.
+RCS on.
 partsDisarmsChutes().
 partsRetractAntennas().
 partsRetractRadiators().
 
-LOCK THROTTLE TO 0.
+lock throttle to 0.
 uiBanner("Deorbit", "Holding 40º Pitch until 35000m").
-LOCK STEERING TO HEADING(90, 40).
-WAIT Until utilIsShipFacing(HEADING(90, 40):Vector).
-SET KUNIVERSE:TIMEWARP:MODE TO "RAILS".
-SET KUNIVERSE:TIMEWARP:WARP to 2.
-WAIT UNTIL SHIP:ALTITUDE < 71000.
-KUNIVERSE:TIMEWARP:CANCELWARP().
-WAIT UNTIL SHIP:ALTITUDE < 35000.
+lock steering to heading(90, 40).
+wait until utilIsShipFacing(heading(90, 40):Vector).
+set kuniverse:timewarp:mode to "RAILS".
+set kuniverse:timewarp:warp to 2.
+wait until ship:altitude < 71000.
+kuniverse:timewarp:cancelwarp().
+wait until ship:altitude < 35000.
 uiBanner("Deorbit", "Holding -3º Pitch until 30000m").
-LOCK STEERING TO HEADING(90,-3).
-WAIT UNTIL SHIP:ALTITUDE < 30000.
+lock steering to heading(90,-3).
+wait until ship:altitude < 30000.
 uiBanner("Deorbit", "Preparing atmospheric autopilot...").
-UNLOCK THROTTLE.
-UNLOCK STEERING.
-SAS ON.
+unlock throttle.
+unlock steering.
+SAS on.
 run fly("SHUTTLE").

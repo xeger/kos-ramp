@@ -25,9 +25,9 @@ function uiConsole {
 	print logtext.
 
 	if logconsole {
-		LOG logtext to "log.txt".
-		IF HOMECONNECTION:ISCONNECTED {
-			COPYPATH("log.txt", "0:/logs/" + SHIP:NAME + ".txt").
+		log logtext to "log.txt".
+		if homeconnection:isconnected {
+			copypath("log.txt", "0:/logs/" + ship:name + ".txt").
 		}
 	}
 }
@@ -171,40 +171,40 @@ function uiDebugAxes {
 	}
 }
 
-FUNCTION uiAlarm {
-	local vAlarm TO GetVoice(0).
+function uiAlarm {
+	local vAlarm to GetVoice(0).
 	set vAlarm:wave to "TRIANGLE".
 	set vAlarm:volume to 0.5.
-	vAlarm:PLAY(
-		LIST(
-			NOTE("A#4", 0.2, 0.25),
-			NOTE("A4",  0.2, 0.25),
-			NOTE("A#4", 0.2, 0.25),
-			NOTE("A4",  0.2, 0.25),
-			NOTE("R",   0.2, 0.25),
-			NOTE("A#4", 0.2, 0.25),
-			NOTE("A4",  0.2, 0.25),
-			NOTE("A#4", 0.2, 0.25),
-			NOTE("A4",  0.2, 0.25)
+	vAlarm:play(
+		list(
+			note("A#4", 0.2, 0.25),
+			note("A4",  0.2, 0.25),
+			note("A#4", 0.2, 0.25),
+			note("A4",  0.2, 0.25),
+			note("R",   0.2, 0.25),
+			note("A#4", 0.2, 0.25),
+			note("A4",  0.2, 0.25),
+			note("A#4", 0.2, 0.25),
+			note("A4",  0.2, 0.25)
 		)
 	).
 }
 
-FUNCTION uiBeep {
+function uiBeep {
 	local vBeep to GetVoice(0).
 	set vBeep:volume to 0.35.
 	set vBeep:wave to "SQUARE".
-	vBeep:PLAY(NOTE("A4", 0.1, 0.1)).
+	vBeep:play(note("A4", 0.1, 0.1)).
 }
 
-FUNCTION uiChime {
+function uiChime {
 	local vChimes to GetVoice(0).
 	set vChimes:volume to 0.25.
 	set vChimes:wave to "SINE".
-	vChimes:PLAY(
-		LIST(
-			NOTE("E5", 0.8, 1),
-			NOTE("C5", 1, 1.2)
+	vChimes:play(
+		list(
+			note("E5", 0.8, 1),
+			note("C5", 1, 1.2)
 		)
 	).
 }
@@ -214,14 +214,14 @@ function uiTerminalMenu {
 	// Shows a menu in the terminal window and waits for user input.
 	// The parameter is a lexicon of a key to be pressed and a text to be show.
 	// ie.:
-	// LOCAL MyOptions IS LEXICON("Y", "Yes", "N", "No").
-	// LOCAL myVal is uiTerminalMenu(MyOptions).
+	// local MyOptions is lexicon("Y", "Yes", "N", "No").
+	// local myVal is uiTerminalMenu(MyOptions).
 	//
 	// That code will produce a menu with two options, Stay or Go, and will return 1 or 2 depending which key user press.
 
 	parameter Options.
 	local Choice is 0.
-	local Term is Terminal:Input().
+	local Term is terminal:input().
 	local ValidSelection is false.
 	Until ValidSelection {
 		uiBanner("Terminal", "Please choose an option in Terminal.", 2).
@@ -235,9 +235,9 @@ function uiTerminalMenu {
 		}
 		print "?>".
 
-		Term:CLEAR().
-		set Choice to Term:GETCHAR().
-		if Options:HASKEY(Choice) {
+		Term:clear().
+		set Choice to Term:getchar().
+		if Options:haskey(Choice) {
 			set ValidSelection to true.
 			print "===> " + Options[Choice].
 		} else print "Invalid selection".
@@ -253,7 +253,7 @@ function uiTerminalList {
 	local Choice is 0.
 	local page is 0.
 	local KeyPressed is 0.
-	local Term is Terminal:Input().
+	local Term is terminal:input().
 	local ValidSelection is false.
 
 	uiBanner("Terminal", "Please make a choice in the Terminal.", 2).
@@ -267,18 +267,18 @@ function uiTerminalList {
 		from { local i is 10 * page. } until i = min(10 + (10 * page), Options:length) step { set i to i + 1. } do {
 			print (i - (10 * page)) + ") - " + Options[i].
 		}
-		print "Showing " + min(Options:Length, 10 + (10 * Page)) + " of " + Options:Length() + " options.".
+		print "Showing " + min(Options:length, 10 + (10 * Page)) + " of " + Options:length() + " options.".
 		print "Use arrows < and > to change pages".
 
-		Term:CLEAR().
-		set KeyPressed to Term:GETCHAR().
+		Term:clear().
+		set KeyPressed to Term:getchar().
 		if KeyPressed = Term:RightCursorOne {
-			if Options:Length > 10 + (10 * Page) set Page to Page + 1.
+			if Options:length > 10 + (10 * Page) set Page to Page + 1.
 		} else if KeyPressed = Term:LeftCursorOne {
 			if Page > 0 set Page to Page - 1.
 		} else if "0123456789":Contains(KeyPressed) {
 			set choice to KeyPressed:ToNumber() + (10 * Page).
-			if choice < Options:Length {
+			if choice < Options:length {
 				set ValidSelection to true.
 				print "===> " + Options[Choice].
 			}
@@ -287,8 +287,8 @@ function uiTerminalList {
 	return Choice.
 }
 
-FUNCTION uiMSTOKMH {
+function uiMSTOKMH {
 	// Return m/s in km/h.
-	PARAMETER MS.
-	RETURN MS * 3.6.
+	parameter MS.
+	return MS * 3.6.
 }

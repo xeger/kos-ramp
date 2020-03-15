@@ -120,7 +120,7 @@ sas off.
 // Main logic checks
 local lock GoingTowardsTarget to vang(target:position, vel) < 10. // Ship travelling towards target
 
-local lock IsNearTarget to (target:position:mag < 150) OR // Ship is VERY close to target.
+local lock IsNearTarget to (target:position:mag < 150) or // Ship is VERY close to target.
 	(target:position:mag < 850 and // Target is near
 	(vel:mag > 1 and vel:mag < 10) and // Target relative speed is reasonable
 	GoingTowardsTarget). // The ship moves towards target
@@ -158,6 +158,6 @@ unlock vel.
 unlock steering.
 unlock throttle.
 set ship:control:neutralize to true.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+set ship:control:pilotmainthrottle to 0.
 
 sas on.

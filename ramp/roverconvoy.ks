@@ -7,10 +7,10 @@ local ValidTargets is List().
 local Names is List().
 list targets in AllTargets.
 
-for Tgt in AllTargets {
-	if Tgt:Body = Ship:Body and Tgt:Type = "Rover" {
-		ValidTargets:Add(Tgt).
-		Names:Add(Tgt:name).
+for tgt in AllTargets {
+	if tgt:body = ship:body and tgt:type = "Rover" {
+		ValidTargets:add(tgt).
+		Names:add(tgt:name).
 	}
 }
 

@@ -1,6 +1,6 @@
 @lazyglobal off.
 
-FUNCTION TerrainNormalVector {
+function TerrainNormalVector {
 	// Thanks to Ozin
 	// Returns a vector normal to the terrain
 	parameter radius is 2. // Radius of the terrain sample

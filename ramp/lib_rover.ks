@@ -13,18 +13,18 @@ function roverStabilzeJump {
 	local Stabilized is false.
 
 	// Ease wheels controls
-	set SHIP:CONTROL:WHEELTHROTTLE to 0.
-	set SHIP:CONTROL:WHEELSTEER to 0.
+	set ship:control:wheelthrottle to 0.
+	set ship:control:wheelsteer to 0.
 
 	// Try to steer the rover straight with terrain
-	LOCK STEERING TO LOOKDIRUP(vxcl(N, VELOCITY:SURFACE), SHIP:UP:vector).
+	lock steering to lookdirup(vxcl(N, velocity:surface), ship:up:vector).
 	RCS on. SAS off.
 	partsEnableReactionWheels().
 
 	Until Stabilized {
 		if ship:status <> "LANDED" { // Deals with rover while in air
 			// Use RCS to try to soften the landing if predicted airtime is greater than 1 second.
-			if ALT:RADAR / ship:verticalspeed > 1 {
+			if alt:radar / ship:verticalspeed > 1 {
 				local sense is ship:facing.
 				local dirV is V(
 					vdot(ship:up:vector, sense:starvector),
@@ -36,11 +36,11 @@ function roverStabilzeJump {
 			// Stop the RCS translation up.
 			else set ship:control:translation to v(0, 0, 0).
 			// Detects long jumps
-			if time:seconds - StartJump > 3 set longJump to True.
+			if time:seconds - StartJump > 3 set longJump to true.
 			set StartLand to 0.
 		} else { // Deals with rover on ground
 			if StartLand = 0 { // Means it just landed or started a rollover
-				SET StartLand to TIME:SECONDS.
+				set StartLand to time:seconds.
 			} else if longJump and time:seconds - StartLand <= LongJumpST { // Stabilze landing
 				local sense is ship:facing.
 				local dirV is V(
@@ -50,14 +50,14 @@ function roverStabilzeJump {
 				).
 				set ship:control:translation to dirV:normalized.
 			} else if time:seconds - StartLand > ShortJumpST {
-				SET Stabilized to True.
+				set Stabilized to true.
 			}
 		}
 		wait 0.
 	}
 	// Reset ship controls
-	SAS OFF. RCS OFF. UNLOCK STEERING.
-	SET ship:control:translation to v(0, 0, 0).
+	SAS off. RCS off. unlock steering.
+	set ship:control:translation to v(0, 0, 0).
 	partsDisableReactionWheels().
 	return LongJump.
 }

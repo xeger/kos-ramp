@@ -47,36 +47,35 @@ function utilCloseApproach {
 	return Rbest.
 }
 
-FUNCTION utilFaceBurn {
+function utilFaceBurn {
 
 	// This function is intended to use with shuttles and spaceplanes that have engines not in line with CoM.
-	// Usage: LOCK STEERING TO utilFaceBurn(THEDIRECTIONYOUWANTTOSTEER).
-	// Example: LOCK STEERING TO utilFaceBurn(PROGRADE).
+	// Usage: lock steering to utilFaceBurn(THEDIRECTIONYOUWANTTOSTEER).
+	// Example: lock steering to utilFaceBurn(PROGRADE).
 
-	PARAMETER DIRTOSTEER. // The direction you want the ship to steer to
-	LOCAL NEWDIRTOSTEER IS DIRTOSTEER. // Return value. Defaults to original direction.
+	parameter dirtosteer. // The direction you want the ship to steer to
+	local newdirtosteer is dirtosteer. // Return value. Defaults to original direction.
 
-	LOCAL OSS IS LEXICON(). // Used to store all persistent data
-	LOCAL trueacc IS 0. // Used to store ship acceleration vector
+	local OSS is lexicon(). // Used to store all persistent data
+	local trueacc is 0. // Used to store ship acceleration vector
 
-	FUNCTION HasSensors {
+	function HasSensors {
 		// Checks if ship have required sensors:
 		// - Accelerometer (Double-C Seismic Accelerometer)
 		// - Gravity Sensor (GRAVMAX Negative Gravioli Detector)
-		LOCAL HasA IS False.
-		LOCAL HasG IS False.
-		LIST SENSORS IN SENSELIST.
-		FOR S IN SENSELIST {
-			IF S:TYPE = "ACC" { SET HasA to True. }
-			IF S:TYPE = "GRAV" { SET HasG to True. }
+		local HasA is false.
+		local HasG is false.
+		list sensors in senselist.
+		for S in senselist {
+			if S:type = "ACC" { set HasA to true. }
+			if S:type = "GRAV" { set HasG to true. }
 		}
-		IF HasA AND HasG { RETURN TRUE. }
-		ELSE { RETURN FALSE. }
+		return HasA and HasG.
 	}
 
-	FUNCTION InitOSS {
+	function InitOSS {
 		// Initialize persistent data.
-		LOCAL OSS IS LEXICON().
+		local OSS is lexicon().
 		OSS:add("t0", time:seconds).
 		OSS:add("pitch_angle", 0).
 		OSS:add("pitch_sum", 0).
@@ -85,25 +84,25 @@ FUNCTION utilFaceBurn {
 		OSS:add("Average_samples", 0).
 		OSS:add("Average_Interval", 1).
 		OSS:add("Average_Interval_Max", 5).
-		OSS:add("Ship_Name", SHIP:NAME:TOSTRING).
+		OSS:add("Ship_Name", ship:name:tostring).
 		OSS:add("HasSensors", HasSensors()).
 
-		RETURN OSS.
+		return OSS.
 	}
 
-	IF EXISTS("oss.json") { // Looks for saved data
-		SET OSS TO READJSON("oss.json").
-		IF OSS["Ship_Name"] <> SHIP:NAME:TOSTRING {
-			SET OSS TO InitOSS().
+	if exists("oss.json") { // Looks for saved data
+		set OSS to readjson("oss.json").
+		if OSS["Ship_Name"] <> ship:name:tostring {
+			set OSS to InitOSS().
 		}
-	} ELSE {
-		SET OSS TO InitOSS().
+	} else {
+		set OSS to InitOSS().
 	}
 
-	IF OSS["HasSensors"] { // Checks for sensors
-		LOCK trueacc TO ship:sensors:acc - ship:sensors:grav.
-	} ELSE { // If ship have no sensors, just returns direction without any correction
-		RETURN DIRTOSTEER.
+	if OSS["HasSensors"] { // Checks for sensors
+		lock trueacc to ship:sensors:acc - ship:sensors:grav.
+	} else { // If ship have no sensors, just returns direction without any correction
+		return dirtosteer.
 	}
 
 
@@ -112,66 +111,66 @@ FUNCTION utilFaceBurn {
 		local dt to time:seconds - OSS["t0"]. // Delta Time
 		if dt > OSS["Average_Interval"] {
 			// This section takes the average of the offset, reset the average counters and reset the timer.
-			SET OSS["t0"] TO TIME:SECONDS.
+			set oss["t0"] to time:seconds.
 			if OSS["Average_samples"] > 0 {
 				// Pitch
-				SET OSS["pitch_angle"] TO OSS["pitch_sum"] / OSS["Average_samples"].
-				SET OSS["pitch_sum"] to OSS["pitch_angle"].
+				set OSS["pitch_angle"] to OSS["pitch_sum"] / OSS["Average_samples"].
+				set OSS["pitch_sum"] to OSS["pitch_angle"].
 				// Yaw
-				SET OSS["yaw_angle"] TO OSS["yaw_sum"] / OSS["Average_samples"].
-				SET OSS["yaw_sum"] to OSS["yaw_angle"].
+				set OSS["yaw_angle"] to OSS["yaw_sum"] / OSS["Average_samples"].
+				set OSS["yaw_sum"] to OSS["yaw_angle"].
 				// Sample count
-				SET OSS["Average_samples"] TO 1.
+				set OSS["Average_samples"] to 1.
 				// Increases the Average interval to try to keep the adjusts more smooth.
 				if OSS["Average_Interval"] < OSS["Average_Interval_Max"] {
-					SET OSS["Average_Interval"] to max(OSS["Average_Interval_Max"], (OSS["Average_Interval"] + dt)) .
+					set OSS["Average_Interval"] to max(OSS["Average_Interval_Max"], (OSS["Average_Interval"] + dt)) .
 				}
 			}
 		} else { // Accumulate the thrust offset error to be averaged by the section above
 
 			// Thanks to reddit.com/user/ElWanderer_KSP
 			// exclude the left/right vector to leave only forwards and up/down
-			LOCAL pitch_error_vec IS VXCL(FACING:STARVECTOR, trueacc).
-			LOCAL pitch_error_ang IS VANG(FACING:VECTOR, pitch_error_vec).
-			If VDOT(FACING:TOPVECTOR, pitch_error_vec) > 0{
-				SET pitch_error_ang TO -pitch_error_ang.
+			local pitch_error_vec is vxcl(facing:starvector, trueacc).
+			local pitch_error_ang is vang(facing:vector, pitch_error_vec).
+			If vdot(facing:topvector, pitch_error_vec) > 0{
+				set pitch_error_ang to -pitch_error_ang.
 			}
 
 			// exclude the up/down vector to leave only forwards and left/right
-			LOCAL yaw_error_vec IS VXCL(FACING:TOPVECTOR, trueacc).
-			LOCAL yaw_error_ang IS VANG(FACING:VECTOR, yaw_error_vec).
-			IF VDOT(FACING:STARVECTOR, yaw_error_vec) < 0{
-				SET yaw_error_ang TO -yaw_error_ang.
+			local yaw_error_vec is vxcl(facing:topvector, trueacc).
+			local yaw_error_ang is vang(facing:vector, yaw_error_vec).
+			if vdot(facing:starvector, yaw_error_vec) < 0{
+				set yaw_error_ang to -yaw_error_ang.
 			}
-			// LOG "P: " + pitch_error_ang TO "0:/oss.txt".
-			// LOG "Y: " + yaw_error_ang TO "0:/oss.txt".
+			// LOG "P: " + pitch_error_ang to "0:/oss.txt".
+			// LOG "Y: " + yaw_error_ang to "0:/oss.txt".
 			set OSS["pitch_sum"] to OSS["pitch_sum"] + pitch_error_ang.
 			set OSS["yaw_sum"] to OSS["yaw_sum"] + yaw_error_ang.
-			SET OSS["Average_samples"] TO OSS["Average_samples"] + 1.
+			set OSS["Average_samples"] to OSS["Average_samples"] + 1.
 		}
 		// Set the return value to original direction combined with the thrust offset
-		// SET NEWDIRTOSTEER TO r(0-OSS["pitch_angle"], OSS["yaw_angle"], 0) * DIRTOSTEER.
-		SET NEWDIRTOSTEER TO DIRTOSTEER.
-		IF ABS(OSS["pitch_angle"]) > 1 { // Don't bother correcting small errors
-			SET NEWDIRTOSTEER TO ANGLEAXIS(-OSS["pitch_angle"], SHIP:FACING:STARVECTOR) * NEWDIRTOSTEER.
+		// set newdirtosteer to r(0-OSS["pitch_angle"], OSS["yaw_angle"], 0) * dirtosteer.
+		set newdirtosteer to dirtosteer.
+		if abs(OSS["pitch_angle"]) > 1 { // Don't bother correcting small errors
+			set newdirtosteer to angleaxis(-OSS["pitch_angle"], ship:facing:starvector) * newdirtosteer.
 		}
-		IF ABS(OSS["yaw_angle"]) > 1 { // Don't bother correcting small errors
-			SET NEWDIRTOSTEER TO ANGLEAXIS(OSS["yaw_angle"], SHIP:FACING:UPVECTOR) * NEWDIRTOSTEER.
+		if abs(OSS["yaw_angle"]) > 1 { // Don't bother correcting small errors
+			set newdirtosteer to angleaxis(OSS["yaw_angle"], ship:facing:upvector) * newdirtosteer.
 		}
 	}
 	// This function is pretty processor intensive, make sure it don't execute too much often.
-	WAIT 0.2.
+	wait 0.2.
 	// Saves the persistent values to a file.
-	WRITEJSON(OSS, "oss.json").
-	RETURN NEWDIRTOSTEER.
+	writejson(OSS, "oss.json").
+	return newdirtosteer.
 }
 
 
-FUNCTION utilRCSCancelVelocity {
+function utilRCSCancelVelocity {
 	// MUST Be a delegate to a vector
 	// Example:
 	//
-	// LOCK myVec to myNode:DeltaV.
+	// lock myVec to myNode:DeltaV.
 	// utilRCSCancelVelocity(myVec@).
 	parameter CancelVec.
 	parameter residualSpeed is 0.01. // Admissible residual speed.
@@ -204,9 +203,9 @@ FUNCTION utilRCSCancelVelocity {
 	// Return ship controls to previus condition
 	set ship:control:translation to v(0, 0, 0).
 	set ship:control:neutralize to true.
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
-	UNLOCK STEERING.
-	UNLOCK THROTTLE.
+	set ship:control:pilotmainthrottle to 0.
+	unlock steering.
+	unlock throttle.
 	set rcs to rstatus.
 	set sas to sstatus.
 }
@@ -224,7 +223,7 @@ function utilIsShipFacing {
 		ship:angularvel:mag < maxAngularVelocity.
 }
 
-FUNCTION utilLongitudeTo360 {
+function utilLongitudeTo360 {
 	// Converts longitudes from -180 to +180 into a 0-360 degrees.
 	// Imagine you start from Greenwitch to East, and instead of stop a 180º, keep until reach Greenwitch again at 360º
 	// i.e.: 10  >  10
@@ -234,8 +233,8 @@ FUNCTION utilLongitudeTo360 {
 	//     -170 > 190
 	//     -180 > 180
 	// From youtube.com/cheerskevin
-	PARAMETER lng.
-	RETURN MOD(lng + 360, 360).
+	parameter lng.
+	return mod(lng + 360, 360).
 }
 
 function utilReduceTo360 {
@@ -251,7 +250,7 @@ function utilCompassHeading {
 	// Returns the same HDG number that Kerbal shows in bottom of Nav Ball
 	local northPole is latlng( 90, 0). // Reference heading
 	if northPole:bearing <= 0 {
-		return ABS(northPole:bearing).
+		return abs(northPole:bearing).
 	} else {
 		return (180 - northPole:bearing) + 180.
 	}

@@ -39,7 +39,7 @@ function partsDoAction {
 				local m is p:getModule(module).
 				for a in m:allActionNames() {
 					if a:matchesPattern(action) {
-						m:doAction(a, True).
+						m:doAction(a, true).
 						set success to true.
 					}
 				}
@@ -81,8 +81,8 @@ function partsEnableReactionWheels {
 
 function partsRetractRadiators {
 	// If you want to turn on or off all the radiators you can use the built in variable RADIATORS, ie:
-	// RADIATORS ON.
-	// RADIATORS OFF.
+	// RADIATORS on.
+	// RADIATORS off.
 	// This function only retract deployable radiators. Useful for reentry.
 	parameter tag is "".
 	return partsDoEvent("ModuleDeployableRadiator", "Retract", tag).
@@ -97,20 +97,20 @@ function partsControlFromDockingPort {
 	// Try to control from the port
 	if cPart:modules:contains("ModuleDockingNode") {
 		local m is cPart:getModule("ModuleDockingNode").
-		for Event in m:allEventNames() {
-			if Event:contains("Control") { m:DOEVENT(Event). success on. }
+		for event in m:allEventNames() {
+			if event:contains("Control") { m:doevent(event). success on. }
 		}.
 	}
 
 	// Try to open/deploy the port
 	if cPart:modules:contains("ModuleAnimateGeneric") {
 		local m is cPart:getModule("ModuleAnimateGeneric").
-		for Event in m:allEventNames() {
-			if Event:contains("open") or Event:contains("deploy") or Event:contains("extend") { m:DOEVENT(Event). }
+		for event in m:allEventNames() {
+			if event:contains("open") or event:contains("deploy") or event:contains("extend") { m:doevent(event). }
 		}.
 	}
 
-	Return success.
+	return success.
 }
 
 function partsDeployFairings {
@@ -120,10 +120,10 @@ function partsDeployFairings {
 function partsHasTermometer {
 	// Checks if ship have required sensors:
 	// - Termometer
-	local HasT is False.
-	LIST SENSORS in SENSELIST.
-	for S in SENSELIST {
-		if S:TYPE = "TEMP" { set HasT to True. }
+	local HasT is false.
+	list sensors in senselist.
+	for S in senselist {
+		if S:type = "TEMP" { set HasT to true. }
 	}
 	return HasT.
 }
@@ -138,8 +138,8 @@ function partsDisarmsChutes {
 
 function partsPercentEC {
 	for R in ship:resources {
-		if R:NAME = "ELECTRICCHARGE" {
-			return R:AMOUNT / R:CAPACITY * 100.
+		if R:name = "ELECTRICCHARGE" {
+			return R:amount / R:capacity * 100.
 		}
 	}
 	return 0.
@@ -152,15 +152,15 @@ function partsPercentLFO {
 	local OXAMT is 0.
 	local SURPLUS is 0.
 	for R in ship:resources {
-		if R:NAME = "LIQUIDFUEL" {
-			set LFCAP to R:CAPACITY.
-			set LFAMT to R:AMOUNT.
-		} else if R:NAME = "OXIDIZER" {
-			set OXCAP to R:CAPACITY.
-			set OXAMT to R:AMOUNT.
+		if R:name = "LIQUIDFUEL" {
+			set LFCAP to R:capacity.
+			set LFAMT to R:amount.
+		} else if R:name = "OXIDIZER" {
+			set OXCAP to R:capacity.
+			set OXAMT to R:amount.
 		}
 	}
-	if OXCAP = 0 OR LFCAP = 0 {
+	if OXCAP = 0 or LFCAP = 0 {
 		return 0.
 	} else {
 		if OXCAP * (11 / 9) < LFCAP { // Surplus fuel
@@ -173,8 +173,8 @@ function partsPercentLFO {
 
 function partsPercentMP {
 	for R in ship:resources {
-		if R:NAME = "MONOPROPELLANT" {
-			return R:AMOUNT / R:CAPACITY * 100.
+		if R:name = "MONOPROPELLANT" {
+			return R:amount / R:capacity * 100.
 		}
 	}
 	return 0.
@@ -185,8 +185,8 @@ function partsMMEngineClosedCycle {
 		if p:modules:contains("MultiModeEngine") {
 			local m is p:getModule("MultiModeEngine").
 			if m:HasField("mode") and m:GetField("mode"):Contains("Air") {
-				for Event in m:allEventNames() {
-					if Event:contains("toggle") m:DoEvent(Event).
+				for event in m:allEventNames() {
+					if event:contains("toggle") m:DoEvent(event).
 				}.
 			}
 		}
@@ -198,8 +198,8 @@ function partsMMEngineAirBreathing {
 		if p:modules:contains("MultiModeEngine") {
 			local m is p:getModule("MultiModeEngine").
 			if m:HasField("mode") and m:GetField("mode"):Contains("Closed") {
-				for Event in m:allEventNames() {
-					if Event:contains("toggle") m:DoEvent(Event).
+				for event in m:allEventNames() {
+					if event:contains("toggle") m:DoEvent(event).
 				}.
 			}
 		}

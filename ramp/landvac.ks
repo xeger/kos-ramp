@@ -4,7 +4,7 @@
 // Make groundfall. Try to avoid a rapid unplanned disassemble.
 // Warranty void if used with air
 //
-// Usage: RUN LANDVAC(<mode>,<latitude>,<longitude>).
+// Usage: run landvac(<mode>,<latitude>,<longitude>).
 //
 //       Parameters:
 //          <mode>: Can be TARG, COOR or SHIP.
@@ -25,18 +25,18 @@
 // 4) Do the deorbit burn
 
 // LandMode defines how this program will work
-PARAMETER LandMode is "TARG".
-PARAMETER LandLat is ship:geoposition:lat.
-PARAMETER LandLng is ship:geoposition:lng.
+parameter LandMode is "TARG".
+parameter LandLat is ship:geoposition:lat.
+parameter LandLng is ship:geoposition:lng.
 
 runoncepath("lib_ui").
 runoncepath("lib_util").
 runoncepath("lib_land").
 
-SAS OFF.
-BAYS OFF.
-GEAR OFF.
-LADDERS OFF.
+SAS off.
+BAYS off.
+GEAR off.
+LADDERS off.
 
 DrawDebugVectors off.
 
@@ -53,10 +53,10 @@ if ship:status = "ORBITING" {
 	if body:atm:exists uiWarning("Deorbit", "Warning: Warranty void, used with atmosphere!").
 
 // Zero the orbit inclination
-	IF abs(OBT:INCLINATION) > 0.1 {
+	if abs(OBT:inclination) > 0.1 {
 		uiBanner("Deorbit", "Setting an equatorial orbit").
-		RUNPATH("node_inc_equ.ks", 0).
-		RUNPATH("node.ks").
+		runpath("node_inc_equ", 0).
+		runpath("node").
 	}
 // Circularize the orbit
 	if obt:eccentricity > 0.01 {
@@ -66,9 +66,9 @@ if ship:status = "ORBITING" {
 
 // Find where to land
 	if LandMode:contains("TARG") {
-		if hastarget and TARGET:BODY = SHIP:BODY { // Make sure have a target in the same planet at least! Note it doesn't check if target is landed/splashed, will just use it's position, for all it cares.
-			set LandLat to utilLongitudeTo360(TARGET:GEOPOSITION:LAT).
-			set LandLng to utilLongitudeTo360(TARGET:GEOPOSITION:LNG).
+		if hastarget and target:body = ship:body { // Make sure have a target in the same planet at least! Note it doesn't check if target is landed/splashed, will just use it's position, for all it cares.
+			set LandLat to utilLongitudeTo360(target:geoposition:lat).
+			set LandLng to utilLongitudeTo360(target:geoposition:lng).
 		} else {
 			set LandLat to utilLongitudeTo360(ship:geoposition:lat).
 			set LandLng to utilLongitudeTo360(ship:geoposition:lng).
@@ -76,17 +76,17 @@ if ship:status = "ORBITING" {
 	} else if LandMode:contains("COOR") {
 		set LandLat to utilLongitudeTo360(LandLat).
 		set LandLng to utilLongitudeTo360(LandLng).
-	} else if LandMode:contains("SHIP") {
+	} else if LandMode:contains("ship") {
 		set LandLat to utilLongitudeTo360(ship:geoposition:lat).
 		set LandLng to utilLongitudeTo360(ship:geoposition:lng).
 	} else {
 		uiFatal("Land", "Invalid mode").
 	}
 
-	SET LandingSite to LATLNG(LandLat, LandLng).
+	set LandingSite to latlng(LandLat, LandLng).
 
 	// Define the deorbit periapsis
-	local DeorbitRad to max(5000 + ship:body:radius, (ship:body:radius * 1.02 + LandingSite:terrainheight)).
+	local DeorbitRad to max(5000+ ship:body:radius, (ship:body:radius * 1.02 + LandingSite:terrainheight)).
 
 	// Find a phase angle for the landing
 	// The landing burning is like a Hohmann transfer, but to an orbit close to the body surface
@@ -112,44 +112,44 @@ if ship:status = "ORBITING" {
 
 	if TotIncDV > 0.1 { // Only burn if it matters.
 		uiBanner("Deorbit", "Burning dV of " + round(TotIncDV, 1) + " m/s @ anti-normal to change plane.").
-		LOCAL nd IS NODE(time:seconds + landTimeToLong(PlaneChangeLong + phiIncManeuver), 0, -nDv, pDv).
+		local nd is node(time:seconds + landTimeToLong(PlaneChangeLong+ phiIncManeuver), 0, -nDv, pDv).
 		add nd. run node.
 	}
 
 	// Lower orbit over landing site
 	local Deorbit_dV is landDeorbitDeltaV(DeorbitRad - body:radius).
 	uiBanner("Deorbit", "Burning dV of " + round(Deorbit_dV, 1) + " m/s retrograde to deorbit.").
-	LOCAL nd IS NODE(time:seconds + landTimeToLong(Deorbit_Long + phi) , 0, 0, Deorbit_dV).
+	local nd is node(time:seconds + landTimeToLong(Deorbit_Long+ phi) , 0, 0, Deorbit_dV).
 	add nd. run node.
 	uiBanner("Deorbit", "Deorbit burn done").
 	wait 5. // Let's have some time to breath and look what's happening
 
 	// Brake the ship to finally deorbit.
-	SET BreakingDeltaV to VELOCITYAT(ship, time:seconds + eta:periapsis):orbit:mag.
+	set BreakingDeltaV to velocityat(ship, time:seconds+ eta:periapsis):orbit:mag.
 	uiBanner("Deorbit", "Burning dV of " + round(BreakingDeltaV, 1) + " m/s retrograde to brake ship.").
-	SET ND TO NODE(time:seconds + eta:periapsis , 0, 0, -BreakingDeltaV).
+	set nd to node(time:seconds + eta:periapsis , 0, 0, -BreakingDeltaV).
 	add nd.
-	RUN NODE.
+	run node.
 	uiBanner("Deorbit", "Brake burn done").
 
-} ELSE IF SHIP:STATUS = "SUB_ORBITAL" {
-	LOCK LandingSite TO SHIP:GEOPOSITION.
+} else if ship:status = "SUB_ORBITAL" {
+	lock LandingSite to ship:geoposition.
 }
 
 // Try to land
 if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
-	SET TouchdownSpeed to 2.
+	set TouchdownSpeed to 2.
 
 	// PID Throttle
-	SET ThrottlePID to PIDLOOP(0.04, 0.001, 0.01). // Kp, Ki, Kd
-	SET ThrottlePID:MAXOUTPUT TO 1.
-	SET ThrottlePID:MINOUTPUT TO 0.
-	SET ThrottlePID:SETPOINT TO 0.
+	set ThrottlePID to pidloop(0.04, 0.001, 0.01). // Kp, Ki, Kd
+	set ThrottlePID:maxoutput to 1.
+	set ThrottlePID:minoutput to 0.
+	set ThrottlePID:setpoint to 0.
 
-	SAS OFF.
-	RCS OFF.
-	LIGHTS ON. // We want the Kerbals to see where they are going right?
-	LEGS ON. // This is important!
+	SAS off.
+	RCS off.
+	LIGHTS on. // We want the Kerbals to see where they are going right?
+	LEGS on. // This is important!
 
 	// Throttle and Steering
 	local tVal is 0.
@@ -158,49 +158,49 @@ if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
 	lock steering to sDir.
 
 	// Main landing loop
-	UNTIL SHIP:STATUS = "LANDED" OR SHIP:STATUS = "SPLASHED" {
-		WAIT 0.
-		// Steer the rocket
-		SET ShipVelocity TO SHIP:velocity:surface.
-		SET ShipHVelocity to vxcl(SHIP:UP:VECTOR, ShipVelocity).
-		Set DFactor TO 0.08. // How much the target position matters when steering. Higher values make landing more precise, but also may make the ship land with too much horizontal speed.
-		SET TargetVector to vxcl(SHIP:UP:VECTOR, LandingSite:Position * DFactor).
-		SET SteerVector to -ShipVelocity - ShipHVelocity + TargetVector.
+	until ship:status = "LANDED" OR ship:status = "SPLASHED" {
+		wait 0.
+	// Steer the rocket
+		set ShipVelocity to ship:velocity:surface.
+		set ShipHVelocity to vxcl(ship:up:vector, ShipVelocity).
+		Set DFactor to 0.08. // How much the target position matters when steering. Higher values make landing more precise, but also may make the ship land with too much horizontal speed.
+		set TargetVector to vxcl(ship:up:vector, LandingSite:position * DFactor).
+		set SteerVector to -ShipVelocity - ShipHVelocity + TargetVector.
 		if DrawDebugVectors {
-			SET DRAWSV TO VECDRAW(v(0, 0, 0), SteerVector, red, "Steering", 1, true, 1).
-			SET DRAWV TO VECDRAW(v(0, 0, 0), ShipVelocity, green, "Velocity", 1, true, 1).
-			SET DRAWHV TO VECDRAW(v(0, 0, 0), ShipHVelocity, YELLOW, "Horizontal Velocity", 1, true, 1).
-			SET DRAWTV TO VECDRAW(v(0, 0, 0), TargetVector, Magenta, "Target", 1, true, 1).
+			set drawsv to vecdraw(v(0, 0, 0), SteerVector, red, "Steering", 1, true, 1).
+			set drawv to vecdraw(v(0, 0, 0), ShipVelocity, green, "Velocity", 1, true, 1).
+			set drawhv to vecdraw(v(0, 0, 0), ShipHVelocity, yellow, "Horizontal Velocity", 1, true, 1).
+			set drawtv to vecdraw(v(0, 0, 0), TargetVector, Magenta, "Target", 1, true, 1).
 		}
 
-		set sDir TO SteerVector:Direction.
+		set sDir to SteerVector:direction.
 
 		// Throttle the rocket
-		set TargetVSpeed to MAX(TouchdownSpeed, sqrt(landRadarAltimeter())).
+		set TargetVSpeed to max(TouchdownSpeed, sqrt(landRadarAltimeter())).
 
-		IF abs(SHIP:VERTICALSPEED) > TargetVSpeed {
-			set tVal TO ThrottlePID:UPDATE(TIME:seconds, (SHIP:VERTICALSPEED + TargetVSpeed)).
-		} ELSE {
-			set tVal TO 0.
+		if abs(ship:verticalspeed) > TargetVSpeed {
+			set tVal to ThrottlePID:update(time:seconds, (ship:verticalspeed + TargetVSpeed)).
+		} else {
+			set tVal to 0.
 		}
 
 		if DrawDebugVectors { // I know, isn't the debug vectors but helps
-			PRINT "Vertical speed " + abs(Ship:VERTICALSPEED) + "                           " at (0, 0).
+			print "Vertical speed " + abs(ship:verticalspeed) + "                           " at (0, 0).
 			Print "Target Vspeed  " + TargetVSpeed            + "                           " at (0, 1).
 			print "Throttle       " + tVal                    + "                           " at (0, 2).
-			print "Ship Velocity  " + ShipVelocity:MAG        + "                           " at (0, 3).
-			print "Ship height    " + landRadarAltimeter()    + "                           " at (0, 4).
+			print "Ship Velocity  " + ShipVelocity:mag        + "                           " at (0, 3).
+			print "Ship height    " + landRadarAltimeter()        + "                           " at (0, 4).
 			print "                                                                    " at (0, 5).
 		}
 		wait 0.
 	}
 
-	UNLOCK THROTTLE. UNLOCK STEERING.
-	SET SHIP:CONTROL:NEUTRALIZE TO TRUE.
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+	unlock throttle. unlock steering.
+	set ship:control:neutralize to true.
+	set ship:control:pilotmainthrottle to 0.
 	clearvecdraws().
-	LADDERS ON.
-	SAS ON. // Helps to don't tumble after landing
+	LADDERS on.
+	SAS on. // Helps to don't tumble after landing
 } else if ship:status = "ORBITING" uiError("Land", "This ship is still in orbit!?").
 else if ship:status = "LANDED" or ship:status = "SPLASHED" uiError("Land", "We are already landed, nothing to do here, move along").
 else uiError("Land", "Can't land from " + ship:status).

@@ -1,25 +1,25 @@
-FUNCTION landRadarAltimeter {
-	Return ship:altitude - ship:geoposition:terrainheight.
+function landRadarAltimeter {
+	return ship:altitude - ship:geoposition:terrainheight.
 }
 
-FUNCTION landTimeToLong {
-	PARAMETER lng.
+function landTimeToLong {
+	parameter lng.
 
-	LOCAL SDAY IS SHIP:BODY:ROTATIONPERIOD. // Duration of Body day in seconds
-	LOCAL KAngS IS 360 / SDAY. // Rotation angular speed.
-	LOCAL P IS SHIP:ORBIT:PERIOD.
-	LOCAL SAngS IS (360 / P) - KAngS. // Ship angular speed acounted for Body rotation.
-	LOCAL TgtLong IS utilLongitudeTo360(lng).
-	LOCAL ShipLong is utilLongitudeTo360(SHIP:LONGITUDE).
-	LOCAL DLong IS TgtLong - ShipLong.
-	IF DLong < 0 {
-		RETURN (DLong + 360) / SAngS.
-	} ELSE {
-		RETURN DLong / SAngS.
+	local sday is ship:body:rotationperiod. // Duration of Body day in seconds
+	local KAngS is 360 / sday. // Rotation angular speed.
+	local P is ship:orbit:period.
+	local SAngS is (360 / P) - KAngS. // Ship angular speed acounted for Body rotation.
+	local TgtLong is utilLongitudeTo360(lng).
+	local ShipLong is utilLongitudeTo360(ship:longitude).
+	local DLong is TgtLong - ShipLong.
+	if DLong < 0 {
+		return (DLong + 360) / SAngS.
+	} else {
+		return DLong / SAngS.
 	}
 }
 
-FUNCTION landDeorbitDeltaV {
+function landDeorbitDeltaV {
 	parameter alt.
 	// From node_apo
 	local mu is body:mu.

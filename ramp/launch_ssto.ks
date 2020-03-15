@@ -8,8 +8,8 @@ runoncepath("lib_ui").
 runoncepath("lib_parts").
 
 // Global Variables.
-global LaunchSPV0 is ship:AIRSPEED.
-global LaunchSPT0 is time:SECONDS.
+global LaunchSPV0 is ship:airspeed.
+global LaunchSPT0 is time:seconds.
 
 // Local Variables.
 Local TGTClimbAcc is 5.             // Acceleration in m/s² the ship try to keep during climb
@@ -21,8 +21,8 @@ Local ThrottleValue is 0.
 
 // Functions.
 function ClimbAcc {
-	if time:SECONDS - LaunchSPT0 > 0 return (SHIP:AIRSPEED - LaunchSPV0 ) / (TIME:SECONDS - LaunchSPT0).
-	else Return 0.
+	if time:seconds - LaunchSPT0 > 0 return (ship:airspeed - LaunchSPV0 ) / (time:seconds - LaunchSPT0).
+	else return 0.
 }
 
 function ascentThrottle {
@@ -33,13 +33,13 @@ function ascentThrottle {
 	return 1 - min(0.95, max(0, ApoCompensation)).
 }
 
-when Ship:Altitude > AirBreathingAlt then {
+when ship:altitude > AirBreathingAlt then {
 	partsMMEngineClosedCycle().
-	Return False.
+	return false.
 }
 
 // PID Loop.
-local CLimbPitchPID is PIDLOOP(1, 0.4, 0.6,-10, 10). // kP, kI, kD, Min, Max
+local CLimbPitchPID is pidloop(1, 0.4, 0.6,-10, 10). // kP, kI, kD, Min, Max
 set CLimbPitchPID:SetPoint to 0.
 
 // Main program
@@ -47,14 +47,14 @@ set CLimbPitchPID:SetPoint to 0.
 // Take off
 uiBanner("SSTO", "Take off...").
 Set ThrottleValue to 1.
-LOCK THROTTLE TO ThrottleValue.
-STAGE.
-LOCK STEERING TO HEADING(90, 0).
-WAIT UNTIL SHIP:AIRSPEED > 90.
+lock throttle to ThrottleValue.
+stage.
+lock steering to heading(90, 0).
+wait until ship:airspeed > 90.
 uiBanner("SSTO", "Rotate...").
-LOCK STEERING TO HEADING(90, 10).
-WAIT UNTIL SHIP:ALTITUDE > 100.
-GEAR OFF.
+lock steering to heading(90, 10).
+wait until ship:altitude > 100.
+GEAR off.
 uiBanner("SSTO", "Positive climb, gear up.").
 
 // Climb to Apoapsis
@@ -64,16 +64,16 @@ Local PitchByAcc is 0.
 Local PitchByGT is 0.
 
 Lock Steering to Heading (TGTHeading, PitchAngle).
-Lock PercentGT to MIN( 1, SHIP:ALTITUDE / GTAltitude).
+Lock PercentGT to min( 1, ship:altitude / GTAltitude).
 
-UNTIL SHIP:Apoapsis > TGTApoapsis {
-	set LaunchSPT0 to Time:Seconds.
-	set LaunchSPV0 to Ship:AIRSPEED.
+until ship:apoapsis > TGTApoapsis {
+	set LaunchSPT0 to time:seconds.
+	set LaunchSPV0 to ship:airspeed.
 	set ThrottleValue to ascentThrottle().
 	wait ClimbTick.
 
 	set PitchByGT to ArcCos(PercentGT).
-	set PitchByAcc to ClimbDefaultPitch + CLimbPitchPID:UPDATE(Time:Seconds, TGTClimbAcc - ClimbAcc()).
+	set PitchByAcc to ClimbDefaultPitch + CLimbPitchPID:update(time:seconds, TGTClimbAcc - ClimbAcc()).
 
 	set PitchAngle to min(PitchByGT, PitchByAcc).
 }
@@ -92,4 +92,4 @@ Panels On.
 Fuelcells On.
 Radiators On.
 uiBanner("SSTO", "Circularizing...").
-RUN CIRC.
+run circ.

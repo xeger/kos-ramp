@@ -156,8 +156,8 @@ function dockChoosePorts {
 	}
 
 	// List all my ship ports not occupied.
-	if SHIP:CONTROLPART:istype("DockingPort") and
-		not SHIP:CONTROLPART:STATE:CONTAINS("docked") myPorts:add(SHIP:CONTROLPART).
+	if ship:controlpart:istype("DockingPort") and
+		not ship:controlpart:state:contains("docked") myPorts:add(ship:controlpart).
 	else {
 		for port in ship:dockingports {
 			if not port:state:contains("docked") myPorts:add(port).
@@ -165,7 +165,7 @@ function dockChoosePorts {
 	}
 
 	// Checks if both ships have ports.
-	if myPorts:LENGTH = 0 OR hisPorts:LENGTH = 0 {
+	if myPorts:length = 0 or hisPorts:length = 0 {
 		return 0.
 	}
 
@@ -174,7 +174,7 @@ function dockChoosePorts {
 		for myP in myPorts {
 			if myPort = 0 {
 				for hisP in hisPorts {
-					if hisPort = 0 and hisP:NODETYPE = myP:NODETYPE {
+					if hisPort = 0 and hisP:nodetype = myP:nodetype {
 						set myPort to myP.
 						set hisPort to hisP.
 					}
@@ -183,7 +183,7 @@ function dockChoosePorts {
 		}
 	} else{ // Target port was pre-selected. Just find a suitable port in my ship
 		for myP in myPorts {
-			if myPort = 0 and hisPort:NODETYPE = myP:NODETYPE {
+			if myPort = 0 and hisPort:nodetype = myP:nodetype {
 				set myPort to myP.
 			}
 		}
@@ -280,7 +280,7 @@ Function dockControlFromCore {
 
 	if ControlPart:HasSuffix("CONTROLFROM") ControlPart:ControlFrom().
 	else {
-		for P in SHIP:PARTS {
+		for P in ship:parts {
 			if not p:istype("DockingPort") and p:HasSuffix("CONTROLFROM") {
 				P:ControlFrom().
 				Break.
@@ -290,7 +290,7 @@ Function dockControlFromCore {
 }
 
 Function dockDefaultControlPart {
-	Local CParts is SHIP:PARTSTAGGED("Control").
-	if CParts:Length() = 1 Return CParts[0].
-	else Return ship:rootpart.
+	Local CParts is ship:partstagged("Control").
+	if CParts:length() = 1 return CParts[0].
+	else return ship:rootpart.
 }

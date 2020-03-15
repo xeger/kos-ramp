@@ -16,14 +16,14 @@ runoncepath("lib_ui").
 runoncepath("lib_dock").
 runoncepath("lib_parts").
 
-local DockingDone is False.
+local DockingDone is false.
 local MaxDistanceToApproach is 5000.
 local TargetVessel is 0.
 if hastarget and target:istype("Vessel") set TargetVessel to Target.
 else if hastarget and target:istype("DockingPort") set TargetVessel to target:ship.
 
 until DockingDone {
-	if hastarget and ship:status = "ORBITING" and TargetVessel:Distance < KUNIVERSE:DEFAULTLOADDISTANCE:ORBIT:UNPACK {
+	if hastarget and ship:status = "ORBITING" and TargetVessel:distance < kuniverse:defaultloaddistance:orbit:unpack {
 
 		global dock_myPort is dockChoosePorts().
 		global dock_hisPort is target.
@@ -75,12 +75,12 @@ until DockingDone {
 			uiError("Dock", "No suitable docking port; try moving closer?").
 		}
 		DockingDone on.
-	} else if hastarget and TargetVessel:Distance >= KUNIVERSE:DEFAULTLOADDISTANCE:ORBIT:UNPACK
-		and Target:Distance < MaxDistanceToApproach {
+	} else if hastarget and TargetVessel:distance >= kuniverse:defaultloaddistance:orbit:unpack
+		and target:distance < MaxDistanceToApproach {
 		uiWarning("Dock", "Target too far, approaching.").
 		run approach.
-	} else if hastarget and TargetVessel:Distance >= MaxDistanceToApproach {
-		uiError("Dock", "Target too far, RUN RENDEZVOUS instead.").
+	} else if hastarget and TargetVessel:distance >= MaxDistanceToApproach {
+		uiError("Dock", "Target too far, `run rendezvous` instead.").
 		DockingDone on.
 	} else {
 		uiError("Dock", "No target selected").
