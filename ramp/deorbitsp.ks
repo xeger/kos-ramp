@@ -5,32 +5,32 @@ runoncepath("lib_parts").
 runoncepath("lib_util").
 SAS OFF.
 
-FUNCTION LngToDegrees { 
-    //From youtube.com/cheerskevin
-    PARAMETER lng.
-    RETURN MOD(lng + 360, 360).
+FUNCTION LngToDegrees {
+	//From youtube.com/cheerskevin
+	PARAMETER lng.
+	RETURN MOD(lng + 360, 360).
 }
 
 FUNCTION TimeToLong {
-    PARAMETER lng.
+	PARAMETER lng.
 
-    LOCAL SDAY IS BODY("KERBIN"):ROTATIONPERIOD. // Duration of Kerbin day in seconds
-    LOCAL KAngS IS 360/SDAY. // Rotation angular speed.
-    LOCAL P IS SHIP:ORBIT:PERIOD.
-    LOCAL SAngS IS (360/P) - KAngS. // Ship angular speed acounted for Kerbin rotation.
-    LOCAL TgtLong IS LngToDegrees(lng).
-    LOCAL ShipLong is LngToDegrees(SHIP:LONGITUDE). 
-    LOCAL DLong IS TgtLong - ShipLong. 
-    IF DLong < 0 {
-        RETURN (DLong + 360) / SAngS. 
-    }
-    ELSE {
-        RETURN DLong / SAngS.
-    }
+	LOCAL SDAY IS BODY("KERBIN"):ROTATIONPERIOD. // Duration of Kerbin day in seconds
+	LOCAL KAngS IS 360/SDAY. // Rotation angular speed.
+	LOCAL P IS SHIP:ORBIT:PERIOD.
+	LOCAL SAngS IS (360/P) - KAngS. // Ship angular speed acounted for Kerbin rotation.
+	LOCAL TgtLong IS LngToDegrees(lng).
+	LOCAL ShipLong is LngToDegrees(SHIP:LONGITUDE).
+	LOCAL DLong IS TgtLong - ShipLong.
+	IF DLong < 0 {
+		RETURN (DLong + 360) / SAngS.
+	}
+	ELSE {
+		RETURN DLong / SAngS.
+	}
 }
 
 SET Deorbit_Long TO -149.8 + DeorbitLongOffset.
-SET Deorbit_dV TO -110. 
+SET Deorbit_dV TO -110.
 SET Deorbit_Inc to 0.
 SET Deorbit_Alt to 80000.
 
@@ -39,25 +39,24 @@ SET ORBITOK TO FALSE.
 SET INCOK TO FALSE.
 
 UNTIL ORBITOK AND INCOK {
+	// Check if orbit is acceptable and correct if needed.
 
-    // Check if orbit is acceptable and correct if needed.
+	IF NOT (OBT:INCLINATION < (Deorbit_Inc + 0.1) AND
+					OBT:INCLINATION > (Deorbit_Inc - 0.1)) {
+		uiBanner("Deorbit","Changing inclination from " + round(OBT:INCLINATION,2) +
+						"º to " + round(Deorbit_Inc,2) + "º").
+		RUNPATH("node_inc_equ",Deorbit_Inc).
+		RUNPATH("node").
+	}
+	ELSE { SET INCOK TO TRUE.}
 
-    IF NOT (OBT:INCLINATION < (Deorbit_Inc + 0.1) AND 
-            OBT:INCLINATION > (Deorbit_Inc - 0.1)) {
-                uiBanner("Deorbit","Changing inclination from " + round(OBT:INCLINATION,2) + 
-                "º to " + round(Deorbit_Inc,2) + "º").
-                RUNPATH("node_inc_equ",Deorbit_Inc).
-                RUNPATH("node").
-            }
-    ELSE { SET INCOK TO TRUE.}
-
-    IF NOT (OBT:APOAPSIS < (Deorbit_Alt + Deorbit_Alt*0.05) AND 
-            OBT:APOAPSIS > (Deorbit_Alt - Deorbit_Alt*0.05) AND
-            OBT:eccentricity < 0.1 ) {
-                uiBanner("Deorbit","Establishing a new orbit at " + round(Deorbit_Alt/1000) + "km" ).
-                RUNPATH("circ_alt",Deorbit_Alt).
-    }
-    ELSE { SET ORBITOK TO TRUE. }
+	IF NOT (OBT:APOAPSIS < (Deorbit_Alt + Deorbit_Alt*0.05) AND
+					OBT:APOAPSIS > (Deorbit_Alt - Deorbit_Alt*0.05) AND
+					OBT:eccentricity < 0.1 ) {
+		uiBanner("Deorbit","Establishing a new orbit at " + round(Deorbit_Alt/1000) + "km" ).
+		RUNPATH("circ_alt",Deorbit_Alt).
+	}
+	ELSE { SET ORBITOK TO TRUE. }
 
 }
 UNLOCK STEERING. UNLOCK THROTTLE. WAIT 5.

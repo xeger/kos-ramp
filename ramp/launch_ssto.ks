@@ -16,21 +16,21 @@ Local TGTClimbAcc is 5.             // Acceleration in m/s² the ship try to kee
 Local ClimbTick is 0.25.            // Time between each loop run
 Local ClimbDefaultPitch is 20.      // Default climb pitch
 Local GTAltitude is 45000.          // End of "Gravit turn" (When ship will fly with pitch 0 until apoapsis)
-Local AirBreathingAlt is 23000.     // From this altitude and up, dual-mode engines will change to closed cycle. 
+Local AirBreathingAlt is 23000.     // From this altitude and up, dual-mode engines will change to closed cycle.
 Local ThrottleValue is 0.
 
 // Functions.
 function ClimbAcc {
-    if time:SECONDS - LaunchSPT0 > 0 return (SHIP:AIRSPEED - LaunchSPV0 ) / (TIME:SECONDS - LaunchSPT0).
-    else Return 0.
+	if time:SECONDS - LaunchSPT0 > 0 return (SHIP:AIRSPEED - LaunchSPV0 ) / (TIME:SECONDS - LaunchSPT0).
+	else Return 0.
 }
 
 function ascentThrottle {
-    // Ease thottle when near the Apoapsis
-    local ApoPercent is ship:obt:apoapsis/TGTApoapsis.
-    local ApoCompensation is 0.
-    if ApoPercent > 0.9 set ApoCompensation to (ApoPercent - 0.9) * 10.
-    return 1 - min(0.95,max(0,ApoCompensation)).  
+	// Ease thottle when near the Apoapsis
+	local ApoPercent is ship:obt:apoapsis/TGTApoapsis.
+	local ApoCompensation is 0.
+	if ApoPercent > 0.9 set ApoCompensation to (ApoPercent - 0.9) * 10.
+	return 1 - min(0.95,max(0,ApoCompensation)).
 }
 
 when Ship:Altitude > AirBreathingAlt then {
@@ -67,22 +67,22 @@ Lock Steering to Heading (TGTHeading,PitchAngle).
 Lock PercentGT to MIN( 1, SHIP:ALTITUDE / GTAltitude).
 
 UNTIL SHIP:Apoapsis > TGTApoapsis {
-    set LaunchSPT0 to Time:Seconds.
-    set LaunchSPV0 to Ship:AIRSPEED.
-    set ThrottleValue to ascentThrottle().
-    wait ClimbTick.
+	set LaunchSPT0 to Time:Seconds.
+	set LaunchSPV0 to Ship:AIRSPEED.
+	set ThrottleValue to ascentThrottle().
+	wait ClimbTick.
 
-    set PitchByGT to ArcCos(PercentGT).
-    set PitchByAcc to ClimbDefaultPitch + CLimbPitchPID:UPDATE(Time:Seconds,TGTClimbAcc-ClimbAcc()).
+	set PitchByGT to ArcCos(PercentGT).
+	set PitchByAcc to ClimbDefaultPitch + CLimbPitchPID:UPDATE(Time:Seconds,TGTClimbAcc-ClimbAcc()).
 
-    set PitchAngle to min(PitchByGT,PitchByAcc).
-} 
+	set PitchAngle to min(PitchByGT,PitchByAcc).
+}
 Set ThrottleValue to 0.
 
 until ship:altitude > body:atm:height {
-  if ship:obt:apoapsis < TGTApoapsis Set ThrottleValue to ascentThrottle().
-  else set ThrottleValue to 0.
-  wait ClimbTick.
+	if ship:obt:apoapsis < TGTApoapsis Set ThrottleValue to ascentThrottle().
+	else set ThrottleValue to 0.
+	wait ClimbTick.
 }
 
 Unlock Steering.

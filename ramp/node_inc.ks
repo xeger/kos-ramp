@@ -13,16 +13,13 @@ local ta is 0. // angle from periapsis to DN (burn in normal direction here)
 local t0 is time:seconds.
 local i0 is orbit:inclination.
 
-if incl <> "" or not hasTarget
-{
+if incl <> "" or not hasTarget {
 	local i1 is 0.
 	if incl <> "" set i1 to incl.
 
 	set di to i1-i0.
 	set ta to -orbit:argumentOfPeriapsis.
-}
-else
-{
+} else {
 	local i1 is target:orbit:inclination.
 	local sp is ship:position-body:position.
 	local tp is target:position-body:position.
@@ -34,19 +31,19 @@ else
 
 	set di to vang(sn, tn).
 	set ta to vang(sp, ln).
-//	fix sign by comparing cross-product to normal vector (the angle is either 0 or 180)
+	//	fix sign by comparing cross-product to normal vector (the angle is either 0 or 180)
 	if vang(vcrs(sp,ln),sn) < 90 set ta to -ta.
 	set ta to ta + orbit:trueAnomaly.
 
-//	DEBUG:
-//	clearVecDraws().
-//	vecDraw(ship:position, sn:normalized*orbit:semiMajorAxis, blue,  "sn", 1, true).
-//	vecDraw(ship:position, tn:normalized*orbit:semiMajorAxis, green, "tn", 1, true).
-//	vecDraw(ship:position, ln:normalized*orbit:semiMajorAxis, red,   "ln=tn*sn", 1, true).
-//	vecDraw(ship:position, sp:normalized*orbit:semiMajorAxis, white, "sp", 1, true).
-//	vecDraw(ship:position, vcrs(sp,ln):normalized*orbit:semiMajorAxis*.5, yellow, "sp*ln", 1, true, 0.3).
-//	set vecDraw(body:position, ln:normalized*orbit:semiMajorAxis,
-//	red, "ln", 1, true):startUpdater to { return body:position. }.
+	// DEBUG:
+	// clearVecDraws().
+	// vecDraw(ship:position, sn:normalized*orbit:semiMajorAxis, blue,  "sn", 1, true).
+	// vecDraw(ship:position, tn:normalized*orbit:semiMajorAxis, green, "tn", 1, true).
+	// vecDraw(ship:position, ln:normalized*orbit:semiMajorAxis, red,   "ln=tn*sn", 1, true).
+	// vecDraw(ship:position, sp:normalized*orbit:semiMajorAxis, white, "sp", 1, true).
+	// vecDraw(ship:position, vcrs(sp,ln):normalized*orbit:semiMajorAxis*.5, yellow, "sp*ln", 1, true, 0.3).
+	// set vecDraw(body:position, ln:normalized*orbit:semiMajorAxis,
+	// red, "ln", 1, true):startUpdater to { return body:position. }.
 }
 
 set ta to utilAngleTo360(ta).

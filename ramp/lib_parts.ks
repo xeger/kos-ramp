@@ -3,7 +3,7 @@ function partsDoEvent {
 	parameter module.
 	parameter event.
 	parameter tag is "".
-	
+
 	set event to "^"+event+"\b". // match first word
 	local success is false.
 	local maxStage is -1.
@@ -27,7 +27,7 @@ function partsDoAction {
 	parameter module.
 	parameter action.
 	parameter tag is "".
-	
+
 	local success is false.
 	if Career():canDoActions {
 		set action to "^"+action+"\b". // match first word
@@ -80,7 +80,7 @@ function partsEnableReactionWheels {
 }
 
 function partsRetractRadiators {
-	//If you want to turn on or off all the radiators you can use the built in variable RADIATORS, ie:
+	// If you want to turn on or off all the radiators you can use the built in variable RADIATORS, ie:
 	// RADIATORS ON.
 	// RADIATORS OFF.
 	// This function only retract deployable radiators. Useful for reentry.
@@ -118,8 +118,8 @@ function partsDeployFairings {
 }
 
 function partsHasTermometer {
-// Checks if ship have required sensors:
-// - Termometer
+	// Checks if ship have required sensors:
+	// - Termometer
 	local HasT is False.
 	LIST SENSORS in SENSELIST.
 	for S in SENSELIST {

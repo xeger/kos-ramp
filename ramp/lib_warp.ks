@@ -31,8 +31,7 @@ function warpSeconds {
 			warpTo(t1).
 			wait 1.
 			wait until time:seconds >= t1-1 or (warp = 0 and kUniverse:timeWarp:isSettled).
-		} else
-		{// warpTo will not warp 10 seconds and less
+		} else { // warpTo will not warp 10 seconds and less
 			if time:seconds < t1-3 {
 				physWarp(4).
 				wait until time:seconds >= t1-3.

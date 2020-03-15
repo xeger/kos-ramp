@@ -15,44 +15,44 @@
 
 // Print informational message.
 function bootConsole {
-  parameter msg.
+	parameter msg.
 
-  print "T+" + round(time:seconds) + " boot: " + msg.
+	print "T+" + round(time:seconds) + " boot: " + msg.
 }
 
 // Print error message and shutdown CPU.
 function bootError {
-  parameter msg.
+	parameter msg.
 
-  print "T+" + round(time:seconds) + " boot: " + msg.
+	print "T+" + round(time:seconds) + " boot: " + msg.
 
-  hudtext(msg, 10, 4, 36, RED, false).
+	hudtext(msg, 10, 4, 36, RED, false).
 
-  local vAlarm TO GetVoice(0).
-  set vAlarm:wave to "TRIANGLE".
-  set vAlarm:volume to 0.5.
-  vAlarm:PLAY(
-    LIST(
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25),
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25),
-        NOTE("R",   0.2,  0.25),
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25),
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25)
-    )
-  ).
-  shutdown.
+	local vAlarm TO GetVoice(0).
+	set vAlarm:wave to "TRIANGLE".
+	set vAlarm:volume to 0.5.
+	vAlarm:PLAY(
+		LIST(
+			NOTE("A#4", 0.2,  0.25),
+			NOTE("A4",  0.2,  0.25),
+			NOTE("A#4", 0.2,  0.25),
+			NOTE("A4",  0.2,  0.25),
+			NOTE("R",   0.2,  0.25),
+			NOTE("A#4", 0.2,  0.25),
+			NOTE("A4",  0.2,  0.25),
+			NOTE("A#4", 0.2,  0.25),
+			NOTE("A4",  0.2,  0.25)
+		)
+	).
+	shutdown.
 }
 
 function bootWarning {
-  parameter msg.
+	parameter msg.
 
-  print "T+" + round(time:seconds) + " boot: " + msg.
+	print "T+" + round(time:seconds) + " boot: " + msg.
 
-  hudtext(msg, 10, 4, 24, YELLOW, false).
+	hudtext(msg, 10, 4, 24, YELLOW, false).
 }
 
 //Print system info; wait for all parts to load
@@ -74,37 +74,37 @@ IF HOMECONNECTION:ISCONNECTED {
 	SET ARC TO VOLUME(0).
 	SWITCH TO ARC.
 
-  IF EXISTS("ramp") {
-	  CD ("ramp").
-  } ELSE IF EXISTS("kos-ramp") {
-    CD ("kos-ramp").
-  }
+	IF EXISTS("ramp") {
+		CD ("ramp").
+	} ELSE IF EXISTS("kos-ramp") {
+		CD ("kos-ramp").
+	}
 
-  LOCAL copyok is TRUE.
+	LOCAL copyok is TRUE.
 	LIST FILES IN fls.
-  LOCAL fSize is 0.
-  FOR f IN fls {
-    IF f:NAME:ENDSWITH(".ks") {
-      SET fSize to fSize + f:SIZE.
-    }
-  }
-  if core:volume:freespace > fSize {
-  	FOR f IN fls {
-      IF f:NAME:ENDSWITH(".ks") {
-        IF NOT COPYPATH(f,HD) { COPYOK OFF. }.
-      }
-  	}
-  	IF copyok {
-  		bootConsole("RAMP initialized.").
-  	}
-  	ELSE {
-  		bootWarning("File copy failed.").
-      failsafe on.
-  	}
-  } else {
-    bootWarning("Core volume too small.").
-    failsafe on.
-  }
+	LOCAL fSize is 0.
+	FOR f IN fls {
+		IF f:NAME:ENDSWITH(".ks") {
+			SET fSize to fSize + f:SIZE.
+		}
+	}
+	if core:volume:freespace > fSize {
+		FOR f IN fls {
+			IF f:NAME:ENDSWITH(".ks") {
+				IF NOT COPYPATH(f,HD) { COPYOK OFF. }.
+			}
+		}
+		IF copyok {
+			bootConsole("RAMP initialized.").
+		}
+		ELSE {
+			bootWarning("File copy failed.").
+			failsafe on.
+		}
+	} else {
+		bootWarning("Core volume too small.").
+		failsafe on.
+	}
 }
 ELSE {
 	bootConsole("No connection to KSC detected.").
@@ -137,7 +137,7 @@ IF HOMECONNECTION:ISCONNECTED {
 	LOCAL StartupScript is PATH("0:/start/"+SHIP:NAME).
 	IF EXISTS(StartupScript) {
 		bootConsole("Copying remote startup script from archive.").
-    SWITCH TO HD.
+		SWITCH TO HD.
 		IF COPYPATH(StartupScript, StartupLocalFile) {
 			StartupOk ON.
 		}
@@ -146,15 +146,15 @@ IF HOMECONNECTION:ISCONNECTED {
 		}
 	}
 	ELSE {
-    PRINT "--------------------------------------".
+		PRINT "--------------------------------------".
 		PRINT "No remote startup script found.".
 		PRINT "You can create a sample one by typing:".
 		PRINT "  RUN initialize.".
-    PRINT "--------------------------------------".
+		PRINT "--------------------------------------".
 	}
 }
 ELSE {
-  SWITCH TO HD.
+	SWITCH TO HD.
 	IF EXISTS(StartupLocalFile) {
 		bootConsole("Using local startup script copied from archive.").
 		StartupOk ON.
@@ -166,17 +166,17 @@ ELSE {
 }
 
 IF Failsafe {
-  bootWarning("Failsafe mode: run from archive.").
-  SWITCH TO ARCHIVE.
+	bootWarning("Failsafe mode: run from archive.").
+	SWITCH TO ARCHIVE.
 }
 ELSE {
-  SWITCH TO HD.
+	SWITCH TO HD.
 }
 
 IF StartupOk {
 	RUNPATH(StartupLocalFile).
 }
 ELSE {
-  bootWarning("Need user input; see kOS console.").
-  PRINT "RAMP ready for commands:". PRINT "".
+	bootWarning("Need user input; see kOS console.").
+	PRINT "RAMP ready for commands:". PRINT "".
 }

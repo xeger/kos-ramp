@@ -7,16 +7,13 @@
 run once lib_ui.
 run once lib_util.
 
-if Career():canMakeNodes and periapsis > max(body:atm:height,1000)
-{
+if Career():canMakeNodes and periapsis > max(body:atm:height,1000) {
 	utilRemoveNodes().
 	if obt:transition = "ESCAPE" or eta:periapsis < eta:apoapsis
-    	run node({run node_apo(obt:periapsis).}).
-  	else run node({run node_peri(obt:apoapsis).}).
+		run node({run node_apo(obt:periapsis).}).
+	else run node({run node_peri(obt:apoapsis).}).
 	uiBanner("Circ", "Circularized; e=" + round(ship:obt:eccentricity, 3)).
-}
-else if apoapsis > 0 and eta:apoapsis < eta:periapsis
-{
+} else if apoapsis > 0 and eta:apoapsis < eta:periapsis {
 	run once lib_staging.
 	run once lib_warp.
 
@@ -50,7 +47,7 @@ else if apoapsis > 0 and eta:apoapsis < eta:periapsis
 	lock steering to circSteering().
 	lock throttle to (sqrt(body:mu/(body:radius+apoapsis))-ship:velocity:orbit:mag)*ship:mass/max(1,availableThrust).
 	local maxHeight is ship:obt:apoapsis*1.01+1000.
-	until orbit:eccentricity < 0.0005	// circular
+	until orbit:eccentricity < 0.0005  // circular
 		or eta:apoapsis > orbit:period/3 and eta:apoapsis < orbit:period*2/3 // happens with good accuracy
 		or orbit:apoapsis > maxHeight and periapsis > max(body:atm:height,1000)+1000 // something went wrong?
 		or orbit:apoapsis > maxHeight*1.5+5000 // something went really really wrong

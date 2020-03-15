@@ -12,7 +12,7 @@ parameter hdglaunch is 90.
 
 // Roll/rotation during launch
 local function defaultRotation {
-	// do not rotate the rocket 180° if we are already facing the proper way
+// do not rotate the rocket 180° if we are already facing the proper way
 	if abs(ship:facing:roll-180-hdglaunch) < 30 return 0.
 	return 180. // needed for shuttles, should not harm rockets
 }
@@ -132,14 +132,14 @@ wait until utilIsShipFacing(heading(hdglaunch,0):vector).
 local AdjustmentThrottle is 0.
 lock throttle to AdjustmentThrottle.
 until ship:altitude > body:atm:height {
-  if ship:obt:apoapsis < apo {
-	set AdjustmentThrottle to ascentThrottle().
-	stagingCheck().
-	wait 0.
-  } else {
-	set AdjustmentThrottle to 0.
-	wait 0.5.
-  }
+	if ship:obt:apoapsis < apo {
+		set AdjustmentThrottle to ascentThrottle().
+		stagingCheck().
+		wait 0.
+	} else {
+		set AdjustmentThrottle to 0.
+		wait 0.5.
+	}
 }
 if warped resetWarp().
 // Discard fairings and deploy panels, if they aren't yet.

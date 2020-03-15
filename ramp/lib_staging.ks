@@ -13,35 +13,35 @@
 
 // list of all consumed fuels (for deltaV; add e.g. Karbonite and/or MonoPropellant if using such mods)
 if not (defined stagingConsumed)
-global stagingConsumed is list("SolidFuel", "LiquidFuel", "Oxidizer").
+	global stagingConsumed is list("SolidFuel", "LiquidFuel", "Oxidizer").
 
 // list of fuels for empty-tank identification (for dual-fuel tanks use only one of the fuels)
 // note: SolidFuel is in list for booster+tank combo, both need to be empty to stage
 if not (defined stagingTankFuels)
-global stagingTankFuels is list("SolidFuel", "LiquidFuel"). //Oxidizer intentionally not included (would need extra logic)
+	global stagingTankFuels is list("SolidFuel", "LiquidFuel"). //Oxidizer intentionally not included (would need extra logic)
 
 // list of modules that identify decoupler
 if not (defined stagingDecouplerModules)
-global stagingDecouplerModules is list("ModuleDecouple", "ModuleAnchoredDecoupler").
+	global stagingDecouplerModules is list("ModuleDecouple", "ModuleAnchoredDecoupler").
 
 // Standard gravity for ISP
 // https://en.wikipedia.org/wiki/Specific_impulse
 // https://en.wikipedia.org/wiki/Standard_gravity
 if not (defined isp_g0)
-global isp_g0 is kerbin:mu/kerbin:radius^2. // exactly 9.81 in KSP 1.3.1, 9.80665 for Earth
+	global isp_g0 is kerbin:mu/kerbin:radius^2. // exactly 9.81 in KSP 1.3.1, 9.80665 for Earth
 // note that constant:G*kerbin:mass/kerbin:radius^2 yields 9.80964723..., correct value could be 9.82
 
 // work variables for staging logic
-global stagingNumber	is -1.		// stage:number when last calling stagingPrepare()
-global stagingMaxStage	is 0.		// stop staging if stage:number is lower or same as this
-global stagingResetMax	is true.	// reset stagingMaxStage to 0 if we passed it (search for next "noauto")
-global stagingEngines	is list().	// list of engines that all need to flameout to stage
-global stagingTanks		is list().	// list of tanks that all need to be empty to stage
+global stagingNumber is -1.    // stage:number when last calling stagingPrepare()
+global stagingMaxStage is 0.    // stop staging if stage:number is lower or same as this
+global stagingResetMax is true.  // reset stagingMaxStage to 0 if we passed it (search for next "noauto")
+global stagingEngines is list().  // list of engines that all need to flameout to stage
+global stagingTanks is list().  // list of tanks that all need to be empty to stage
 // info for and from stageDeltaV
-global stageAvgIsp		is 0.		// average ISP in seconds
-global stageStdIsp		is 0.		// average ISP in N*s/kg (stageAvgIsp*isp_g0)
-global stageDryMass		is 0.		// dry mass just before staging
-global stageBurnTime	is 0.		// updated in stageDeltaV()
+global stageAvgIsp is 0.    // average ISP in seconds
+global stageStdIsp is 0.    // average ISP in N*s/kg (stageAvgIsp*isp_g0)
+global stageDryMass is 0.    // dry mass just before staging
+global stageBurnTime is 0.    // updated in stageDeltaV()
 
 // return stage number where the part is decoupled (probably Part.separationIndex in KSP API)
 function stagingDecoupledIn {
@@ -87,9 +87,8 @@ function stagingPrepare {
 	// and average ISP for stageDeltaV()
 	list engines in engines.
 	local thrust is 0.
-    local flow is 0.
-	for e in engines if e:ignition and e:isp > 0
-	{
+	local flow is 0.
+	for e in engines if e:ignition and e:isp > 0 {
 		if stagingDecoupledIn(e) = stage:number-1
 			stagingEngines:add(e).
 
@@ -98,12 +97,12 @@ function stagingPrepare {
 		set flow to flow + t / e:isp. // thrust=isp*g0*dm/dt => flow = sum of thrust/isp
 	}
 	set stageAvgIsp to 0.
-    if flow > 0 set stageAvgIsp to thrust/flow.
+	if flow > 0 set stageAvgIsp to thrust/flow.
 	set stageStdIsp to stageAvgIsp * isp_g0.
 
 	// prepare dry mass for stageDeltaV()
-    local fuelMass is 0.
-    for r in stage:resources if stagingConsumed:contains(r:name)
+	local fuelMass is 0.
+	for r in stage:resources if stagingConsumed:contains(r:name)
 		set fuelMass to fuelMass + r:amount*r:density.
 	set stageDryMass to ship:mass-fuelMass.
 }

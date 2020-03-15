@@ -25,10 +25,8 @@ stagingPrepare().
 // Configuration constants; these are pre-set for automated missions; if you
 // have a ship that turns poorly, you may need to decrease these and perform
 // manual corrections.
-if not (defined node_bestFacing)
-global node_bestFacing is 5.   // ~5  degrees error (10 degree cone)
-if not (defined node_okFacing)
-global node_okFacing   is 20.  // ~20 degrees error (40 degree cone)
+if not (defined node_bestFacing) global node_bestFacing is 5. // ~5  degrees error (10 degree cone)
+if not (defined node_okFacing) global node_okFacing   is 20. // ~20 degrees error (40 degree cone)
 
 local sstate is sas. // save SAS state
 local rstate is rcs. // save RCS state
@@ -71,7 +69,7 @@ until false {
 	if warpLoop = 0 break.
 	if warpLoop > 1 {
 		if (warpSeconds(nn:eta - dt - 60) > 600 and nodeCreator:istype("delegate")) {
-		//	recreate node if warped more than 10 minutes and we have node creator delegate
+			//	recreate node if warped more than 10 minutes and we have node creator delegate
 			unlock steering. // release references before deleting nodes
 			unlock steerDir.
 			set nn to false.
@@ -109,8 +107,7 @@ if nn:eta-dt > 5 {
 	resetWarp().
 }
 wait until nn:eta-dt <= 1.
-until dvMin < 0.05
-{
+until dvMin < 0.05 {
 	if stagingCheck() uiWarning("Node", "Stage " + stage:number + " separation during burn").
 	wait 0. //Let a physics tick run each loop.
 
@@ -127,10 +124,10 @@ until dvMin < 0.05
 			set minThrottle to 0.1.
 			set maxThrottle to 0.1.
 			rcs on.
-	 	}
-		if vdot(dv0, nn:deltaV) < 0 break.	// overshot (node delta vee is pointing opposite from initial)
-		if dv > dvMin + 0.1 break.			// burn DV increases (off target due to wobbles)
-		if dv <= 0.2 {						// burn DV gets too small for main engines to cope with
+		}
+		if vdot(dv0, nn:deltaV) < 0 break.  // overshot (node delta vee is pointing opposite from initial)
+		if dv > dvMin + 0.1 break.      // burn DV increases (off target due to wobbles)
+		if dv <= 0.2 {            // burn DV gets too small for main engines to cope with
 			if almostThere = 0 set almostThere to time:seconds.
 			if time:seconds-almostThere > 5 break.
 			if dv <= 0.05 break.
@@ -156,9 +153,9 @@ else wait 1.
 
 // Fault if remaining dv > 5% of initial AND mag is > 0.1 m/s
 if nn:deltaV:mag > dv0:mag * 0.05 and nn:deltaV:mag > 0.1 {
-  uiFatal("Node", "BURN FAULT " + round(nn:deltaV:mag, 1) + " m/s").
+	uiFatal("Node", "BURN FAULT " + round(nn:deltaV:mag, 1) + " m/s").
 } else if nn:deltaV:mag > 0.1 {
-  uiWarning("Node", "BURN FAULT " + round(nn:deltaV:mag, 1) + " m/s").
+	uiWarning("Node", "BURN FAULT " + round(nn:deltaV:mag, 1) + " m/s").
 }
 
 remove nn.
