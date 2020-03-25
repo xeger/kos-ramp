@@ -44,28 +44,28 @@ RAMP scripts use about 150kb of memory. That seems low, but default kOS hard dis
 {
 	@MODULE[kOSProcessor]
 	{
-		diskSpace = 524288
-	}
-}
-@PART[KAL9000]
-{
-	@MODULE[kOSProcessor]
-	{
-		diskSpace = 262144
+		diskSpace = 180000
 	}
 }
 @PART[KR-2042]
 {
 	@MODULE[kOSProcessor]
 	{
-		diskSpace = 16384
+		diskSpace = 256000
 	}
 }
 @PART[kOSMachineRad]
 {
 	@MODULE[kOSProcessor]
 	{
-		diskSpace = 131072
+		diskSpace = 256000
+	}
+}
+@PART[KAL9000]
+{
+	@MODULE[kOSProcessor]
+	{
+		diskSpace = 512000
 	}
 }
 ```
