@@ -8,6 +8,19 @@ runoncepath("lib_util").
 runoncepath("lib_dock").
 runoncepath("lib_ui").
 
+//////////////////////////////////////
+// Main program
+/////////////////////////////////////
+
+local accel is uiAssertAccel("Maneuver").
+lock vel to (ship:velocity:orbit - target:velocity:orbit).
+lock velR to vdot(vel, target:position:normalized) * target:position:normalized.
+lock velT to vxcl(target:position:normalized, vel).
+
+// Don't let unbalanced RCS mess with our velocity
+rcs off.
+sas off.
+
 // Those functions are for use by this program ONLY!
 function CancelVelT {
 	uiBanner("Maneuver", "Match transverse velocity").
@@ -99,22 +112,6 @@ function BrakeForEncounter {
 	unlock throttle.
 	unlock steering.
 }
-
-//////////////////////////////////////
-// Main program
-/////////////////////////////////////
-
-
-local accel is uiAssertAccel("Maneuver").
-lock vel to (ship:velocity:orbit - target:velocity:orbit).
-lock velR to vdot(vel, target:position:normalized) * target:position:normalized.
-lock velT to vxcl(target:position:normalized, vel).
-
-
-
-// Don't let unbalanced RCS mess with our velocity
-rcs off.
-sas off.
 
 
 // Main logic checks

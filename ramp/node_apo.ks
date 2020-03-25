@@ -5,7 +5,7 @@
 // An optional argument allows for scheduling the burn at another time.
 /////////////////////////////////////////////////////////////////////////////
 
-parameter alt.
-parameter nodetime is time:seconds + eta:periapsis.
+parameter nodeAlt.
+parameter nodeTime is time:seconds + eta:periapsis.
 
-run node_alt(alt, nodetime).
+run node_alt(nodeAlt, nodeTime).

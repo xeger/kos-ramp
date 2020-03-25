@@ -17,129 +17,18 @@ if OldIPU < 500 set config:ipu to 500.
 Local consoleinfo is false.
 uiDebug("console output is " + consoleinfo).
 
-//////////////////////////////////////////////
-// Functions to use exclusive with this script
-//////////////////////////////////////////////
+// Runways coordinates
+global RWYKSC is latlng(-0.04807,-74.65).
+global RWYKSC_SHUTTLE is latlng(-0.04807,-74.82).
+global RWYOAF is latlng(-1.51764918920989,-71.9565681001265).
 
-function Mach {
-	parameter SpdMS.
-	local AirTemp is 288.15.
-	if HasTermometer { set AirTemp to ship:sensors:temp. }.
-	return SpdMS / sqrt(1.4 * 286 * AirTemp).
-}
-
-function YawError {
-	local yaw_error_vec is vxcl(facing:topvector, ship:srfprograde:vector).
-	local yaw_error_ang is vang(facing:vector, yaw_error_vec).
-	if vdot(ship:facing:starvector, ship:srfprograde:vector) < 0 {
-		return yaw_error_ang.
-	} else {
-		return -yaw_error_ang.
-	}
-
-}
-
-function AoA {
-	local pitch_error_vec is vxcl(facing:starvector, ship:srfprograde:vector).
-	local pitch_error_ang is vang(facing:vector, pitch_error_vec).
-	if vdot(ship:facing:topvector, ship:srfprograde:vector) < 0 {
-		return pitch_error_ang.
-	} else {
-		return -pitch_error_ang.
-	}
-
-}
-
-function BankAngle {
-	local starBoardRotation to ship:facing * R(0, 90, 0).
-	local starVec to starBoardRotation:vector.
-	local horizonVec to vcrs(ship:up:vector, ship:facing:vector).
-
-	if vdot(ship:up:vector, starVec) < 0{
-		return vang(starVec, horizonVec).
-	} else {
-		return -vang(starVec, horizonVec).
-	}
-}
-
-function PitchAngle {
-	return -(vang(ship:up:vector, ship:facing:forevector) - 90).
-}
-
-function ProgradePitchAngle {
-	return -(vang(ship:up:vector, vxcl(ship:facing:starvector, ship:velocity:surface)) - 90).
-}
-
-function MagHeading {
-	local northPole to latlng(90, 0).
-	return mod(360 - northPole:bearing, 360).
-}
-
-function CompassDegrees {
-	parameter degrees.
-	return mod(360 - degrees, 360).
-}
-
-function RadarAltimeter {
-	return ship:altitude - ship:geoposition:terrainheight.
-}
-
-function DeltaHeading {
-	parameter tHeading.
-	// Heading Control
-	local dHeading to tHeading - magheading().
-	if dHeading > 180 {
-		set dHeading to dHeading - 360.
-	} else if dHeading < -180 {
-		set dHeading to dHeading + 360.
-	}
-	return dHeading.
-}
-
-function GroundDistance {
-	// Returns distance to a point in ground from the ship's ground position (ignores altitude)
-	parameter TgtPos.
-	return vxcl(up:vector, TgtPos:position):mag.
-}
-
-function Glideslope{
-	// Returns the altitude of the glideslope
-	parameter Threshold.
-	parameter GSAngle is 5.
-	parameter Offset is 20.
-	local KerbinAngle is abs(ship:geoposition:lng) - abs(Threshold:lng).
-	local Correction is sqrt( (kerbin:radius ^ 2) + (tan(KerbinAngle) * kerbin:radius) ^ 2 ) - kerbin:radius. // Why this correction? https://imgur.com/a/CPHnD
-	return (tan(GSAngle) * GroundDistance(Threshold)) + Threshold:terrainheight + Correction + Offset.
-}
-
-function CenterLineDistance {
-	// Returns the ground distance of the centerline
-	parameter Threshold.
-	local Marker is latlng(Threshold:lat, ship:geoposition:lng).
-	if ship:geoposition:lat > Threshold:lat {
-		return GroundDistance(Marker).
-	} else {
-		return -GroundDistance(Marker).
-	}
-}
-
-function TakeOff {
-	local LandedAlt is ship:altitude.
-	sas off.
-	brakes off.
-	lights on.
-	stage.
-	set ship:control:pilotmainthrottle to 1.
-	wait until ship:airspeed > 50.
-	set ship:control:pitch to 0.5.
-	wait until ship:altitude > LandedAlt + 50.
-	set ship:control:pitch to 0.
-	sas on.
-	gear off.
-	lights off.
-	wait until ship:altitude > LandedAlt + 600.
-	set ship:control:pilotmainthrottle to 0.
-}
+// Values
+local TGTAltitude is 1000.
+local TGTBank is 0.
+local TGTHeading is 90.
+local TGTPitch is 0.
+local TGTRunway is RWYKSC.
+local TGTSpeed is 150.
 
 ////////////////////
 // Graphic Interface
@@ -241,7 +130,6 @@ set buttonWP08:onclick to {
 	guiWP:hide.
 }.
 
-
 // Main Window
 local gui is GUI(300).
 set gui:x to 30.
@@ -251,20 +139,21 @@ local labelMode is gui:addlabel("<b>AP Mode</b>").
 set labelMode:style:align to "CENTER".
 set labelMode:style:hstretch to true.
 
-local baseselectbuttons to gui:addhbox().
-local radiobuttonKSC to baseselectbuttons:addradiobutton("Space Center", true).
-local radiobuttonOAF to baseselectbuttons:addradiobutton("Old airfield", false).
-local checkboxVectors to baseselectbuttons:addbutton("HoloILS™").
-set radiobuttonKSC:style:height to 25.
-set radiobuttonOAF:style:height to 25.
+local baseSelectButtons to gui:addhbox().
+local radioButtonKSC to baseSelectButtons:addradiobutton("Space Center", true).
+local radioButtonOAF to baseSelectButtons:addradiobutton("Old airfield", false).
+local checkboxVectors to baseSelectButtons:addbutton("HoloILS™").
+set radioButtonKSC:style:height to 25.
+set radioButtonOAF:style:height to 25.
 set checkboxVectors:toggle to true.
 
-set baseselectbuttons:onradiochange to {
+set baseSelectButtons:onRadioChange to {
 	parameter B.
 
 	if B:text = "Space Center" {
 		set TGTRunway to RWYKSC.
 	}
+
 	if B:text = "Old airfield" {
 		set TGTRunway to RWYOAF.
 	}
@@ -470,20 +359,10 @@ set BankAnglePID:setpoint to 0.
 local ThrottlePID is pidloop(0.01, 0.006, 0.016, 0, 1).
 set ThrottlePID:setpoint to 0.
 
-// Autotrim parameters
-local ElevatorTrimSum is 0.
-local ElevatorTrimCnt is 0.
-
 // Control surface variables
 local Elevator is 0.
 local Aileron is 0.
 local Rudder is 0.
-local ElevatorTrim is 0.
-
-// Runways coordinates
-global rwyksc is latlng(-0.04807,-74.65).
-global RWYKSC_SHUTTLE is latlng(-0.04807,-74.82).
-global rwyoaf is latlng(-1.51764918920989,-71.9565681001265).
 
 // Defauts
 local APATEnabled is true.
@@ -499,7 +378,6 @@ local flarealt is 150.
 local GSAng is 5.
 local GSLocked is false.
 local HasTermometer is partsHasTermometer().
-local ilsholdalt is 0.
 local lnavmode is "HDG".
 local MaxAoA is 20.
 local previousap is "".
@@ -509,12 +387,6 @@ local previousvnav is "".
 local RA is RadarAltimeter().
 local ShipStatus is ship:status.
 local TargetCoord is RWYKSC.
-local TGTAltitude is 1000.
-local TGTBank is 0.
-local TGTHeading is 90.
-local TGTPitch is 0.
-local TGTRunway is RWYKSC.
-local TGTSpeed is 150.
 local TimeOfLanding is 0.
 local vnavmode is "ALT".
 local valuethrottle is 0.
@@ -546,6 +418,132 @@ if KindOfCraft = "Shuttle" {
 local rampend is 0.
 local rampendalt is 0.
 local ilsvec is 0.
+
+
+//////////////////////////////////////////////
+// Functions to use exclusive with this script
+//////////////////////////////////////////////
+
+function Mach {
+	parameter SpdMS.
+	local AirTemp is 288.15.
+	if HasTermometer { set AirTemp to ship:sensors:temp. }.
+	return SpdMS / sqrt(1.4 * 286 * AirTemp).
+}
+
+function YawError {
+	local yaw_error_vec is vxcl(facing:topvector, ship:srfprograde:vector).
+	local yaw_error_ang is vang(facing:vector, yaw_error_vec).
+	if vdot(ship:facing:starvector, ship:srfprograde:vector) < 0 {
+		return yaw_error_ang.
+	} else {
+		return -yaw_error_ang.
+	}
+
+}
+
+function AoA {
+	local pitch_error_vec is vxcl(facing:starvector, ship:srfprograde:vector).
+	local pitch_error_ang is vang(facing:vector, pitch_error_vec).
+	if vdot(ship:facing:topvector, ship:srfprograde:vector) < 0 {
+		return pitch_error_ang.
+	} else {
+		return -pitch_error_ang.
+	}
+
+}
+
+function BankAngle {
+	local starBoardRotation to ship:facing * R(0, 90, 0).
+	local starVec to starBoardRotation:vector.
+	local horizonVec to vcrs(ship:up:vector, ship:facing:vector).
+
+	if vdot(ship:up:vector, starVec) < 0{
+		return vang(starVec, horizonVec).
+	} else {
+		return -vang(starVec, horizonVec).
+	}
+}
+
+function PitchAngle {
+	return -(vang(ship:up:vector, ship:facing:forevector) - 90).
+}
+
+function ProgradePitchAngle {
+	return -(vang(ship:up:vector, vxcl(ship:facing:starvector, ship:velocity:surface)) - 90).
+}
+
+function MagHeading {
+	local northPole to latlng(90, 0).
+	return mod(360 - northPole:bearing, 360).
+}
+
+function CompassDegrees {
+	parameter degrees.
+	return mod(360 - degrees, 360).
+}
+
+function RadarAltimeter {
+	return ship:altitude - ship:geoposition:terrainheight.
+}
+
+function DeltaHeading {
+	parameter tHeading.
+	// Heading Control
+	local val to tHeading - magheading().
+	if val > 180 {
+		set val to val - 360.
+	} else if val < -180 {
+		set val to val + 360.
+	}
+	return val.
+}
+
+function GroundDistance {
+	// Returns distance to a point in ground from the ship's ground position (ignores altitude)
+	parameter TgtPos.
+	return vxcl(up:vector, TgtPos:position):mag.
+}
+
+function Glideslope{
+	// Returns the altitude of the glideslope
+	parameter Threshold.
+	parameter GSAngle is 5.
+	parameter Offset is 20.
+	local KerbinAngle is abs(ship:geoposition:lng) - abs(Threshold:lng).
+	local Correction is sqrt( (kerbin:radius ^ 2) + (tan(KerbinAngle) * kerbin:radius) ^ 2 ) - kerbin:radius. // Why this correction? https://imgur.com/a/CPHnD
+	return (tan(GSAngle) * GroundDistance(Threshold)) + Threshold:terrainheight + Correction + Offset.
+}
+
+function CenterLineDistance {
+	// Returns the ground distance of the centerline
+	parameter Threshold.
+	local Marker is latlng(Threshold:lat, ship:geoposition:lng).
+	if ship:geoposition:lat > Threshold:lat {
+		return GroundDistance(Marker).
+	} else {
+		return -GroundDistance(Marker).
+	}
+}
+
+function TakeOff {
+	local LandedAlt is ship:altitude.
+	sas off.
+	brakes off.
+	lights on.
+	stage.
+	set ship:control:pilotmainthrottle to 1.
+	wait until ship:airspeed > 50.
+	set ship:control:pitch to 0.5.
+	wait until ship:altitude > LandedAlt + 50.
+	set ship:control:pitch to 0.
+	sas on.
+	gear off.
+	lights off.
+	wait until ship:altitude > LandedAlt + 600.
+	set ship:control:pilotmainthrottle to 0.
+}
+
 
 // *********
 // MAIN LOOP

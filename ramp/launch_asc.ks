@@ -49,8 +49,6 @@ function ascentSteering {
 /////////////////////////////////////////////////////////////////////////////
 
 function ascentThrottle {
-	// angle of attack
-	local aoa is vdot(ship:facing:vector, ship:velocity:surface).
 	// how far through the soup are we?
 	local atmPct is ship:altitude / (body:atm:height + 1).
 	local spd is ship:airspeed.

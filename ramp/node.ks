@@ -40,7 +40,7 @@ local nn is nextnode.
 
 // keep ship pointed at node
 sas off.
-lock steerDir to lookdirup(nn:deltav, positionAt(ship, time:seconds + nn:eta) - body:position).
+local lock steerDir to lookdirup(nn:deltav, positionAt(ship, time:seconds + nn:eta) - body:position).
 lock steering to steerDir.
 
 // estimate burn direction & duration
@@ -137,7 +137,7 @@ until dvMin < 0.05 {
 		if choked = 0 set choked to time:seconds.
 		if not warned and time:seconds - choked > 3 {
 			set warned to true.
-			uiWarn("Node", "No acceleration").
+			uiWarning("Node", "No acceleration").
 		}
 		if time:seconds - choked > 30
 			uiFatal("Node", "No acceleration").

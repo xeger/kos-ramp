@@ -22,8 +22,6 @@ local RelSpeed is ship:groundspeed.
 local FollowingVessel is false.
 local gs is 0.
 local Waypoints is queue().
-local NotifyInterval is 10.
-local LastNotify is 0.
 local NextWaypoint is 0.
 local N is TerrainNormalVector().
 local turnlimit is 0.

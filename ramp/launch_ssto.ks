@@ -25,7 +25,7 @@ function ClimbAcc {
 	else return 0.
 }
 
-function ascentThrottle {
+function ascentThrottleSSTO {
 	// Ease thottle when near the Apoapsis
 	local ApoPercent is ship:obt:apoapsis / TGTApoapsis.
 	local ApoCompensation is 0.
@@ -69,7 +69,7 @@ Lock PercentGT to min( 1, ship:altitude / GTAltitude).
 until ship:apoapsis > TGTApoapsis {
 	set LaunchSPT0 to time:seconds.
 	set LaunchSPV0 to ship:airspeed.
-	set ThrottleValue to ascentThrottle().
+	set ThrottleValue to ascentThrottleSSTO().
 	wait ClimbTick.
 
 	set PitchByGT to ArcCos(PercentGT).
@@ -80,7 +80,7 @@ until ship:apoapsis > TGTApoapsis {
 Set ThrottleValue to 0.
 
 until ship:altitude > body:atm:height {
-	if ship:obt:apoapsis < TGTApoapsis Set ThrottleValue to ascentThrottle().
+	if ship:obt:apoapsis < TGTApoapsis Set ThrottleValue to ascentThrottleSSTO().
 	else set ThrottleValue to 0.
 	wait ClimbTick.
 }

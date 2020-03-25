@@ -110,7 +110,7 @@ function uiAssertAccel {
 	local uiAccel is ship:availablethrust / ship:mass. // kN over tonnes; 1000s cancel
 
 	if uiAccel <= 0 {
-		uiFatal("Maneuver", "ENGINE FAULT").
+		uiFatal(prefix, "ENGINE FAULT").
 	} else {
 		return uiAccel.
 	}

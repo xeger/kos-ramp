@@ -13,7 +13,6 @@ if ship:body <> target:body {
 	reboot.
 }
 
-local accel is uiAssertAccel("Rendezvous").
 local approachT is utilClosestApproach(ship, target).
 local approachX is (positionat(target, approachT) - positionat(ship, approachT)):mag.
 

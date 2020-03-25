@@ -20,7 +20,6 @@ if incl <> "" or not hasTarget {
 	set di to i1 - i0.
 	set ta to -orbit:argumentOfPeriapsis.
 } else {
-	local i1 is target:orbit:inclination.
 	local sp is ship:position - body:position.
 	local tp is target:position - body:position.
 	local sv is ship:velocity:orbit.

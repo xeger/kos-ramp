@@ -6,10 +6,8 @@
 
 run once lib_ui.
 
-global land_slip    is 0.05. // transverse speed @ touchdown (m/s)
-global land_warp    is 3.    // warp factor during descent
+global land_slip    is 0.05. // transverse speed at touchdown (m/s)
 global land_descend is 10.0. // max speed during final descent (m/s)
-global land_touch   is 10.   // touchdown height during final descent (m)
 sas off.
 
 until status <> "ORBITING" {
@@ -38,36 +36,31 @@ if status = "SUB_ORBITAL" or status = "FLYING" {
 		local dtGround is (sqrt(4 * grav * abs(geo:position:mag) + sv:mag ^ 2) - sv:mag) / (2 * grav).
 
 		if final {
-		// Final descent: fall straight down; fire retros at touchdown.
+			// Final descent: fall straight down; fire retros at touchdown.
 			legs on.
 
-		// decide when to touch down
+			// decide when to touch down
 			if dtBrake >= dtGround - 1 {
 				set touchdown to true.
 			}
 
-		// control transverse speed; keep it below allowable slip
+			// control transverse speed; keep it below allowable slip
 			if svT:mag > land_slip {
 				local sense is ship:facing.
-				local dirV is V(
-								vdot(svT, sense:starvector),
-												0,
-												vdot(svT, sense:vector)
-								).
-
+				local dirV is V(vdot(svT, sense:starvector), 0, vdot(svT, sense:vector)).
 				set ship:control:translation to -(dirV / land_slip / 2).
 			} else {
 				set ship:control:translation to 0.
 			}
 
-		// deploy legs and fire retros for soft touchdown
+			// deploy legs and fire retros for soft touchdown
 			if touchdown and vdot(svR, ground) > 0 {
 				lock throttle to (sv:mag / accel) * 0.8.
 			} else {
 				lock throttle to 0.
 			}
 		} else if brake {
-		// Braking burn: scrub velocity down to final-descent speed
+			// Braking burn: scrub velocity down to final-descent speed
 			if sv:mag > land_descend {
 				lock throttle to min((sv:mag - land_descend * 0.5) / accel, 1.0).
 			} else {
@@ -78,7 +71,7 @@ if status = "SUB_ORBITAL" or status = "FLYING" {
 				set final to true.
 			}
 		} else {
-		// Deorbit: monitor & predict when to perform braking burn
+			// Deorbit: monitor & predict when to perform braking burn
 			local rF is positionat(ship, time:seconds + dtBrake).
 			local geoF is body:geopositionof(rF).
 			local altF is rf:y - geoF:position:y.

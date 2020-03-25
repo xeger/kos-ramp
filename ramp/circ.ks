@@ -23,8 +23,8 @@ if Career():canMakeNodes and periapsis > max(body:atm:height, 1000) {
 	lock steering to v0.
 	stagingPrepare().
 	// deltaV = required orbital speed minus predicted speed
-	set dv to sqrt(body:mu / (body:radius + apoapsis)) - v0:mag.
-	set dt to burnTimeForDv(dv) / 2.
+	local dv is sqrt(body:mu / (body:radius + apoapsis)) - v0:mag.
+	local dt is burnTimeForDv(dv) / 2.
 	uiBanner("Circ", "Coast to apoapsis.").
 	wait until utilIsShipFacing(v0).
 	warpSeconds(eta:apoapsis - dt - 30).

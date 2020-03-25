@@ -22,6 +22,7 @@ function partsDoEvent {
 	}
 	return success.
 }
+
 // actions are only accessible if VAB or SPH upgraded enough
 function partsDoAction {
 	parameter module.
@@ -88,7 +89,6 @@ function partsRetractRadiators {
 	return partsDoEvent("ModuleDeployableRadiator", "Retract", tag).
 }
 
-
 // Try to control from the specified docking port.
 function partsControlFromDockingPort {
 	parameter cPart. // The docking port you want to control from.
@@ -121,13 +121,12 @@ function partsHasTermometer {
 	// Checks if ship have required sensors:
 	// - Termometer
 	local HasT is false.
-	list sensors in senselist.
-	for S in senselist {
-		if S:type = "TEMP" { set HasT to true. }
+	list sensors in sensorsList.
+	for s in sensorsList {
+		if s:type = "TEMP" { set HasT to true. }
 	}
 	return HasT.
 }
-
 
 function partsDisarmsChutes {
 	// Make sure all chutes are disarmed, even if already staged.
@@ -150,7 +149,6 @@ function partsPercentLFO {
 	local LFAMT is 0.
 	local OXCAP is 0.
 	local OXAMT is 0.
-	local SURPLUS is 0.
 	for R in ship:resources {
 		if R:name = "LIQUIDFUEL" {
 			set LFCAP to R:capacity.

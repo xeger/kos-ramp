@@ -1,17 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////
 // Warp time
 /////////////////////////////////////////////////////////////////////////////
-// Block until dt seconds have elapsed; use physics or rails warp as needed
+// Block until dtime seconds have elapsed; use physics or rails warp as needed
 // to accelerate simulated game time.
 /////////////////////////////////////////////////////////////////////////////
 
-declare parameter dt.
+parameter dtime.
 
 set TW to kuniverse:timewarp.
 
-if dt > 0 {
+if dtime > 0 {
 	set TW:mode to "RAILS".
-	tw:warpto(time:seconds + dt).
-	wait dt.
-	wait until tw:warp = 0 and tw:issettled.
+	TW:warpto(time:seconds + dtime).
+	wait dtime.
+	wait until TW:warp = 0 and TW:issettled.
 }

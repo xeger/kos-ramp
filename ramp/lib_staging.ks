@@ -48,18 +48,20 @@ function stagingDecoupledIn {
 	parameter part.
 
 	local function partIsDecoupler {
-		parameter part.
-		for m in stagingDecouplerModules if part:modules:contains(m) {
-			if part:tag:matchesPattern("\bnoauto\b") and part:stage + 1 >= stagingMaxStage
-				set stagingMaxStage to part:stage + 1.
+		parameter p.
+		for m in stagingDecouplerModules if p:modules:contains(m) {
+			if p:tag:matchesPattern("\bnoauto\b") and p:stage + 1 >= stagingMaxStage
+				set stagingMaxStage to p:stage + 1.
 			return true.
 		}
 		return false.
 	}
+
 	until partIsDecoupler(part) {
 		if not part:hasParent return -1.
 		set part to part:parent.
 	}
+
 	return part:stage.
 }
 
@@ -118,8 +120,8 @@ function stagingCheck {
 	// need to stage because all engines are without fuel?
 	local function checkEngines {
 		if stagingEngines:empty return false.
-		for e in stagingEngines if not e:flameout
-			return false.
+		for se in stagingEngines
+			if not se:flameout return false.
 		return true.
 	}
 

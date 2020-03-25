@@ -33,6 +33,13 @@ local errorSteering is 0.
 local turnlimit is 0.
 
 // Route maker
+local routeMaker is gui:AddVBox().
+local rmButtons is routeMaker:AddHLayout().
+local buttonAddWPT is rmButtons:AddButton("+ Waypoint").
+local buttonRmvWPT is rmButtons:AddButton("- Waypoint").
+local buttonSaveRoute is rmButtons:AddButton("Save Route").
+local textFieldRouteName is routeMaker:AddTextField("Route name").
+
 local Route is list().
 Function AddWaypoint {
 	local waypointlex is lexicon("lat", ship:geoposition:lat, "lng", ship:geoposition:lng).
@@ -50,13 +57,10 @@ Function RmvWaypoint {
 
 Function SaveRoute {
 	if HomeConnection:IsConnected {
-		WriteJSON(Route, "0:/routes/" + TextFieldRouteName:text()+ ".json").
+		WriteJSON(Route, "0:/routes/" + textFieldRouteName:text() + ".json").
 		uiBanner("Route", "Route saved!", 2).
 	} else uiError("Route", "There is no connection to KSC servers. Raise antennas and try again.").
 }
-
-
-
 
 // Create a GUI window
 local gui is GUI(250).
@@ -158,16 +162,9 @@ set LabelControls:style:align to "RIGHT".
 set LabelControls:style:hstretch to true.
 local SliderThrottle to dashboard:addvslider(0, 1,-1).
 
-local RouteMaker is gui:AddVBox().
-local rmButtons is RouteMaker:AddHLayout().
-local ButtonAddWPT is rmButtons:AddButton("+ Waypoint").
-local ButtonRmvWPT is rmButtons:AddButton("- Waypoint").
-local ButtonSaveRoute is rmButtons:AddButton("Save Route").
-local TextFieldRouteName is RouteMaker:AddTextField("Route name").
-
-Set ButtonAddWPT:onclick to AddWaypoint@.
-Set ButtonRmvWPT:onclick to RmvWaypoint@.
-Set ButtonSaveRoute:onclick To SaveRoute@.
+Set buttonAddWPT:onclick to AddWaypoint@.
+Set buttonRmvWPT:onclick to RmvWaypoint@.
+Set buttonSaveRoute:onclick To SaveRoute@.
 
 on AG1 { AddWaypoint(). Preserve. }
 

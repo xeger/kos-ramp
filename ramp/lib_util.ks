@@ -5,8 +5,6 @@ function utilClosestApproach {
 
 	local Tmin is time:seconds.
 	local Tmax is Tmin + 2 * max(ship1:obt:period, ship2:obt:period).
-	local Rbest is (ship1:position - ship2:position):mag.
-	local Tbest is 0.
 
 	until Tmax - Tmin < 5 {
 		local dt2 is (Tmax - Tmin) / 2.
@@ -32,7 +30,6 @@ function utilCloseApproach {
 	parameter Tmax.
 
 	local Rbest is (ship1:position - ship2:position):mag.
-	local Tbest is 0.
 	local dt is (Tmax - Tmin) / 32.
 
 	local T is Tmin.
@@ -75,19 +72,18 @@ function utilFaceBurn {
 
 	function InitOSS {
 		// Initialize persistent data.
-		local OSS is lexicon().
-		OSS:add("t0", time:seconds).
-		OSS:add("pitch_angle", 0).
-		OSS:add("pitch_sum", 0).
-		OSS:add("yaw_angle", 0).
-		OSS:add("yaw_sum", 0).
-		OSS:add("Average_samples", 0).
-		OSS:add("Average_Interval", 1).
-		OSS:add("Average_Interval_Max", 5).
-		OSS:add("Ship_Name", ship:name:tostring).
-		OSS:add("HasSensors", HasSensors()).
-
-		return OSS.
+		local lex is lexicon().
+		lex:add("t0", time:seconds).
+		lex:add("pitch_angle", 0).
+		lex:add("pitch_sum", 0).
+		lex:add("yaw_angle", 0).
+		lex:add("yaw_sum", 0).
+		lex:add("Average_samples", 0).
+		lex:add("Average_Interval", 1).
+		lex:add("Average_Interval_Max", 5).
+		lex:add("Ship_Name", ship:name:tostring).
+		lex:add("HasSensors", HasSensors()).
+		return lex.
 	}
 
 	if exists("oss.json") { // Looks for saved data
@@ -273,35 +269,37 @@ function utilRemoveNodes {
 
 // convert any angle to range [0, 360)
 function utilAngleTo360 {
-	parameter a.
-	set a to mod(a, 360).
-	if a < 0 set a to a + 360.
-	return a.
+	parameter pAngle.
+	set pAngle to mod(pAngle, 360).
+	if pAngle < 0 set pAngle to pAngle + 360.
+	return pAngle.
 }
 
 // convert from true to mean anomaly
 function utilMeanFromTrue {
-	parameter a.
-	parameter obt is orbit.
-	set e to obt:eccentricity.
-	if e < 0.001 return a. // circular, no need for conversion
-	if e >= 1 { print "ERROR: meanFromTrue(" + round(a, 2) + ") with e=" + round(e, 5). return a. }
-	set a to a*.5.
-	set a to 2 * arctan2(sqrt(1 - e) * sin(a), sqrt(1 + e) * cos(a)).
+	parameter pAnomaly.
+	parameter pOrbit is orbit.
+	local e is pOrbit:eccentricity.
+	if e < 0.001 return pAnomaly. // circular, no need for conversion
+	if e >= 1 { print "ERROR: meanFromTrue(" + round(pAnomaly, 2) + ") with e=" + round(e, 5). return pAnomaly. }
+	set pAnomaly to pAnomaly * 0.5.
+	set pAnomaly to 2 * arctan2(sqrt(1 - e) * sin(pAnomaly), sqrt(1 + e) * cos(pAnomaly)).
 	// https://en.wikipedia.org/wiki/Eccentric_anomaly
 	// https://en.wikipedia.org/wiki/Mean_anomaly
-	return a - e * sin(a) * 180 / constant:pi.
+	return pAnomaly - e * sin(pAnomaly) * 180 / constant:pi.
 }
+
 // eta to mean anomaly (angle from periapsis converted to mean-motion circle)
 function utilDtMean {
-	parameter a.
-	parameter obt is orbit.
-	return utilAngleTo360(a - utilMeanFromTrue(obt:trueAnomaly)) / 360 * obt:period.
+	parameter pAnomaly.
+	parameter pOrbit is orbit.
+	return utilAngleTo360(pAnomaly - utilMeanFromTrue(pOrbit:trueAnomaly)) / 360 * pOrbit:period.
 }
+
 // eta to true anomaly (angle from periapsis in the direction of movement)
 // note: this is the ultimate ETA function which is in KSP API known as GetDTforTrueAnomaly
 function utilDtTrue {
-	parameter a.
-	parameter obt is orbit.
-	return utilAngleTo360(utilMeanFromTrue(a) - utilMeanFromTrue(obt:trueAnomaly)) / 360 * obt:period.
+	parameter pAnomaly.
+	parameter pOrbit is orbit.
+	return utilAngleTo360(utilMeanFromTrue(pAnomaly) - utilMeanFromTrue(pOrbit:trueAnomaly)) / 360 * pOrbit:period.
 }

@@ -38,9 +38,7 @@ BAYS off.
 GEAR off.
 LADDERS off.
 
-DrawDebugVectors off.
-
-
+local DrawDebugVectors to false.
 
 // ************
 // MAIN PROGRAM
@@ -52,19 +50,20 @@ if ship:status = "ORBITING" {
 
 	if body:atm:exists uiWarning("Deorbit", "Warning: Warranty void, used with atmosphere!").
 
-// Zero the orbit inclination
+	// Zero the orbit inclination
 	if abs(OBT:inclination) > 0.1 {
 		uiBanner("Deorbit", "Setting an equatorial orbit").
 		runpath("node_inc_equ", 0).
 		runpath("node").
 	}
-// Circularize the orbit
+
+	// Circularize the orbit
 	if obt:eccentricity > 0.01 {
 		uiBanner("Deorbit", "Circularizing the orbit").
 		run circ.
 	}
 
-// Find where to land
+	// Find where to land
 	if LandMode:contains("TARG") {
 		if hastarget and target:body = ship:body { // Make sure have a target in the same planet at least! Note it doesn't check if target is landed/splashed, will just use it's position, for all it cares.
 			set LandLat to utilLongitudeTo360(target:geoposition:lat).
