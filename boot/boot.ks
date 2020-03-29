@@ -85,6 +85,8 @@ if homeconnection:isconnected {
 	local fSize is 0.
 	for f in fls {
 		if f:name:endswith(".ks") {
+			// remove file if it alredy exists, needed to avoid requirement of double space on reboot
+			if hd:exists(f:name) hd:delete(f:name).
 			set fSize to fSize + f:size.
 		}
 	}
