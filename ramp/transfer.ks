@@ -4,7 +4,7 @@
 // Hohmann transfer to a satellite of the vessel's SoI body.
 /////////////////////////////////////////////////////////////////////////////
 
-run once lib_ui.
+runoncepath("lib_ui").
 
 if ship:body <> target:body {
 	uiError("Transfer", "Target outside of SoI").

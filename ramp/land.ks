@@ -4,7 +4,7 @@
 // Make groundfall
 /////////////////////////////////////////////////////////////////////////////
 
-run once lib_ui.
+runoncepath("lib_ui").
 
 global land_slip    is 0.05. // transverse speed at touchdown (m/s)
 global land_descend is 10.0. // max speed during final descent (m/s)
