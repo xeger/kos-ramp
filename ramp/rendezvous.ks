@@ -14,7 +14,7 @@ if ship:body <> target:body {
 }
 
 local approachT is utilClosestApproach(ship, target).
-local approachX is (positionat(target, approachT) - positionat(ship, approachT)):mag.
+local approachX is (positionAt(target, approachT) - positionAt(ship, approachT)):mag.
 
 // Perform Hohmann transfer if necessary
 if target:position:mag > 25000 and approachX > 25000 {

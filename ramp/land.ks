@@ -72,7 +72,7 @@ if status = "SUB_ORBITAL" or status = "FLYING" {
 			}
 		} else {
 			// Deorbit: monitor & predict when to perform braking burn
-			local rF is positionat(ship, time:seconds + dtBrake).
+			local rF is positionAt(ship, time:seconds + dtBrake).
 			local geoF is body:geopositionof(rF).
 			local altF is rf:y - geoF:position:y.
 

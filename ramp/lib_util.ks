@@ -34,7 +34,7 @@ function utilCloseApproach {
 
 	local T is Tmin.
 	until T >= Tmax {
-		local X is (positionat(ship1, T)) - (positionat(ship2, T)).
+		local X is (positionAt(ship1, T)) - (positionAt(ship2, T)).
 		if X:mag < Rbest {
 			set Rbest to X:mag.
 		}

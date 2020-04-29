@@ -14,11 +14,11 @@ local br is body:radius.
 // present orbit properties
 local vom is ship:velocity:orbit:mag. // current velocity
 local r is br + altitude. // current radius
-local v1 is velocityat(ship, nodeTime):orbit:mag. // velocity at burn time
+local v1 is velocityAt(ship, nodeTime):orbit:mag. // velocity at burn time
 local sma1 is orbit:semimajoraxis.
 
 // future orbit properties
-local r2 is br + ship:body:altitudeof(positionat(ship, nodeTime)).
+local r2 is br + ship:body:altitudeof(positionAt(ship, nodeTime)).
 local sma2 is (nodeAlt + br + r2) / 2.
 local v2 is sqrt( vom ^ 2 + (mu * (2 / r2 - 2 / r + 1 / sma1 - 1 / sma2 ) ) ).
 

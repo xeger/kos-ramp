@@ -103,14 +103,14 @@ if node_T = "Stranded" {
 	uiDebug("Transfer eta=" + round(node_T - time:seconds, 0)).
 	uiDebug("Transfer dv0=" + round(hohmannDv, 1)).
 
-	local r1 is (positionat(ship, node_T) - body:position):mag.
+	local r1 is (positionAt(ship, node_T) - body:position):mag.
 	global node_dv is hohmannDv(r1).
 	uiDebug("Transfer dv1=" + round(node_dv, 1) + ", r1=" + round(r1)).
 
 	local nd is node(node_T, 0, 0, node_dv).
 	add nd.
 
-	local r2 is (positionat(target, node_T + nd:orbit:period / 2) - body:position):mag.
+	local r2 is (positionAt(target, node_T + nd:orbit:period / 2) - body:position):mag.
 	set node_dv to hohmannDv(r1, r2).
 	set nd:prograde to node_dv.
 	uiDebug("Transfer dv2=" + round(node_dv, 1) + ", r2=" + round(r2)).

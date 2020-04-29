@@ -25,13 +25,17 @@ if Career():canMakeNodes and periapsis > max(body:atm:height, 1000) {
 	// deltaV = required orbital speed minus predicted speed
 	local dv is sqrt(body:mu / (body:radius + apoapsis)) - v0:mag.
 	local dt is burnTimeForDv(dv) / 2.
+
 	uiBanner("Circ", "Coast to apoapsis.").
 	wait until utilIsShipFacing(v0).
 	warpSeconds(eta:apoapsis - dt - 30).
+
 	lock steering to prograde.
 	wait until utilIsShipFacing(prograde:forevector).
+
 	warpSeconds(eta:apoapsis - dt - 5).
 	wait until eta:apoapsis <= dt + 0.1.
+
 	uiBanner("Circ", "Burn to raise periapsis.").
 	local function circSteering {
 		if eta:apoapsis < eta:periapsis {
@@ -44,6 +48,7 @@ if Career():canMakeNodes and periapsis > max(body:atm:height, 1000) {
 		// note that ship's pitch is actually yaw in world perspective (pitch = normal, yaw = radial-out)
 		return prograde:vector + r(0, min(30, max(0, orbit:period - eta:apoapsis)), 0).
 	}
+
 	lock steering to circSteering().
 	lock throttle to (sqrt(body:mu / (body:radius + apoapsis)) - ship:velocity:orbit:mag) * ship:mass / max(1, availableThrust).
 	local maxHeight is ship:obt:apoapsis * 1.01 + 1000.

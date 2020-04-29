@@ -12,9 +12,9 @@ runoncepath("lib_util").
 
 // Figure out some basics
 local T is utilClosestApproach(ship, target).
-local Vship is velocityat(ship, T):orbit.
-local Vtgt is velocityat(target, T):orbit.
-local Pship is positionat(ship, T) - body:position.
+local Vship is velocityAt(ship, T):orbit.
+local Vtgt is velocityAt(target, T):orbit.
+local Pship is positionAt(ship, T) - body:position.
 local dv is Vtgt - Vship.
 
 // project dv onto the radial/normal/prograde direction vectors to convert it

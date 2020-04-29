@@ -103,7 +103,7 @@ if ship:status = "ORBITING" {
 	Set PlaneChangeLong to utilLongitudeTo360(LandLng - 270).
 
 	// Plane change for landing site
-	local vel is velocityat(ship, landTimeToLong(PlaneChangeLong)):orbit.
+	local vel is velocityAt(ship, landTimeToLong(PlaneChangeLong)):orbit.
 	local inc is LandingSite:lat.
 	local TotIncDV is 2 * vel:mag * sin(inc / 2).
 	local nDv is vel:mag * sin(inc).
@@ -111,22 +111,24 @@ if ship:status = "ORBITING" {
 
 	if TotIncDV > 0.1 { // Only burn if it matters.
 		uiBanner("Deorbit", "Burning dV of " + round(TotIncDV, 1) + " m/s @ anti-normal to change plane.").
-		local nd is node(time:seconds + landTimeToLong(PlaneChangeLong+ phiIncManeuver), 0, -nDv, pDv).
-		add nd. run node.
+		local nd is node(time:seconds + landTimeToLong(PlaneChangeLong + phiIncManeuver), 0, -nDv, pDv).
+		add nd.
+		run node.
 	}
 
 	// Lower orbit over landing site
 	local Deorbit_dV is landDeorbitDeltaV(DeorbitRad - body:radius).
 	uiBanner("Deorbit", "Burning dV of " + round(Deorbit_dV, 1) + " m/s retrograde to deorbit.").
-	local nd is node(time:seconds + landTimeToLong(Deorbit_Long+ phi) , 0, 0, Deorbit_dV).
-	add nd. run node.
+	local nd is node(time:seconds + landTimeToLong(Deorbit_Long + phi) , 0, 0, Deorbit_dV).
+	add nd.
+	run node.
 	uiBanner("Deorbit", "Deorbit burn done").
 	wait 5. // Let's have some time to breath and look what's happening
 
 	// Brake the ship to finally deorbit.
-	set BreakingDeltaV to velocityat(ship, time:seconds+ eta:periapsis):orbit:mag.
+	set BreakingDeltaV to velocityAt(ship, time:seconds + eta:periapsis):orbit:mag.
 	uiBanner("Deorbit", "Burning dV of " + round(BreakingDeltaV, 1) + " m/s retrograde to brake ship.").
-	set nd to node(time:seconds + eta:periapsis , 0, 0, -BreakingDeltaV).
+	set nd to node(time:seconds + eta:periapsis, 0, 0, -BreakingDeltaV).
 	add nd.
 	run node.
 	uiBanner("Deorbit", "Brake burn done").
@@ -155,16 +157,18 @@ if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
 	lock Throttle to tVal.
 	local sDir is ship:up.
 	lock steering to sDir.
+	uiBanner("Land", "Landing").
 
 	// Main landing loop
 	until ship:status = "LANDED" OR ship:status = "SPLASHED" {
 		wait 0.
-	// Steer the rocket
+		// Steer the rocket
 		set ShipVelocity to ship:velocity:surface.
 		set ShipHVelocity to vxcl(ship:up:vector, ShipVelocity).
 		Set DFactor to 0.08. // How much the target position matters when steering. Higher values make landing more precise, but also may make the ship land with too much horizontal speed.
 		set TargetVector to vxcl(ship:up:vector, LandingSite:position * DFactor).
 		set SteerVector to -ShipVelocity - ShipHVelocity + TargetVector.
+
 		if DrawDebugVectors {
 			set drawsv to vecdraw(v(0, 0, 0), SteerVector, red, "Steering", 1, true, 1).
 			set drawv to vecdraw(v(0, 0, 0), ShipVelocity, green, "Velocity", 1, true, 1).
@@ -188,18 +192,26 @@ if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
 			Print "Target Vspeed  " + TargetVSpeed            + "                           " at (0, 1).
 			print "Throttle       " + tVal                    + "                           " at (0, 2).
 			print "Ship Velocity  " + ShipVelocity:mag        + "                           " at (0, 3).
-			print "Ship height    " + landRadarAltimeter()        + "                           " at (0, 4).
+			print "Ship height    " + landRadarAltimeter()    + "                           " at (0, 4).
 			print "                                                                    " at (0, 5).
 		}
+
 		wait 0.
 	}
 
-	unlock throttle. unlock steering.
+	unlock throttle.
+	unlock steering.
 	set ship:control:neutralize to true.
 	set ship:control:pilotmainthrottle to 0.
 	clearvecdraws().
 	LADDERS on.
 	SAS on. // Helps to don't tumble after landing
-} else if ship:status = "ORBITING" uiError("Land", "This ship is still in orbit!?").
-else if ship:status = "LANDED" or ship:status = "SPLASHED" uiError("Land", "We are already landed, nothing to do here, move along").
-else uiError("Land", "Can't land from " + ship:status).
+
+	uiBanner("Land", "Landed").
+} else if ship:status = "ORBITING" {
+	uiError("Land", "This ship is still in orbit!?").
+} else if ship:status = "LANDED" or ship:status = "SPLASHED" {
+	uiError("Land", "We are already landed, nothing to do here, move along").
+} else {
+	uiError("Land", "Can't land from " + ship:status).
+}
