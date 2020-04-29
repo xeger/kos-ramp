@@ -128,7 +128,7 @@ if ship:status = "ORBITING" {
 	// Brake the ship to finally deorbit.
 	set BreakingDeltaV to velocityAt(ship, time:seconds + eta:periapsis):orbit:mag.
 	uiBanner("Deorbit", "Burning dV of " + round(BreakingDeltaV, 1) + " m/s retrograde to brake ship.").
-	set nd to node(time:seconds + eta:periapsis, 0, 0, -BreakingDeltaV).
+	set nd to node(time:seconds + eta:periapsis, 0, 0, -BreakingDeltaV / 1.0001).
 	add nd.
 	run node.
 	uiBanner("Deorbit", "Brake burn done").
