@@ -27,7 +27,7 @@ if Career():canMakeNodes and periapsis > max(body:atm:height, 1000) {
 	local dt is burnTimeForDv(dv) / 2.
 
 	uiBanner("Circ", "Coast to apoapsis.").
-	wait until utilIsShipFacing(v0).
+	if partsHasReactionWheels() wait until utilIsShipFacing(v0) OR eta:apoapsis < dt - 30.
 	warpSeconds(eta:apoapsis - dt - 30).
 
 	lock steering to prograde.

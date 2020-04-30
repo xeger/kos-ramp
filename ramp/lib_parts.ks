@@ -128,6 +128,15 @@ function partsHasTermometer {
 	return HasT.
 }
 
+function partsHasReactionWheels {
+	for part in ship:parts {
+		for module in part:modules() {
+			if module = "ModuleReactionWheel" return true.
+		}
+	}
+	return false.
+}
+
 function partsDisarmsChutes {
 	// Make sure all chutes are disarmed, even if already staged.
 	// Warning: If chutes are staged and disarmed, SPACEBAR will not deploy they!
