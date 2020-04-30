@@ -85,7 +85,7 @@ if ship:status = "ORBITING" {
 	set LandingSite to latlng(LandLat, LandLng).
 
 	// Define the deorbit periapsis
-	local DeorbitRad to max(5000+ ship:body:radius, (ship:body:radius * 1.02 + LandingSite:terrainheight)).
+	local DeorbitRad to max((ship:body:radius + 5000 + LandingSite:terrainheight), (ship:body:radius * 1.02 + LandingSite:terrainheight)).
 
 	// Find a phase angle for the landing
 	// The landing burning is like a Hohmann transfer, but to an orbit close to the body surface
@@ -139,10 +139,13 @@ if ship:status = "ORBITING" {
 
 // Try to land
 if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
-	set TouchdownSpeed to 2.
+	local TouchdownSpeed to 2.
+	// at the time we capture this value, the direction of ship can be incorrect, therefore we just take the longest side of it
+	local ShipBottomOffset to ceiling(ship:bounds:absmax:mag).
+	local SpeedDiffRate to 1.
 
 	// PID Throttle
-	set ThrottlePID to pidloop(0.04, 0.001, 0.01). // Kp, Ki, Kd
+	local ThrottlePID to pidloop(0.04, 0.001, 0.01). // Kp, Ki, Kd
 	set ThrottlePID:maxoutput to 1.
 	set ThrottlePID:minoutput to 0.
 	set ThrottlePID:setpoint to 0.
@@ -163,11 +166,12 @@ if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
 	until ship:status = "LANDED" OR ship:status = "SPLASHED" {
 		wait 0.
 		// Steer the rocket
-		set ShipVelocity to ship:velocity:surface.
-		set ShipHVelocity to vxcl(ship:up:vector, ShipVelocity).
-		Set DFactor to 0.08. // How much the target position matters when steering. Higher values make landing more precise, but also may make the ship land with too much horizontal speed.
-		set TargetVector to vxcl(ship:up:vector, LandingSite:position * DFactor).
-		set SteerVector to -ShipVelocity - ShipHVelocity + TargetVector.
+		local ShipHeight to landRadarAltimeter() - ShipBottomOffset.
+		local ShipVelocity to ship:velocity:surface.
+		local ShipHVelocity to vxcl(ship:up:vector, ShipVelocity).
+		local DFactor to 0.08. // How much the target position matters when steering. Higher values make landing more precise, but also may make the ship land with too much horizontal speed.
+		local TargetVector to vxcl(ship:up:vector, LandingSite:position * DFactor).
+		local SteerVector to -ShipVelocity - ShipHVelocity + TargetVector.
 
 		if DrawDebugVectors {
 			set drawsv to vecdraw(v(0, 0, 0), SteerVector, red, "Steering", 1, true, 1).
@@ -179,7 +183,13 @@ if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
 		set sDir to SteerVector:direction.
 
 		// Throttle the rocket
-		set TargetVSpeed to max(TouchdownSpeed, sqrt(landRadarAltimeter())).
+		local TargetVSpeed to max(TouchdownSpeed, sqrt(max(ShipHeight, 0))).
+		local nSpeedDiffRate to abs(ship:verticalspeed) / TargetVSpeed.
+		if nSpeedDiffRate > SpeedDiffRate + 0.001 and ThrottlePID:output < 1 {
+			// we are going down too fast, need to do something
+			set ThrottlePID:kp to ThrottlePID:kp + 0.01. // add more throttle per error
+		}
+		set SpeedDiffRate to nSpeedDiffRate.
 
 		if abs(ship:verticalspeed) > TargetVSpeed {
 			set tVal to ThrottlePID:update(time:seconds, (ship:verticalspeed + TargetVSpeed)).
@@ -189,11 +199,12 @@ if ship:status = "SUB_ORBITAL" or ship:status = "FLYING" {
 
 		if DrawDebugVectors { // I know, isn't the debug vectors but helps
 			print "Vertical speed " + abs(ship:verticalspeed) + "                           " at (0, 0).
-			Print "Target Vspeed  " + TargetVSpeed            + "                           " at (0, 1).
-			print "Throttle       " + tVal                    + "                           " at (0, 2).
-			print "Ship Velocity  " + ShipVelocity:mag        + "                           " at (0, 3).
-			print "Ship height    " + landRadarAltimeter()    + "                           " at (0, 4).
-			print "                                                                    " at (0, 5).
+			print "Target Vspeed  " + TargetVSpeed            + "                           " at (0, 1).
+			print "Speed rate     " + nSpeedDiffRate          + "                           " at (0, 2).
+			print "Throttle       " + tVal                    + "                           " at (0, 3).
+			print "Ship Velocity  " + ShipVelocity:mag        + "                           " at (0, 4).
+			print "Ship height    " + ShipHeight              + "                           " at (0, 5).
+			print "                                                                         " at (0, 6).
 		}
 
 		wait 0.
