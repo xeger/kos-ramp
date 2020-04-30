@@ -104,7 +104,7 @@ lock throttle to ascentThrottle().
 /////////////////////////////////////////////////////////////////////////////
 
 local warped to false.
-until ship:obt:apoapsis >= apo {
+until ship:obt:apoapsis >= apo or (ship:altitude > (apo / 2) and eta:apoapsis < 30) {
 	stagingCheck().
 	ascentDeploy().
 	if not warped and altitude > min(ship:body:atm:height / 10, 1000) {
@@ -124,16 +124,18 @@ set ship:control:pilotmainthrottle to 0.
 
 // Roll with top up
 uiBanner("ascend", "Point prograde").
-lock steering to heading (hdglaunch, 0). // Horizon, ceiling up.
-wait until utilIsShipFacing(heading(hdglaunch, 0):vector).
+lock steering to heading(hdglaunch, 0). // Horizon, ceiling up.
+wait until utilIsShipFacing(heading(hdglaunch, 0):vector) or eta:apoapsis < 30.
 
 // Warp to end of atmosphere
 local AdjustmentThrottle is 0.
 lock throttle to AdjustmentThrottle.
+uiBanner("ascend", "Warp to end of atmosphere").
 until ship:altitude > body:atm:height {
+	stagingCheck().
+	ascentDeploy().
 	if ship:obt:apoapsis < apo {
 		set AdjustmentThrottle to ascentThrottle().
-		stagingCheck().
 		wait 0.
 	} else {
 		set AdjustmentThrottle to 0.
