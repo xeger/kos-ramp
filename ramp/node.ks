@@ -56,15 +56,21 @@ until false {
 	// If ship is not rotating for some reason, will proceed anyway. (Maybe only torque source is engine gimbal?)
 	wait 0.
 	local warped to false.
-	until utilIsShipFacing(steerDir, node_bestFacing, 0.5) or
-		nn:eta <= dt and utilIsShipFacing(steerDir, node_okFacing, 5) or
-		ship:angularvel:mag < 0.0001 and rcs = true
+	local tried to false. // we need to run at least once to make sure we checked for RCS
+	until (utilIsShipFacing(steerDir, node_bestFacing, 0.5) or
+				 (nn:eta <= dt and utilIsShipFacing(steerDir, node_okFacing, 5)) or
+				 (ship:angularvel:mag < 0.0001 and tried = true))
 	{
-		if ship:angularvel:mag < 0.01 rcs on.
+		// if not rotatiting and there is RCS, enable it
+		if ship:angularvel:mag < 0.0001 and rcs = true rcs on.
+
 		stagingCheck().
 		if not warped { set warped to true. physWarp(1). }
 		wait 0.
+
+		set tried to true.
 	}
+
 	if warped resetWarp().
 	if warpLoop = 0 break.
 	if warpLoop > 1 {
@@ -106,6 +112,7 @@ if nn:eta - dt > 5 {
 	wait until nn:eta - dt <= 2.
 	resetWarp().
 }
+
 wait until nn:eta - dt <= 1.
 until dvMin < 0.05 {
 	if stagingCheck() uiWarning("Node", "Stage " + stage:number + " separation during burn").
@@ -125,6 +132,7 @@ until dvMin < 0.05 {
 			set maxThrottle to 0.1.
 			rcs on.
 		}
+
 		if vdot(dv0, nn:deltaV) < 0 break. // overshot (node delta vee is pointing opposite from initial)
 		if dv > dvMin + 0.1 break. // burn DV increases (off target due to wobbles)
 		if dv <= 0.2 { // burn DV gets too small for main engines to cope with
@@ -135,10 +143,12 @@ until dvMin < 0.05 {
 		set choked to 0.
 	} else {
 		if choked = 0 set choked to time:seconds.
+
 		if not warned and time:seconds - choked > 3 {
 			set warned to true.
 			uiWarning("Node", "No acceleration").
 		}
+
 		if time:seconds - choked > 30
 			uiFatal("Node", "No acceleration").
 	}
