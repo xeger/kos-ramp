@@ -60,8 +60,8 @@ Automating a Mission
 
 If you want to script your entire mission end-to-end, it is highly suggested
 that you choose `boot` as the boot script for your vessel's main CPU. When
-your ship is on the pad, `RUN initialize.` to create a sample Mun mission for
-your craft. Finally, `REBOOT.` to perform the automated sample mission.
+your ship is on the pad, `run initialize.` to create a sample Mun mission for
+your craft. Finally, `reboot.` to perform the automated sample mission.
 
 To change the mission profile, just edit the startup script that now lives under
 `start/YourCraftName.ks` and launch a fresh craft of the same name. The sample
@@ -141,9 +141,9 @@ Function Libraries
 ------------------
 
 Programs beginning with `lib_` contain reusable functions and are invoked by
-other programs using `RUN ONCE` or `RUNONCEPATH()`.
+other programs using `run once` or `runoncepath()`.
 
-Beware that libs cannot run other libs! If two library scripts depend on one another's functions, then you must make sure to `RUN ONCE` both scripts from every top-level program that uses either oft hem!
+Beware that libs cannot run other libs! If two library scripts depend on one another's functions, then you must make sure to `run once` both scripts from every top-level program that uses either oft hem!
 
 Comments and Documentation
 --------------------------

@@ -11,14 +11,14 @@
 run once lib_ui.
 
 if ship:status = "PRELAUNCH" {
-  wait 1.
-  uiBanner("Mission", "Launch!").
-  set ship:control:pilotmainthrottle to 1.
-  stage.
-  wait 2. // Wait to ship stabilize
+	wait 1.
+	uiBanner("Mission", "Launch!").
+	set ship:control:pilotmainthrottle to 1.
+	stage.
+	wait 2. // Wait to ship stabilize
 }
 
 if ship:status = "FLYING" or ship:status = "SUB_ORBITAL" {
-  uiBanner("Mission", "Ascend from " + body:name).
-  run launch_asc(body:atm:height + (body:radius / 10)).
+	uiBanner("Mission", "Ascend from " + body:name).
+	run launch_asc(body:atm:height + (body:radius / 10)).
 }

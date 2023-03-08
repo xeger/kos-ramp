@@ -20,7 +20,6 @@ FUNCTION INSTALL {
 	SET CopyFailed TO LIST().
 	SET DiskFull TO FALSE.
 
-	// bootConsole("install", "Connected to network.  Installing files...").
 	FOR F IN FLS {
 		LOCAL LF IS SRC:COMBINE(F).
 		IF EXISTS(LF) {
@@ -47,46 +46,12 @@ FUNCTION INSTALL {
 	}
 }
 
-// Print informational message.
-function bootConsole {
-  parameter msg.
-
-  print "T+" + round(time:seconds) + " boot: " + msg.
-}
-
-// Print error message and shutdown CPU.
-function bootError {
-  parameter msg.
-
-  print "T+" + round(time:seconds) + " boot: " + msg.
-
-  hudtext(msg, 10, 4, 36, RED, false).
-
-  local vAlarm TO GetVoice(0).
-  set vAlarm:wave to "TRIANGLE".
-  set vAlarm:volume to 0.5.
-  vAlarm:PLAY(
-    LIST(
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25),
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25),
-        NOTE("R",   0.2,  0.25),
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25),
-        NOTE("A#4", 0.2,  0.25),
-        NOTE("A4",  0.2,  0.25)
-    )
-  ).
-  shutdown.
-}
-
 function bootWarning {
-  parameter msg.
+	parameter msg.
 
-  print "T+" + round(time:seconds) + " boot: " + msg.
+	print "T+" + round(time:seconds) + " boot: " + msg.
 
-  hudtext(msg, 10, 4, 24, YELLOW, false).
+	hudtext(msg, 10, 4, 24, YELLOW, false).
 }
 
 //Print info

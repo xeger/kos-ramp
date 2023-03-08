@@ -1,4 +1,12 @@
+# IDEs
+.idea
+.vscode
+
+# Temporal files
 test.ks
 *.bak
-start/*
+*.ksm
 
+# Missions files
+start/*
+routes/*

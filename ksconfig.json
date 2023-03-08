@@ -1,0 +1,10 @@
+{
+  "archive": "ramp",
+  "linting": {
+		"file-loading": "hint",
+		"symbol-may-not-exist-closure": "hint",
+		"symbol-may-not-exist": "hint",
+		"symbol-unused-locally": "hint",
+		"symbol-unused": "hint"
+  }
+}
